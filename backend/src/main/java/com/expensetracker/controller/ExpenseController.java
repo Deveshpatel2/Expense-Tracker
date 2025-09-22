@@ -5,36 +5,26 @@ import com.expensetracker.dto.ExpenseRequest;
 import com.expensetracker.entity.Expense;
 import com.expensetracker.entity.User;
 import com.expensetracker.service.ExpenseService;
-import com.expensetracker.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/expenses")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3004"})
 public class ExpenseController {
-    
+
     @Autowired
     private ExpenseService expenseService;
-    
-    @Autowired
-    private UserService userService;
-    
+
     @PostMapping
     public ResponseEntity<ApiResponse<Expense>> createExpense(@Valid @RequestBody ExpenseRequest expenseRequest,
-                                                              Authentication authentication) {
+            Authentication authentication) {
         try {
             User user = (User) authentication.getPrincipal();
             Expense expense = expenseService.createExpense(expenseRequest, user);
@@ -43,11 +33,9 @@ public class ExpenseController {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     @GetMapping
     public ResponseEntity<ApiResponse<List<Expense>>> getExpenses(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
@@ -56,7 +44,7 @@ public class ExpenseController {
         try {
             User user = (User) authentication.getPrincipal();
             List<Expense> expenses;
-            
+
             if (search != null && !search.trim().isEmpty()) {
                 expenses = expenseService.searchExpenses(user, search);
             } else if (category != null || startDate != null || endDate != null) {
@@ -66,35 +54,36 @@ public class ExpenseController {
             } else {
                 expenses = expenseService.getExpensesByUser(user);
             }
-            
+
             return ResponseEntity.ok(ApiResponse.success("Expenses retrieved successfully", expenses));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Expense>> getExpense(@PathVariable Long id,
-                                                           Authentication authentication) {
+            Authentication authentication) {
         try {
             User user = (User) authentication.getPrincipal();
             Expense expense = expenseService.findById(id);
-            
+
             // Check if the expense belongs to the user
             if (!expense.getUser().getId().equals(user.getId())) {
-                return ResponseEntity.badRequest().body(ApiResponse.error("You don't have permission to view this expense"));
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("You don't have permission to view this expense"));
             }
-            
+
             return ResponseEntity.ok(ApiResponse.success("Expense retrieved successfully", expense));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Expense>> updateExpense(@PathVariable Long id,
-                                                              @Valid @RequestBody ExpenseRequest expenseRequest,
-                                                              Authentication authentication) {
+            @Valid @RequestBody ExpenseRequest expenseRequest,
+            Authentication authentication) {
         try {
             User user = (User) authentication.getPrincipal();
             Expense expense = expenseService.updateExpense(id, expenseRequest, user);
@@ -103,10 +92,10 @@ public class ExpenseController {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteExpense(@PathVariable Long id,
-                                                           Authentication authentication) {
+            Authentication authentication) {
         try {
             User user = (User) authentication.getPrincipal();
             expenseService.deleteExpense(id, user);
@@ -115,7 +104,7 @@ public class ExpenseController {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     @GetMapping("/statistics/totals")
     public ResponseEntity<ApiResponse<Map<String, Double>>> getTotalByCurrency(Authentication authentication) {
         try {
@@ -126,7 +115,7 @@ public class ExpenseController {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     @GetMapping("/statistics/averages")
     public ResponseEntity<ApiResponse<Map<String, Double>>> getAverageByCurrency(Authentication authentication) {
         try {
@@ -137,7 +126,7 @@ public class ExpenseController {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     @GetMapping("/statistics/categories")
     public ResponseEntity<ApiResponse<Map<String, Double>>> getTotalByCategory(Authentication authentication) {
         try {
@@ -148,7 +137,7 @@ public class ExpenseController {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-    
+
     @GetMapping("/statistics/counts")
     public ResponseEntity<ApiResponse<Map<String, Long>>> getCountByCategory(Authentication authentication) {
         try {
