@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './CategoryManager.css';
 
 const CategoryManager = ({ onCategorySelect, onCategoryUpdate, expenses = [] }) => {
   const [activeTab, setActiveTab] = useState('default');
@@ -242,10 +243,6 @@ const CategoryManager = ({ onCategorySelect, onCategoryUpdate, expenses = [] }) 
     }
   };
 
-  // Handle category selection
-  const handleCategorySelect = (category) => {
-    onCategorySelect(category);
-  };
 
   // Handle subcategory selection
   const handleSubcategorySelect = (category, subcategory) => {

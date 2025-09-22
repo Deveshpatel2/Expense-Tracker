@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCurrency } from '../context/CurrencyContext';
+import './EditExpenseModal.css';
 
 const EditExpenseModal = ({ isOpen, onClose, expense, onSave }) => {
   const { selectedCurrency, currencies } = useCurrency();

@@ -1,0 +1,256 @@
+/* Report.css - Styles for Report component */
+
+/* Main Container */
+.report-container {
+  @apply space-y-6;
+}
+
+/* Header */
+.report-header {
+  @apply flex flex-col sm:flex-row sm:items-center sm:justify-between;
+}
+
+.report-title {
+  @apply text-2xl font-bold text-gray-900 dark:text-white;
+}
+
+.report-subtitle {
+  @apply text-sm text-gray-600 dark:text-gray-400 mt-1;
+}
+
+/* Controls */
+.report-controls {
+  @apply flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0;
+}
+
+/* Generate Report Button */
+.generate-report-button {
+  @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+}
+
+.generate-report-icon {
+  @apply -ml-1 mr-2 h-5 w-5;
+}
+
+/* Filters */
+.report-filters {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow p-4;
+}
+
+.report-filters-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4;
+}
+
+.report-filter-group {
+  @apply space-y-2;
+}
+
+.report-filter-label {
+  @apply block text-sm font-medium text-gray-700 dark:text-gray-300;
+}
+
+.report-filter-input {
+  @apply block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
+}
+
+.report-filter-select {
+  @apply block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
+}
+
+.report-filter-actions {
+  @apply flex justify-end space-x-3;
+}
+
+.report-filter-button {
+  @apply px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+.report-filter-button-primary {
+  @apply text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500;
+}
+
+.report-filter-button-secondary {
+  @apply text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 focus:ring-gray-500;
+}
+
+/* Report Content */
+.report-content {
+  @apply space-y-6;
+}
+
+/* Report Summary */
+.report-summary {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow p-6;
+}
+
+.report-summary-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+.report-summary-title {
+  @apply text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.report-summary-subtitle {
+  @apply text-sm text-gray-600 dark:text-gray-400;
+}
+
+/* Summary Stats */
+.summary-stats {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6;
+}
+
+.summary-stat {
+  @apply text-center;
+}
+
+.summary-stat-value {
+  @apply text-2xl font-bold text-gray-900 dark:text-white;
+}
+
+.summary-stat-label {
+  @apply text-sm text-gray-600 dark:text-gray-400 mt-1;
+}
+
+/* Report Table */
+.report-table {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden;
+}
+
+.report-table-header {
+  @apply px-6 py-4 border-b border-gray-200 dark:border-gray-700;
+}
+
+.report-table-title {
+  @apply text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.report-table-subtitle {
+  @apply text-sm text-gray-600 dark:text-gray-400;
+}
+
+.report-table-content {
+  @apply overflow-x-auto;
+}
+
+.report-table-table {
+  @apply min-w-full divide-y divide-gray-200 dark:divide-gray-700;
+}
+
+.report-table-header-row {
+  @apply bg-gray-50 dark:bg-gray-700;
+}
+
+.report-table-header-cell {
+  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider;
+}
+
+.report-table-body {
+  @apply bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700;
+}
+
+.report-table-row {
+  @apply hover:bg-gray-50 dark:hover:bg-gray-700;
+}
+
+.report-table-cell {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white;
+}
+
+/* Report Chart */
+.report-chart {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow p-6;
+}
+
+.report-chart-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+.report-chart-title {
+  @apply text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.report-chart-subtitle {
+  @apply text-sm text-gray-600 dark:text-gray-400;
+}
+
+.report-chart-container {
+  @apply h-64;
+}
+
+/* Export Options */
+.export-options {
+  @apply flex flex-wrap gap-3;
+}
+
+.export-button {
+  @apply inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+}
+
+.export-button-icon {
+  @apply -ml-1 mr-2 h-5 w-5;
+}
+
+/* Loading State */
+.loading-container {
+  @apply flex items-center justify-center h-64;
+}
+
+.loading-spinner {
+  @apply animate-spin h-8 w-8 text-indigo-600;
+}
+
+/* Error State */
+.error-container {
+  @apply flex items-center justify-center h-64;
+}
+
+.error-message {
+  @apply text-red-600 dark:text-red-400 text-center;
+}
+
+/* Empty State */
+.empty-container {
+  @apply flex items-center justify-center h-64;
+}
+
+.empty-message {
+  @apply text-gray-500 dark:text-gray-400 text-center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .report-controls {
+    @apply flex-col;
+  }
+  
+  .report-filters-grid {
+    @apply grid-cols-1;
+  }
+  
+  .summary-stats {
+    @apply grid-cols-2;
+  }
+  
+  .export-options {
+    @apply flex-col;
+  }
+  
+  .export-button {
+    @apply w-full justify-center;
+  }
+}
+
+@media (max-width: 640px) {
+  .summary-stats {
+    @apply grid-cols-1;
+  }
+  
+  .report-filter-actions {
+    @apply flex-col space-x-0 space-y-2;
+  }
+  
+  .report-filter-button {
+    @apply w-full;
+  }
+}

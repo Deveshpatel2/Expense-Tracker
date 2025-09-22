@@ -29,6 +29,24 @@ export const AuthProvider = ({ children }) => {
                 const parsedUserData = JSON.parse(userData);
 
                 // Validate token by checking if it's expired
+                // Check if token has the correct JWT format (3 parts separated by dots)
+                if (token.split('.').length !== 3) {
+                    console.log('Invalid token format, logging out');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    localStorage.removeItem('authMethod');
+                    return;
+                }
+
+                // Additional validation - check if token is not just whitespace
+                if (token.trim() === '') {
+                    console.log('Empty token, logging out');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    localStorage.removeItem('authMethod');
+                    return;
+                }
+
                 const tokenPayload = JSON.parse(atob(token.split('.')[1]));
                 const currentTime = Date.now() / 1000;
 
@@ -95,15 +113,19 @@ export const AuthProvider = ({ children }) => {
 
     const loginWithEmail = async (email, password) => {
         try {
+            console.log('AuthContext: loginWithEmail called with:', { email, password: password ? '***' : 'empty' });
             const response = await authAPI.login(email, password);
+            console.log('AuthContext: API response:', response);
             if (response.success) {
+                console.log('AuthContext: Login successful, calling login function');
                 login(response.data.user, response.data.token, 'manual');
                 return { success: true, user: response.data.user };
             } else {
+                console.log('AuthContext: Login failed:', response.message);
                 return { success: false, error: response.message };
             }
         } catch (error) {
-            console.error('Login failed:', error);
+            console.error('AuthContext: Login failed:', error);
             return { success: false, error: error.message || 'Login failed' };
         }
     };

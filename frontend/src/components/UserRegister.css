@@ -1,104 +1,149 @@
-/* UserRegister Component Styles */
+/* UserRegister.css - Styles for UserRegister component */
+
+/* Main Container */
 .register-container {
-  @apply min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-200;
+  @apply min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8;
 }
 
-.register-form-wrapper {
-  @apply max-w-md w-full space-y-8 relative;
+/* Form Container */
+.register-form-container {
+  @apply max-w-md w-full space-y-8;
 }
 
-.register-dark-mode-toggle {
-  @apply absolute top-0 right-0;
-}
-
+/* Header */
 .register-header {
-  @apply mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white;
+  @apply text-center;
+}
+
+.register-title {
+  @apply text-3xl font-extrabold text-gray-900 dark:text-white;
 }
 
 .register-subtitle {
-  @apply mt-2 text-center text-sm text-gray-600 dark:text-gray-400;
+  @apply mt-2 text-sm text-gray-600 dark:text-gray-400;
 }
 
-.register-form-container {
-  @apply bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700;
-}
-
-.register-form-title {
-  @apply text-lg font-medium text-gray-900 dark:text-white mb-4 text-center;
-}
-
+/* Form */
 .register-form {
-  @apply space-y-4;
+  @apply mt-8 space-y-6;
 }
 
-.register-error-message {
-  @apply bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded;
+/* Form Group */
+.form-group {
+  @apply space-y-2;
 }
 
-.register-success-message {
-  @apply bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-300 px-4 py-3 rounded;
-}
-
-.register-field-grid {
-  @apply grid grid-cols-1 gap-4 sm:grid-cols-2;
-}
-
-.register-field-container {
-  /* Individual field container styles */
-}
-
-.register-label {
+/* Label */
+.form-label {
   @apply block text-sm font-medium text-gray-700 dark:text-gray-300;
 }
 
-.register-input {
-  @apply mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm;
-}
-
-.register-submit-button {
-  @apply w-full bg-indigo-600 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed;
-}
-
-.register-divider-container {
+/* Input Container */
+.input-container {
   @apply relative;
 }
 
-.register-divider-line {
+/* Input Field */
+.form-input {
+  @apply appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm;
+}
+
+/* Password Toggle Button */
+.password-toggle {
+  @apply absolute inset-y-0 right-0 pr-3 flex items-center;
+}
+
+.password-toggle-button {
+  @apply text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none focus:text-gray-600 dark:focus:text-gray-300;
+}
+
+.password-toggle-icon {
+  @apply h-5 w-5;
+}
+
+/* Password Strength Indicator */
+.password-strength {
+  @apply mt-2;
+}
+
+.password-strength-bar {
+  @apply w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2;
+}
+
+.password-strength-fill {
+  @apply h-2 rounded-full transition-all duration-300;
+}
+
+.password-strength-text {
+  @apply text-xs mt-1;
+}
+
+/* Submit Button */
+.submit-button {
+  @apply relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.submit-button-loading {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  @apply animate-spin -ml-1 mr-3 h-5 w-5 text-white;
+}
+
+/* Error Message */
+.error-message {
+  @apply text-red-600 dark:text-red-400 text-sm mt-1;
+}
+
+/* Success Message */
+.success-message {
+  @apply text-green-600 dark:text-green-400 text-sm mt-1;
+}
+
+/* Link */
+.link {
+  @apply text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300;
+}
+
+/* Divider */
+.divider {
+  @apply relative my-6;
+}
+
+.divider-line {
   @apply absolute inset-0 flex items-center;
 }
 
-.register-divider-border {
-  @apply w-full border-t border-gray-300;
+.divider-line-content {
+  @apply w-full border-t border-gray-300 dark:border-gray-600;
 }
 
-.register-divider-text {
+.divider-text {
   @apply relative flex justify-center text-sm;
 }
 
-.register-divider-span {
-  @apply px-2 bg-gray-50 text-gray-500;
+.divider-text-content {
+  @apply px-2 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400;
 }
 
-.register-google-button {
-  @apply relative w-full flex justify-center py-3 px-4 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed;
+/* Additional Options */
+.additional-options {
+  @apply text-center;
 }
 
-.register-google-icon {
-  @apply w-5 h-5 mr-2;
-}
-
-.register-links-container {
-  @apply text-center space-y-2;
-}
-
-.register-login-link {
+.additional-options-text {
   @apply text-sm text-gray-600 dark:text-gray-400;
 }
 
-.register-login-link-text {
-  @apply font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300;
-}
-
-.register-demo-text {
-  @apply text-xs text-gray-500 dark:text-gray-400;
+/* Responsive Design */
+@media (max-width: 640px) {
+  .register-container {
+    @apply px-4;
+  }
+  
+  .register-form-container {
+    @apply max-w-sm;
+  }
 }

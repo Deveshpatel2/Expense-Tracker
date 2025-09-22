@@ -9,6 +9,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { DarkModeProvider } from './context/DarkModeContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { TimezoneProvider } from './context/TimezoneContext';
+import { NotificationProvider } from './components/NotificationSystem';
+import { LoadingProvider } from './components/LoadingStates';
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -35,24 +37,28 @@ function App() {
       <AuthProvider>
         <CurrencyProvider>
           <TimezoneProvider>
-            <Router>
-              <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-                <Routes>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<UserRegister />} />
-                  <Route path="/verify-email" element={<EmailVerification />} />
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route path="/" element={<Navigate to="/dashboard" />} />
-                </Routes>
-              </div>
-            </Router>
+            <NotificationProvider>
+              <LoadingProvider>
+                <Router>
+                  <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+                    <Routes>
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/register" element={<UserRegister />} />
+                      <Route path="/verify-email" element={<EmailVerification />} />
+                      <Route
+                        path="/dashboard"
+                        element={
+                          <ProtectedRoute>
+                            <Dashboard />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route path="/" element={<Navigate to="/dashboard" />} />
+                    </Routes>
+                  </div>
+                </Router>
+              </LoadingProvider>
+            </NotificationProvider>
           </TimezoneProvider>
         </CurrencyProvider>
       </AuthProvider>

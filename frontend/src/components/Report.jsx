@@ -4,6 +4,7 @@ import {
   PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
 import { useDarkMode } from '../context/DarkModeContext';
+import './Report.css';
 
 const currencies = [
   { code: 'USD', symbol: '$', name: 'US Dollar' },

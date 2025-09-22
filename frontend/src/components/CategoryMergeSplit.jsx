@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './CategoryMergeSplit.css';
 
 const CategoryMergeSplit = ({ categories, expenses, onCategoryUpdate, onExpenseUpdate }) => {
   const [activeTab, setActiveTab] = useState('merge');
@@ -158,18 +159,18 @@ const CategoryMergeSplit = ({ categories, expenses, onCategoryUpdate, onExpenseU
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+    <div className="category-merge-split-container">
+      <div className="category-merge-split-header">
+        <h3 className="category-merge-split-title">
           Category Merge & Split
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="category-merge-split-subtitle">
           Merge multiple categories or split one category into multiple
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 dark:border-gray-700">
+      <div className="category-merge-split-tabs">
         <button
           onClick={() => setActiveTab('merge')}
           className={`flex-1 py-3 px-4 text-sm font-medium ${

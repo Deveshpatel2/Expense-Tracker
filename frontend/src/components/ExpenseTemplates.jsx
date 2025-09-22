@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './ExpenseTemplates.css';
 
 const ExpenseTemplates = ({ onSelectTemplate }) => {
   const [selectedTemplate, setSelectedTemplate] = useState(null);

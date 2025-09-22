@@ -4,10 +4,10 @@ import { useCurrency } from '../context/CurrencyContext';
 import PasswordResetModal from './PasswordResetModal';
 import DeleteAccountModal from './DeleteAccountModal';
 import UserSettings from './UserSettings';
+import './ProfileDropdown.css';
 
 const ProfileDropdown = () => {
   const { user, logout } = useAuth();
-  const { selectedCurrency, currencies, updateCurrency } = useCurrency();
   const [isOpen, setIsOpen] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);

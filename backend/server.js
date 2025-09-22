@@ -9,6 +9,9 @@ const path = require('path');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
+// Rate limiting
+const rateLimit = require('express-rate-limit');
+
 const app = express();
 const PORT = process.env.PORT || 8080;
 const JWT_SECRET = 'mySecretKey123456789012345678901234567890';
@@ -74,6 +77,45 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static('uploads'));
 
+// Rate limiting configuration
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+    message: {
+        success: false,
+        message: 'Too many requests from this IP, please try again later.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // limit each IP to 5 requests per windowMs
+    message: {
+        success: false,
+        message: 'Too many authentication attempts, please try again later.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const uploadLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // limit each IP to 10 uploads per windowMs
+    message: {
+        success: false,
+        message: 'Too many file uploads, please try again later.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Apply rate limiting
+app.use('/api/', generalLimiter);
+app.use('/api/auth/', authLimiter);
+app.use('/api/upload/', uploadLimiter);
+
 // Database setup
 const db = new sqlite3.Database('expense_tracker.db');
 
@@ -113,6 +155,98 @@ db.serialize(() => {
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (userId) REFERENCES users (id)
   )`);
+
+    // Budgets table
+    db.run(`CREATE TABLE IF NOT EXISTS budgets (
+    id TEXT PRIMARY KEY,
+    userId TEXT NOT NULL,
+    category TEXT NOT NULL,
+    amount REAL NOT NULL,
+    currency TEXT NOT NULL,
+    budgetMonth DATE NOT NULL,
+    notes TEXT,
+    alertThreshold INTEGER DEFAULT 80,
+    isTemplate BOOLEAN DEFAULT 0,
+    templateName TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES users (id)
+  )`);
+
+    // Recurring expenses table
+    db.run(`CREATE TABLE IF NOT EXISTS recurring_expenses (
+    id TEXT PRIMARY KEY,
+    userId TEXT NOT NULL,
+    description TEXT NOT NULL,
+    amount REAL NOT NULL,
+    category TEXT NOT NULL,
+    pattern TEXT NOT NULL,
+    startDate DATE NOT NULL,
+    endDate DATE,
+    notes TEXT,
+    currency TEXT NOT NULL,
+    isActive BOOLEAN DEFAULT 1,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES users (id)
+  )`);
+
+    // Categories table
+    db.run(`CREATE TABLE IF NOT EXISTS categories (
+    id TEXT PRIMARY KEY,
+    userId TEXT NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    color TEXT DEFAULT '#3B82F6',
+    icon TEXT DEFAULT 'tag',
+    isDefault BOOLEAN DEFAULT 0,
+    isActive BOOLEAN DEFAULT 1,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES users (id),
+    UNIQUE(userId, name)
+  )`);
+
+    // User settings table
+    db.run(`CREATE TABLE IF NOT EXISTS user_settings (
+    id TEXT PRIMARY KEY,
+    userId TEXT NOT NULL,
+    settingKey TEXT NOT NULL,
+    settingValue TEXT,
+    settingType TEXT DEFAULT 'string',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES users (id),
+    UNIQUE(userId, settingKey)
+  )`);
+
+    // Insert default categories for all users
+    const defaultCategories = [
+        { name: 'Food & Dining', description: 'Restaurants, groceries, food delivery', color: '#EF4444', icon: 'utensils' },
+        { name: 'Transportation', description: 'Gas, public transport, rideshare', color: '#3B82F6', icon: 'car' },
+        { name: 'Shopping', description: 'Clothing, electronics, general shopping', color: '#8B5CF6', icon: 'shopping-bag' },
+        { name: 'Entertainment', description: 'Movies, games, subscriptions', color: '#F59E0B', icon: 'film' },
+        { name: 'Healthcare', description: 'Medical expenses, pharmacy, insurance', color: '#10B981', icon: 'heart' },
+        { name: 'Utilities', description: 'Electricity, water, internet, phone', color: '#6B7280', icon: 'zap' },
+        { name: 'Housing', description: 'Rent, mortgage, maintenance', color: '#DC2626', icon: 'home' },
+        { name: 'Education', description: 'Courses, books, training', color: '#059669', icon: 'book' },
+        { name: 'Travel', description: 'Vacation, business trips', color: '#0EA5E9', icon: 'plane' },
+        { name: 'Other', description: 'Miscellaneous expenses', color: '#6B7280', icon: 'more-horizontal' }
+    ];
+
+    // Create default categories for existing users
+    db.all('SELECT id FROM users', [], (err, users) => {
+        if (!err && users) {
+            users.forEach(user => {
+                defaultCategories.forEach(category => {
+                    db.run(
+                        'INSERT OR IGNORE INTO categories (id, userId, name, description, color, icon, isDefault) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                        [uuidv4(), user.id, category.name, category.description, category.color, category.icon, 1]
+                    );
+                });
+            });
+        }
+    });
 });
 
 // File upload configuration
@@ -139,10 +273,25 @@ const authenticateToken = (req, res, next) => {
         return res.status(401).json({ success: false, message: 'Access token required' });
     }
 
+    // Validate JWT format before verification
+    const tokenParts = token.split('.');
+    if (tokenParts.length !== 3) {
+        console.error('JWT format error: Invalid token structure');
+        return res.status(403).json({ success: false, message: 'Invalid token format' });
+    }
+
+    // Additional validation - check if token is not just whitespace
+    if (token.trim() === '') {
+        console.error('JWT format error: Empty token');
+        return res.status(403).json({ success: false, message: 'Invalid token format' });
+    }
+
     jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) {
+            console.error('JWT verification error:', err);
             return res.status(403).json({ success: false, message: 'Invalid token' });
         }
+        console.log('Authenticated user:', user);
         req.user = user;
         next();
     });
@@ -186,6 +335,175 @@ const validatePassword = (password) => {
         isValid: errors.length === 0,
         errors: errors
     };
+};
+
+// Comprehensive input validation functions
+const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+};
+
+const validateAmount = (amount) => {
+    const num = parseFloat(amount);
+    return !isNaN(num) && num > 0 && num <= 999999.99;
+};
+
+const validateDate = (dateString) => {
+    const date = new Date(dateString);
+    return date instanceof Date && !isNaN(date);
+};
+
+const validateCurrency = (currency) => {
+    const validCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'BRL'];
+    return validCurrencies.includes(currency);
+};
+
+const validateCategory = (category) => {
+    const validCategories = [
+        'Food & Dining', 'Transportation', 'Shopping', 'Entertainment',
+        'Healthcare', 'Utilities', 'Housing', 'Education', 'Travel', 'Other'
+    ];
+    return validCategories.includes(category);
+};
+
+const validatePattern = (pattern) => {
+    const validPatterns = ['weekly', 'monthly', 'yearly'];
+    return validPatterns.includes(pattern);
+};
+
+const sanitizeInput = (input) => {
+    if (typeof input !== 'string') return input;
+    return input.trim().replace(/[<>]/g, '');
+};
+
+const validateExpenseInput = (data) => {
+    const errors = [];
+
+    if (!data.description || typeof data.description !== 'string' || data.description.trim().length === 0) {
+        errors.push('Description is required and must be a non-empty string');
+    } else if (data.description.length > 255) {
+        errors.push('Description must be less than 255 characters');
+    }
+
+    if (!data.amount || !validateAmount(data.amount)) {
+        errors.push('Amount is required and must be a positive number less than 1,000,000');
+    }
+
+    if (!data.category || !validateCategory(data.category)) {
+        errors.push('Category is required and must be a valid category');
+    }
+
+    if (!data.expenseDate || !validateDate(data.expenseDate)) {
+        errors.push('Expense date is required and must be a valid date');
+    }
+
+    if (data.currency && !validateCurrency(data.currency)) {
+        errors.push('Currency must be a valid currency code');
+    }
+
+    if (data.notes && data.notes.length > 1000) {
+        errors.push('Notes must be less than 1000 characters');
+    }
+
+    return {
+        isValid: errors.length === 0,
+        errors: errors
+    };
+};
+
+const validateBudgetInput = (data) => {
+    const errors = [];
+
+    if (!data.category || !validateCategory(data.category)) {
+        errors.push('Category is required and must be a valid category');
+    }
+
+    if (!data.amount || !validateAmount(data.amount)) {
+        errors.push('Amount is required and must be a positive number less than 1,000,000');
+    }
+
+    if (!data.currency || !validateCurrency(data.currency)) {
+        errors.push('Currency is required and must be a valid currency code');
+    }
+
+    if (!data.budgetMonth || !validateDate(data.budgetMonth)) {
+        errors.push('Budget month is required and must be a valid date');
+    }
+
+    if (data.alertThreshold && (data.alertThreshold < 1 || data.alertThreshold > 100)) {
+        errors.push('Alert threshold must be between 1 and 100');
+    }
+
+    return {
+        isValid: errors.length === 0,
+        errors: errors
+    };
+};
+
+const validateRecurringExpenseInput = (data) => {
+    const errors = [];
+
+    if (!data.description || typeof data.description !== 'string' || data.description.trim().length === 0) {
+        errors.push('Description is required and must be a non-empty string');
+    } else if (data.description.length > 255) {
+        errors.push('Description must be less than 255 characters');
+    }
+
+    if (!data.amount || !validateAmount(data.amount)) {
+        errors.push('Amount is required and must be a positive number less than 1,000,000');
+    }
+
+    if (!data.category || !validateCategory(data.category)) {
+        errors.push('Category is required and must be a valid category');
+    }
+
+    if (!data.pattern || !validatePattern(data.pattern)) {
+        errors.push('Pattern is required and must be weekly, monthly, or yearly');
+    }
+
+    if (!data.startDate || !validateDate(data.startDate)) {
+        errors.push('Start date is required and must be a valid date');
+    }
+
+    if (data.endDate && !validateDate(data.endDate)) {
+        errors.push('End date must be a valid date');
+    }
+
+    if (data.currency && !validateCurrency(data.currency)) {
+        errors.push('Currency must be a valid currency code');
+    }
+
+    return {
+        isValid: errors.length === 0,
+        errors: errors
+    };
+};
+
+// Error handling middleware
+const handleError = (res, error, message = 'An error occurred') => {
+    console.error('API Error:', error);
+
+    if (error.code === 'SQLITE_CONSTRAINT') {
+        return res.status(400).json({
+            success: false,
+            message: 'Database constraint violation',
+            error: 'CONSTRAINT_ERROR'
+        });
+    }
+
+    if (error.code === 'SQLITE_BUSY') {
+        return res.status(503).json({
+            success: false,
+            message: 'Database is busy, please try again',
+            error: 'DATABASE_BUSY'
+        });
+    }
+
+    return res.status(500).json({
+        success: false,
+        message: message,
+        error: error.message || 'INTERNAL_ERROR'
+    });
 };
 
 // Account lockout check
@@ -891,6 +1209,1325 @@ app.get('/api/user/export', authenticateToken, (req, res) => {
             };
 
             res.json({ success: true, data: exportData });
+        }
+    );
+});
+
+// ==================== BUDGET ENDPOINTS ====================
+
+// Create budget
+app.post('/api/budgets', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const { category, amount, currency, budgetMonth, notes, alertThreshold, isTemplate, templateName } = req.body;
+
+    console.log('Budget creation request:', {
+        userId,
+        category,
+        amount,
+        currency,
+        budgetMonth
+    });
+
+
+    if (!category || !amount || !currency || !budgetMonth) {
+        return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    // Check if budget already exists for this category and month
+    db.get(
+        'SELECT * FROM budgets WHERE userId = ? AND category = ? AND budgetMonth = ?',
+        [userId, category, budgetMonth],
+        (err, existingBudget) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Database error' });
+            }
+
+            if (existingBudget) {
+                return res.status(400).json({ success: false, message: 'Budget already exists for this category and month' });
+            }
+
+            const budgetId = uuidv4();
+            const now = new Date().toISOString();
+
+            db.run(
+                `INSERT INTO budgets (id, userId, category, amount, currency, budgetMonth, notes, alertThreshold, isTemplate, templateName, createdAt, updatedAt)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [budgetId, userId, category, amount, currency, budgetMonth, notes || '', alertThreshold || 80, isTemplate || false, templateName || '', now, now],
+                function (err) {
+                    if (err) {
+                        return res.status(500).json({ success: false, message: 'Failed to create budget' });
+                    }
+
+                    res.json({
+                        success: true,
+                        message: 'Budget created successfully',
+                        data: {
+                            id: budgetId,
+                            category,
+                            amount,
+                            currency,
+                            budgetMonth,
+                            notes: notes || '',
+                            alertThreshold: alertThreshold || 80,
+                            isTemplate: isTemplate || false,
+                            templateName: templateName || '',
+                            createdAt: now,
+                            updatedAt: now
+                        }
+                    });
+                }
+            );
+        }
+    );
+});
+
+// Get budgets
+app.get('/api/budgets', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const { month } = req.query;
+
+    let query = 'SELECT * FROM budgets WHERE userId = ?';
+    let params = [userId];
+
+    if (month) {
+        query += ' AND budgetMonth = ?';
+        params.push(month);
+    }
+
+    query += ' ORDER BY budgetMonth DESC, category ASC';
+
+    db.all(query, params, (err, budgets) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+
+        // Calculate monitoring data for each budget
+        const budgetsWithMonitoring = budgets.map(budget => {
+            return new Promise((resolve) => {
+                // Calculate actual spending for this category in the budget month
+                const budgetMonthStr = budget.budgetMonth; // e.g., "2025-09-01"
+                const [year, month] = budgetMonthStr.split('-').map(Number);
+                const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+                const lastDay = new Date(year, month, 0).getDate(); // Last day of the month
+                const endDate = `${year}-${month.toString().padStart(2, '0')}-${lastDay.toString().padStart(2, '0')}`;
+
+                db.all(
+                    'SELECT SUM(amount) as total FROM expenses WHERE userId = ? AND category = ? AND expenseDate >= ? AND expenseDate <= ?',
+                    [userId, budget.category, startDate, endDate],
+                    (err, result) => {
+                        if (err) {
+                            resolve({
+                                ...budget,
+                                actualSpent: 0,
+                                remainingAmount: budget.amount,
+                                utilizationPercentage: 0,
+                                status: 'on_track',
+                                alertTriggered: false
+                            });
+                            return;
+                        }
+
+                        const actualSpent = result[0]?.total || 0;
+                        const remaining = budget.amount - actualSpent;
+                        const utilizationPercentage = budget.amount > 0 ? (actualSpent / budget.amount) * 100 : 0;
+
+                        let status = 'on_track';
+                        let alertTriggered = false;
+
+                        if (utilizationPercentage >= 100) {
+                            status = 'exceeded';
+                            alertTriggered = true;
+                        } else if (utilizationPercentage >= budget.alertThreshold) {
+                            status = 'warning';
+                            alertTriggered = true;
+                        }
+
+                        resolve({
+                            ...budget,
+                            actualSpent,
+                            remainingAmount: remaining,
+                            utilizationPercentage,
+                            status,
+                            alertTriggered
+                        });
+                    }
+                );
+            });
+        });
+
+        Promise.all(budgetsWithMonitoring).then(budgetsWithData => {
+            res.json({
+                success: true,
+                message: 'Budgets retrieved successfully',
+                data: budgetsWithData
+            });
+        });
+    });
+});
+
+// Get budget by ID
+app.get('/api/budgets/:id', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const budgetId = req.params.id;
+
+    db.get(
+        'SELECT * FROM budgets WHERE id = ? AND userId = ?',
+        [budgetId, userId],
+        (err, budget) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Database error' });
+            }
+
+            if (!budget) {
+                return res.status(404).json({ success: false, message: 'Budget not found' });
+            }
+
+            // Calculate monitoring data
+            const budgetMonthStr = budget.budgetMonth;
+            const [year, month] = budgetMonthStr.split('-').map(Number);
+            const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+            const lastDay = new Date(year, month, 0).getDate();
+            const endDate = `${year}-${month.toString().padStart(2, '0')}-${lastDay.toString().padStart(2, '0')}`;
+
+            db.all(
+                'SELECT SUM(amount) as total FROM expenses WHERE userId = ? AND category = ? AND expenseDate >= ? AND expenseDate <= ?',
+                [userId, budget.category, startDate, endDate],
+                (err, result) => {
+                    if (err) {
+                        return res.status(500).json({ success: false, message: 'Database error' });
+                    }
+
+                    const actualSpent = result[0]?.total || 0;
+                    const remaining = budget.amount - actualSpent;
+                    const utilizationPercentage = budget.amount > 0 ? (actualSpent / budget.amount) * 100 : 0;
+
+                    let status = 'on_track';
+                    let alertTriggered = false;
+
+                    if (utilizationPercentage >= 100) {
+                        status = 'exceeded';
+                        alertTriggered = true;
+                    } else if (utilizationPercentage >= budget.alertThreshold) {
+                        status = 'warning';
+                        alertTriggered = true;
+                    }
+
+                    res.json({
+                        success: true,
+                        message: 'Budget retrieved successfully',
+                        data: {
+                            ...budget,
+                            actualSpent,
+                            remainingAmount: remaining,
+                            utilizationPercentage,
+                            status,
+                            alertTriggered
+                        }
+                    });
+                }
+            );
+        }
+    );
+});
+
+// Update budget
+app.put('/api/budgets/:id', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const budgetId = req.params.id;
+    const { category, amount, currency, budgetMonth, notes, alertThreshold, isTemplate, templateName } = req.body;
+
+    if (!category || !amount || !currency || !budgetMonth) {
+        return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    // Check if budget exists and belongs to user
+    db.get(
+        'SELECT * FROM budgets WHERE id = ? AND userId = ?',
+        [budgetId, userId],
+        (err, existingBudget) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Database error' });
+            }
+
+            if (!existingBudget) {
+                return res.status(404).json({ success: false, message: 'Budget not found' });
+            }
+
+            // Check if updating to a different category/month combination that already exists
+            if (existingBudget.category !== category || existingBudget.budgetMonth !== budgetMonth) {
+                db.get(
+                    'SELECT * FROM budgets WHERE userId = ? AND category = ? AND budgetMonth = ? AND id != ?',
+                    [userId, category, budgetMonth, budgetId],
+                    (err, conflictBudget) => {
+                        if (err) {
+                            return res.status(500).json({ success: false, message: 'Database error' });
+                        }
+
+                        if (conflictBudget) {
+                            return res.status(400).json({ success: false, message: 'Budget already exists for this category and month' });
+                        }
+
+                        updateBudget();
+                    }
+                );
+            } else {
+                updateBudget();
+            }
+
+            function updateBudget() {
+                const now = new Date().toISOString();
+
+                db.run(
+                    `UPDATE budgets SET category = ?, amount = ?, currency = ?, budgetMonth = ?, notes = ?, 
+                     alertThreshold = ?, isTemplate = ?, templateName = ?, updatedAt = ? WHERE id = ? AND userId = ?`,
+                    [category, amount, currency, budgetMonth, notes || '', alertThreshold || 80, isTemplate || false, templateName || '', now, budgetId, userId],
+                    function (err) {
+                        if (err) {
+                            return res.status(500).json({ success: false, message: 'Failed to update budget' });
+                        }
+
+                        res.json({
+                            success: true,
+                            message: 'Budget updated successfully',
+                            data: {
+                                id: budgetId,
+                                category,
+                                amount,
+                                currency,
+                                budgetMonth,
+                                notes: notes || '',
+                                alertThreshold: alertThreshold || 80,
+                                isTemplate: isTemplate || false,
+                                templateName: templateName || '',
+                                updatedAt: now
+                            }
+                        });
+                    }
+                );
+            }
+        }
+    );
+});
+
+// Delete budget
+app.delete('/api/budgets/:id', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const budgetId = req.params.id;
+
+    db.run(
+        'DELETE FROM budgets WHERE id = ? AND userId = ?',
+        [budgetId, userId],
+        function (err) {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Database error' });
+            }
+
+            if (this.changes === 0) {
+                return res.status(404).json({ success: false, message: 'Budget not found' });
+            }
+
+            res.json({ success: true, message: 'Budget deleted successfully' });
+        }
+    );
+});
+
+// Create budgets from template
+app.post('/api/budgets/templates/:templateName/create', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const templateName = req.params.templateName;
+    const { targetMonth } = req.query;
+
+    if (!targetMonth) {
+        return res.status(400).json({ success: false, message: 'Target month is required' });
+    }
+
+    // Get template budgets
+    db.all(
+        'SELECT * FROM budgets WHERE userId = ? AND isTemplate = 1 AND templateName = ?',
+        [userId, templateName],
+        (err, templates) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Database error' });
+            }
+
+            if (templates.length === 0) {
+                return res.status(404).json({ success: false, message: 'Template not found' });
+            }
+
+            const newBudgets = [];
+            let completed = 0;
+
+            templates.forEach(template => {
+                // Check if budget already exists for this category and month
+                db.get(
+                    'SELECT * FROM budgets WHERE userId = ? AND category = ? AND budgetMonth = ?',
+                    [userId, template.category, targetMonth],
+                    (err, existingBudget) => {
+                        if (err) {
+                            completed++;
+                            if (completed === templates.length) {
+                                return res.status(500).json({ success: false, message: 'Database error' });
+                            }
+                            return;
+                        }
+
+                        if (!existingBudget) {
+                            const budgetId = uuidv4();
+                            const now = new Date().toISOString();
+
+                            db.run(
+                                `INSERT INTO budgets (id, userId, category, amount, currency, budgetMonth, notes, alertThreshold, isTemplate, templateName, createdAt, updatedAt)
+                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                                [budgetId, userId, template.category, template.amount, template.currency, targetMonth, template.notes, template.alertThreshold, false, '', now, now],
+                                function (err) {
+                                    if (!err) {
+                                        newBudgets.push({
+                                            id: budgetId,
+                                            category: template.category,
+                                            amount: template.amount,
+                                            currency: template.currency,
+                                            budgetMonth: targetMonth,
+                                            notes: template.notes,
+                                            alertThreshold: template.alertThreshold,
+                                            isTemplate: false,
+                                            templateName: '',
+                                            createdAt: now,
+                                            updatedAt: now
+                                        });
+                                    }
+
+                                    completed++;
+                                    if (completed === templates.length) {
+                                        res.json({
+                                            success: true,
+                                            message: 'Budgets created from template successfully',
+                                            data: newBudgets
+                                        });
+                                    }
+                                }
+                            );
+                        } else {
+                            completed++;
+                            if (completed === templates.length) {
+                                res.json({
+                                    success: true,
+                                    message: 'Budgets created from template successfully',
+                                    data: newBudgets
+                                });
+                            }
+                        }
+                    }
+                );
+            });
+        }
+    );
+});
+
+// Copy budgets to next month
+app.post('/api/budgets/copy-to-next-month', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const { sourceMonth } = req.query;
+
+    if (!sourceMonth) {
+        return res.status(400).json({ success: false, message: 'Source month is required' });
+    }
+
+    // Calculate next month
+    const sourceDate = new Date(sourceMonth);
+    const nextMonth = new Date(sourceDate.getFullYear(), sourceDate.getMonth() + 1, 1).toISOString().split('T')[0];
+
+    // Get source budgets
+    db.all(
+        'SELECT * FROM budgets WHERE userId = ? AND budgetMonth = ?',
+        [userId, sourceMonth],
+        (err, sourceBudgets) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Database error' });
+            }
+
+            const newBudgets = [];
+            let completed = 0;
+
+            if (sourceBudgets.length === 0) {
+                return res.json({
+                    success: true,
+                    message: 'No budgets to copy',
+                    data: []
+                });
+            }
+
+            sourceBudgets.forEach(sourceBudget => {
+                // Check if budget already exists for next month
+                db.get(
+                    'SELECT * FROM budgets WHERE userId = ? AND category = ? AND budgetMonth = ?',
+                    [userId, sourceBudget.category, nextMonth],
+                    (err, existingBudget) => {
+                        if (err) {
+                            completed++;
+                            if (completed === sourceBudgets.length) {
+                                return res.status(500).json({ success: false, message: 'Database error' });
+                            }
+                            return;
+                        }
+
+                        if (!existingBudget) {
+                            const budgetId = uuidv4();
+                            const now = new Date().toISOString();
+
+                            db.run(
+                                `INSERT INTO budgets (id, userId, category, amount, currency, budgetMonth, notes, alertThreshold, isTemplate, templateName, createdAt, updatedAt)
+                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                                [budgetId, userId, sourceBudget.category, sourceBudget.amount, sourceBudget.currency, nextMonth, sourceBudget.notes, sourceBudget.alertThreshold, false, '', now, now],
+                                function (err) {
+                                    if (!err) {
+                                        newBudgets.push({
+                                            id: budgetId,
+                                            category: sourceBudget.category,
+                                            amount: sourceBudget.amount,
+                                            currency: sourceBudget.currency,
+                                            budgetMonth: nextMonth,
+                                            notes: sourceBudget.notes,
+                                            alertThreshold: sourceBudget.alertThreshold,
+                                            isTemplate: false,
+                                            templateName: '',
+                                            createdAt: now,
+                                            updatedAt: now
+                                        });
+                                    }
+
+                                    completed++;
+                                    if (completed === sourceBudgets.length) {
+                                        res.json({
+                                            success: true,
+                                            message: 'Budgets copied to next month successfully',
+                                            data: newBudgets
+                                        });
+                                    }
+                                }
+                            );
+                        } else {
+                            completed++;
+                            if (completed === sourceBudgets.length) {
+                                res.json({
+                                    success: true,
+                                    message: 'Budgets copied to next month successfully',
+                                    data: newBudgets
+                                });
+                            }
+                        }
+                    }
+                );
+            });
+        }
+    );
+});
+
+// Get budget templates
+app.get('/api/budgets/templates', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+
+    db.all(
+        'SELECT * FROM budgets WHERE userId = ? AND isTemplate = 1 ORDER BY templateName ASC, category ASC',
+        [userId],
+        (err, templates) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Database error' });
+            }
+
+            res.json({
+                success: true,
+                message: 'Budget templates retrieved successfully',
+                data: templates
+            });
+        }
+    );
+});
+
+// Get budget summary
+app.get('/api/budgets/summary', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const { month } = req.query;
+
+    console.log('Budget summary request:', { userId, month });
+    console.log('Authenticated user:', req.user);
+
+    if (!month) {
+        return res.status(400).json({ success: false, message: 'Month is required' });
+    }
+
+    // Get budgets for the month
+    db.all(
+        'SELECT * FROM budgets WHERE userId = ? AND budgetMonth = ?',
+        [userId, month],
+        (err, budgets) => {
+            if (err) {
+                console.log('Database error:', err);
+                return res.status(500).json({ success: false, message: 'Database error' });
+            }
+
+            console.log('Found budgets:', budgets.length);
+            console.log('Query params:', { userId, month });
+
+            if (budgets.length === 0) {
+                console.log('No budgets found for this month, returning empty summary');
+                return res.json({
+                    success: true,
+                    data: {
+                        totalBudget: 0,
+                        totalSpent: 0,
+                        remaining: 0,
+                        utilizationPercentage: 0,
+                        budgets: []
+                    }
+                });
+            }
+
+            const totalBudget = budgets.reduce((sum, budget) => sum + budget.amount, 0);
+
+            // Calculate total spent for the month
+            const [year, monthNum] = month.split('-').map(Number);
+            const startDate = `${year}-${monthNum.toString().padStart(2, '0')}-01`;
+            const lastDay = new Date(year, monthNum, 0).getDate();
+            const endDate = `${year}-${monthNum.toString().padStart(2, '0')}-${lastDay.toString().padStart(2, '0')}`;
+
+            db.all(
+                'SELECT SUM(amount) as total FROM expenses WHERE userId = ? AND expenseDate >= ? AND expenseDate <= ?',
+                [userId, startDate, endDate],
+                (err, result) => {
+                    if (err) {
+                        return res.status(500).json({ success: false, message: 'Database error' });
+                    }
+
+                    const totalSpent = result[0]?.total || 0;
+                    const remaining = totalBudget - totalSpent;
+                    const utilizationPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+
+                    res.json({
+                        success: true,
+                        message: 'Budget summary retrieved successfully',
+                        data: {
+                            totalBudget,
+                            totalSpent,
+                            remaining,
+                            utilizationPercentage,
+                            budgetCount: budgets.length,
+                            budgetMonth: month
+                        }
+                    });
+                }
+            );
+        }
+    );
+});
+
+// Analytics API endpoints
+app.get('/api/analytics/spending-overview', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const { timeRange = 'month' } = req.query;
+
+    let dateFilter = '';
+    let params = [userId];
+
+    switch (timeRange) {
+        case 'today':
+            dateFilter = 'AND DATE(date) = DATE("now")';
+            break;
+        case 'week':
+            dateFilter = 'AND date >= datetime("now", "-7 days")';
+            break;
+        case 'month':
+            dateFilter = 'AND date >= datetime("now", "start of month")';
+            break;
+        case 'year':
+            dateFilter = 'AND date >= datetime("now", "start of year")';
+            break;
+        default:
+            dateFilter = '';
+    }
+
+    const query = `
+        SELECT 
+            SUM(amount) as totalSpending,
+            COUNT(*) as transactionCount,
+            AVG(amount) as averageAmount,
+            currency
+        FROM expenses 
+        WHERE userId = ? ${dateFilter}
+        GROUP BY currency
+    `;
+
+    db.all(query, params, (err, rows) => {
+        if (err) {
+            console.error('Database error getting spending overview:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+
+        res.json({ success: true, data: rows });
+    });
+});
+
+app.get('/api/analytics/category-breakdown', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const { timeRange = 'month' } = req.query;
+
+    let dateFilter = '';
+    let params = [userId];
+
+    switch (timeRange) {
+        case 'today':
+            dateFilter = 'AND DATE(date) = DATE("now")';
+            break;
+        case 'week':
+            dateFilter = 'AND date >= datetime("now", "-7 days")';
+            break;
+        case 'month':
+            dateFilter = 'AND date >= datetime("now", "start of month")';
+            break;
+        case 'year':
+            dateFilter = 'AND date >= datetime("now", "start of year")';
+            break;
+        default:
+            dateFilter = '';
+    }
+
+    const query = `
+        SELECT 
+            category,
+            SUM(amount) as totalAmount,
+            COUNT(*) as transactionCount,
+            currency
+        FROM expenses 
+        WHERE userId = ? ${dateFilter}
+        GROUP BY category, currency
+        ORDER BY totalAmount DESC
+    `;
+
+    db.all(query, params, (err, rows) => {
+        if (err) {
+            console.error('Database error getting category breakdown:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+
+        res.json({ success: true, data: rows });
+    });
+});
+
+app.get('/api/analytics/monthly-trend', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const { months = 12 } = req.query;
+
+    const query = `
+        SELECT 
+            strftime('%Y-%m', date) as month,
+            SUM(amount) as totalAmount,
+            currency
+        FROM expenses 
+        WHERE userId = ? 
+        AND date >= datetime('now', '-${parseInt(months)} months')
+        GROUP BY strftime('%Y-%m', date), currency
+        ORDER BY month ASC
+    `;
+
+    db.all(query, [userId], (err, rows) => {
+        if (err) {
+            console.error('Database error getting monthly trend:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+
+        res.json({ success: true, data: rows });
+    });
+});
+
+app.get('/api/analytics/top-expenses', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const { limit = 10, timeRange = 'month' } = req.query;
+
+    let dateFilter = '';
+    let params = [userId];
+
+    switch (timeRange) {
+        case 'today':
+            dateFilter = 'AND DATE(date) = DATE("now")';
+            break;
+        case 'week':
+            dateFilter = 'AND date >= datetime("now", "-7 days")';
+            break;
+        case 'month':
+            dateFilter = 'AND date >= datetime("now", "start of month")';
+            break;
+        case 'year':
+            dateFilter = 'AND date >= datetime("now", "start of year")';
+            break;
+        default:
+            dateFilter = '';
+    }
+
+    const query = `
+        SELECT * FROM expenses 
+        WHERE userId = ? ${dateFilter}
+        ORDER BY amount DESC 
+        LIMIT ?
+    `;
+
+    params.push(parseInt(limit));
+
+    db.all(query, params, (err, rows) => {
+        if (err) {
+            console.error('Database error getting top expenses:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+
+        res.json({ success: true, data: rows });
+    });
+});
+
+app.get('/api/analytics/insights', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+
+    // Get this month vs last month comparison
+    const thisMonthQuery = `
+        SELECT SUM(amount) as totalAmount, currency
+        FROM expenses 
+        WHERE userId = ? 
+        AND date >= datetime('now', 'start of month')
+        GROUP BY currency
+    `;
+
+    const lastMonthQuery = `
+        SELECT SUM(amount) as totalAmount, currency
+        FROM expenses 
+        WHERE userId = ? 
+        AND date >= datetime('now', 'start of month', '-1 month')
+        AND date < datetime('now', 'start of month')
+        GROUP BY currency
+    `;
+
+    const averageDailyQuery = `
+        SELECT 
+            SUM(amount) as totalAmount,
+            COUNT(DISTINCT DATE(date)) as daysWithExpenses,
+            currency
+        FROM expenses 
+        WHERE userId = ? 
+        AND date >= datetime('now', 'start of month')
+        GROUP BY currency
+    `;
+
+    Promise.all([
+        new Promise((resolve, reject) => {
+            db.all(thisMonthQuery, [userId], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            });
+        }),
+        new Promise((resolve, reject) => {
+            db.all(lastMonthQuery, [userId], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            });
+        }),
+        new Promise((resolve, reject) => {
+            db.all(averageDailyQuery, [userId], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            });
+        })
+    ]).then(([thisMonth, lastMonth, averageDaily]) => {
+        res.json({
+            success: true,
+            data: {
+                thisMonth,
+                lastMonth,
+                averageDaily
+            }
+        });
+    }).catch(err => {
+        console.error('Database error getting insights:', err);
+        res.status(500).json({ success: false, message: 'Database error' });
+    });
+});
+
+// ==================== DATA MANAGEMENT ENDPOINTS ====================
+
+// CSV Export - Export all user data to CSV
+app.get('/api/data/export/csv', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+
+    // Get all user data
+    db.all(
+        `SELECT 
+            e.id, e.description, e.amount, e.category, e.expenseDate, e.notes, e.currency,
+            b.amount as budget_amount, b.budgetMonth, b.alertThreshold
+        FROM expenses e
+        LEFT JOIN budgets b ON e.userId = b.userId AND e.category = b.category
+        WHERE e.userId = ?
+        ORDER BY e.expenseDate DESC`,
+        [userId],
+        (err, rows) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Database error' });
+            }
+
+            // Convert to CSV
+            const csvHeader = 'ID,Description,Amount,Category,Date,Notes,Currency,Budget Amount,Budget Month,Alert Threshold\n';
+            const csvData = rows.map(row =>
+                `"${row.id}","${row.description}","${row.amount}","${row.category}","${row.expenseDate}","${row.notes || ''}","${row.currency}","${row.budget_amount || ''}","${row.budgetMonth || ''}","${row.alertThreshold || ''}"`
+            ).join('\n');
+
+            const csv = csvHeader + csvData;
+
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', `attachment; filename="expense-data-${new Date().toISOString().split('T')[0]}.csv"`);
+            res.send(csv);
+        }
+    );
+});
+
+// CSV Import - Import expenses from CSV
+app.post('/api/data/import/csv', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const { csvData } = req.body;
+
+    if (!csvData) {
+        return res.status(400).json({ success: false, message: 'CSV data is required' });
+    }
+
+    try {
+        const lines = csvData.split('\n');
+        const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+
+        const expenses = [];
+        const errors = [];
+
+        for (let i = 1; i < lines.length; i++) {
+            if (lines[i].trim()) {
+                const values = lines[i].split(',').map(v => v.replace(/"/g, '').trim());
+
+                if (values.length >= 5) {
+                    const expense = {
+                        id: uuidv4(),
+                        description: values[1] || 'Imported Expense',
+                        amount: parseFloat(values[2]) || 0,
+                        category: values[3] || 'Other',
+                        expenseDate: values[4] || new Date().toISOString().split('T')[0],
+                        notes: values[5] || '',
+                        currency: values[6] || 'USD',
+                        userId: userId,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    };
+
+                    expenses.push(expense);
+                } else {
+                    errors.push(`Row ${i + 1}: Insufficient data`);
+                }
+            }
+        }
+
+        // Insert expenses
+        let completed = 0;
+        const insertedExpenses = [];
+
+        if (expenses.length === 0) {
+            return res.json({
+                success: true,
+                message: 'No valid expenses to import',
+                data: { imported: 0, errors: errors.length }
+            });
+        }
+
+        expenses.forEach(expense => {
+            db.run(
+                `INSERT INTO expenses (id, description, amount, category, expenseDate, notes, currency, userId, createdAt, updatedAt)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [expense.id, expense.description, expense.amount, expense.category, expense.expenseDate,
+                expense.notes, expense.currency, expense.userId, expense.createdAt, expense.updatedAt],
+                function (err) {
+                    if (err) {
+                        errors.push(`Failed to import: ${expense.description}`);
+                    } else {
+                        insertedExpenses.push(expense);
+                    }
+
+                    completed++;
+                    if (completed === expenses.length) {
+                        res.json({
+                            success: true,
+                            message: `Imported ${insertedExpenses.length} expenses successfully`,
+                            data: {
+                                imported: insertedExpenses.length,
+                                errors: errors.length,
+                                errorDetails: errors
+                            }
+                        });
+                    }
+                }
+            );
+        });
+
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error processing CSV data' });
+    }
+});
+
+// PDF Report Generation
+app.get('/api/data/export/pdf', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const { startDate, endDate, category } = req.query;
+
+    let query = 'SELECT * FROM expenses WHERE userId = ?';
+    let params = [userId];
+
+    if (startDate) {
+        query += ' AND expenseDate >= ?';
+        params.push(startDate);
+    }
+
+    if (endDate) {
+        query += ' AND expenseDate <= ?';
+        params.push(endDate);
+    }
+
+    if (category && category !== 'all') {
+        query += ' AND category = ?';
+        params.push(category);
+    }
+
+    query += ' ORDER BY expenseDate DESC';
+
+    db.all(query, params, (err, expenses) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+
+        // Calculate summary data
+        const totalAmount = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+        const categoryBreakdown = {};
+        expenses.forEach(expense => {
+            categoryBreakdown[expense.category] = (categoryBreakdown[expense.category] || 0) + parseFloat(expense.amount);
+        });
+
+        // Generate HTML report
+        const htmlReport = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Expense Report</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                .header { text-align: center; margin-bottom: 30px; }
+                .summary { background: #f5f5f5; padding: 15px; margin-bottom: 20px; }
+                .category { margin: 10px 0; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f2f2f2; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Expense Report</h1>
+                <p>Generated on: ${new Date().toLocaleDateString()}</p>
+                ${startDate && endDate ? `<p>Period: ${startDate} to ${endDate}</p>` : ''}
+            </div>
+            
+            <div class="summary">
+                <h3>Summary</h3>
+                <p><strong>Total Expenses:</strong> ${expenses.length}</p>
+                <p><strong>Total Amount:</strong> $${totalAmount.toFixed(2)}</p>
+                
+                <h4>Category Breakdown:</h4>
+                ${Object.entries(categoryBreakdown).map(([cat, amount]) =>
+            `<div class="category">${cat}: $${amount.toFixed(2)}</div>`
+        ).join('')}
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Amount</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${expenses.map(expense => `
+                        <tr>
+                            <td>${expense.expenseDate}</td>
+                            <td>${expense.description}</td>
+                            <td>${expense.category}</td>
+                            <td>$${parseFloat(expense.amount).toFixed(2)}</td>
+                            <td>${expense.notes || ''}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </body>
+        </html>
+        `;
+
+        res.setHeader('Content-Type', 'text/html');
+        res.setHeader('Content-Disposition', `attachment; filename="expense-report-${new Date().toISOString().split('T')[0]}.html"`);
+        res.send(htmlReport);
+    });
+});
+
+// Data Backup - Export all user data as JSON
+app.get('/api/data/backup', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+
+    // Get all user data
+    db.all('SELECT * FROM expenses WHERE userId = ?', [userId], (err, expenses) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+
+        db.all('SELECT * FROM budgets WHERE userId = ?', [userId], (err, budgets) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Database error' });
+            }
+
+            const backupData = {
+                exportDate: new Date().toISOString(),
+                userId: userId,
+                expenses: expenses,
+                budgets: budgets,
+                metadata: {
+                    totalExpenses: expenses.length,
+                    totalBudgets: budgets.length,
+                    totalAmount: expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0)
+                }
+            };
+
+            res.setHeader('Content-Type', 'application/json');
+            res.setHeader('Content-Disposition', `attachment; filename="expense-backup-${new Date().toISOString().split('T')[0]}.json"`);
+            res.json(backupData);
+        });
+    });
+});
+
+// ==================== RECURRING EXPENSES ENDPOINTS ====================
+
+// Create recurring expense
+app.post('/api/recurring-expenses', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const { description, amount, category, pattern, startDate, endDate, notes, currency } = req.body;
+
+    if (!description || !amount || !category || !pattern || !startDate) {
+        return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    const recurringExpense = {
+        id: uuidv4(),
+        userId: userId,
+        description: description,
+        amount: parseFloat(amount),
+        category: category,
+        pattern: pattern, // 'weekly', 'monthly', 'yearly'
+        startDate: startDate,
+        endDate: endDate || null,
+        notes: notes || '',
+        currency: currency || 'USD',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+
+    db.run(
+        `INSERT INTO recurring_expenses (id, userId, description, amount, category, pattern, startDate, endDate, notes, currency, isActive, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [recurringExpense.id, recurringExpense.userId, recurringExpense.description, recurringExpense.amount,
+        recurringExpense.category, recurringExpense.pattern, recurringExpense.startDate, recurringExpense.endDate,
+        recurringExpense.notes, recurringExpense.currency, recurringExpense.isActive, recurringExpense.createdAt, recurringExpense.updatedAt],
+        function (err) {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Database error creating recurring expense' });
+            }
+
+            res.json({
+                success: true,
+                message: 'Recurring expense created successfully',
+                data: { ...recurringExpense, rowId: this.lastID }
+            });
+        }
+    );
+});
+
+// Get recurring expenses
+app.get('/api/recurring-expenses', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+
+    db.all(
+        'SELECT * FROM recurring_expenses WHERE userId = ? ORDER BY createdAt DESC',
+        [userId],
+        (err, recurringExpenses) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Database error' });
+            }
+
+            res.json({
+                success: true,
+                message: 'Recurring expenses retrieved successfully',
+                data: recurringExpenses
+            });
+        }
+    );
+});
+
+// Update recurring expense
+app.put('/api/recurring-expenses/:id', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { description, amount, category, pattern, startDate, endDate, notes, currency, isActive } = req.body;
+
+    db.run(
+        `UPDATE recurring_expenses 
+         SET description = ?, amount = ?, category = ?, pattern = ?, startDate = ?, endDate = ?, notes = ?, currency = ?, isActive = ?, updatedAt = ?
+         WHERE id = ? AND userId = ?`,
+        [description, amount, category, pattern, startDate, endDate, notes, currency, isActive, new Date().toISOString(), id, userId],
+        function (err) {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Database error updating recurring expense' });
+            }
+
+            if (this.changes === 0) {
+                return res.status(404).json({ success: false, message: 'Recurring expense not found' });
+            }
+
+            res.json({
+                success: true,
+                message: 'Recurring expense updated successfully'
+            });
+        }
+    );
+});
+
+// Delete recurring expense
+app.delete('/api/recurring-expenses/:id', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    db.run(
+        'DELETE FROM recurring_expenses WHERE id = ? AND userId = ?',
+        [id, userId],
+        function (err) {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Database error deleting recurring expense' });
+            }
+
+            if (this.changes === 0) {
+                return res.status(404).json({ success: false, message: 'Recurring expense not found' });
+            }
+
+            res.json({
+                success: true,
+                message: 'Recurring expense deleted successfully'
+            });
+        }
+    );
+});
+
+// Generate expenses from recurring patterns
+app.post('/api/recurring-expenses/generate', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const { upToDate } = req.body;
+
+    const targetDate = upToDate || new Date().toISOString().split('T')[0];
+
+    db.all(
+        'SELECT * FROM recurring_expenses WHERE userId = ? AND isActive = 1',
+        [userId],
+        (err, recurringExpenses) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Database error' });
+            }
+
+            const generatedExpenses = [];
+            let completed = 0;
+
+            if (recurringExpenses.length === 0) {
+                return res.json({
+                    success: true,
+                    message: 'No active recurring expenses found',
+                    data: { generated: 0 }
+                });
+            }
+
+            recurringExpenses.forEach(recurring => {
+                const startDate = new Date(recurring.startDate);
+                const endDate = recurring.endDate ? new Date(recurring.endDate) : new Date(targetDate);
+                const currentDate = new Date(startDate);
+
+                while (currentDate <= endDate) {
+                    // Check if expense already exists for this date
+                    const expenseDate = currentDate.toISOString().split('T')[0];
+
+                    db.get(
+                        'SELECT id FROM expenses WHERE userId = ? AND description = ? AND expenseDate = ?',
+                        [userId, recurring.description, expenseDate],
+                        (err, existing) => {
+                            if (!err && !existing) {
+                                const expense = {
+                                    id: uuidv4(),
+                                    description: recurring.description,
+                                    amount: recurring.amount,
+                                    category: recurring.category,
+                                    expenseDate: expenseDate,
+                                    notes: recurring.notes,
+                                    currency: recurring.currency,
+                                    userId: userId,
+                                    createdAt: new Date().toISOString(),
+                                    updatedAt: new Date().toISOString()
+                                };
+
+                                db.run(
+                                    `INSERT INTO expenses (id, description, amount, category, expenseDate, notes, currency, userId, createdAt, updatedAt)
+                                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                                    [expense.id, expense.description, expense.amount, expense.category, expense.expenseDate,
+                                    expense.notes, expense.currency, expense.userId, expense.createdAt, expense.updatedAt],
+                                    function (err) {
+                                        if (!err) {
+                                            generatedExpenses.push(expense);
+                                        }
+
+                                        completed++;
+                                        if (completed === recurringExpenses.length) {
+                                            res.json({
+                                                success: true,
+                                                message: `Generated ${generatedExpenses.length} expenses from recurring patterns`,
+                                                data: { generated: generatedExpenses.length, expenses: generatedExpenses }
+                                            });
+                                        }
+                                    }
+                                );
+                            } else {
+                                completed++;
+                                if (completed === recurringExpenses.length) {
+                                    res.json({
+                                        success: true,
+                                        message: `Generated ${generatedExpenses.length} expenses from recurring patterns`,
+                                        data: { generated: generatedExpenses.length, expenses: generatedExpenses }
+                                    });
+                                }
+                            }
+                        }
+                    );
+
+                    // Move to next occurrence
+                    switch (recurring.pattern) {
+                        case 'weekly':
+                            currentDate.setDate(currentDate.getDate() + 7);
+                            break;
+                        case 'monthly':
+                            currentDate.setMonth(currentDate.getMonth() + 1);
+                            break;
+                        case 'yearly':
+                            currentDate.setFullYear(currentDate.getFullYear() + 1);
+                            break;
+                    }
+                }
+            });
         }
     );
 });

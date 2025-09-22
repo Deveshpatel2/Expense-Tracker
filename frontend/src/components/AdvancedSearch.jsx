@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './AdvancedSearch.css';
 
 const AdvancedSearch = ({ onSearch, onFilter, onSort, onClear }) => {
   const [searchData, setSearchData] = useState({
@@ -70,44 +71,44 @@ const AdvancedSearch = ({ onSearch, onFilter, onSort, onClear }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+    <div className="advanced-search-container">
+      <div className="advanced-search-header">
+        <h3 className="advanced-search-title">
           Advanced Search & Filter
         </h3>
         <button
           onClick={handleClear}
-          className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+          className="advanced-search-clear"
         >
           Clear All
         </button>
       </div>
 
-      <div className="space-y-6">
+      <div className="advanced-search-form">
         {/* Search Query */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="advanced-search-field">
             Search Query
           </label>
           <input
             type="text"
             value={searchData.query}
             onChange={(e) => handleInputChange('query', e.target.value)}
-            className="input"
+            className="advanced-search-input"
             placeholder="Search in descriptions, notes, tags..."
           />
         </div>
 
         {/* Category and Amount Range */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="advanced-search-grid-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="advanced-search-field">
               Category
             </label>
             <select
               value={searchData.category}
               onChange={(e) => handleInputChange('category', e.target.value)}
-              className="input"
+              className="advanced-search-input"
             >
               {categories.map((category) => (
                 <option key={category} value={category}>
@@ -117,7 +118,7 @@ const AdvancedSearch = ({ onSearch, onFilter, onSort, onClear }) => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="advanced-search-field">
               Min Amount
             </label>
             <input
@@ -125,12 +126,12 @@ const AdvancedSearch = ({ onSearch, onFilter, onSort, onClear }) => {
               step="0.01"
               value={searchData.minAmount}
               onChange={(e) => handleInputChange('minAmount', e.target.value)}
-              className="input"
+              className="advanced-search-input"
               placeholder="0.00"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="advanced-search-field">
               Max Amount
             </label>
             <input
@@ -138,62 +139,62 @@ const AdvancedSearch = ({ onSearch, onFilter, onSort, onClear }) => {
               step="0.01"
               value={searchData.maxAmount}
               onChange={(e) => handleInputChange('maxAmount', e.target.value)}
-              className="input"
+              className="advanced-search-input"
               placeholder="1000.00"
             />
           </div>
         </div>
 
         {/* Date Range */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="advanced-search-grid-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="advanced-search-field">
               Start Date
             </label>
             <input
               type="date"
               value={searchData.startDate}
               onChange={(e) => handleInputChange('startDate', e.target.value)}
-              className="input"
+              className="advanced-search-input"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="advanced-search-field">
               End Date
             </label>
             <input
               type="date"
               value={searchData.endDate}
               onChange={(e) => handleInputChange('endDate', e.target.value)}
-              className="input"
+              className="advanced-search-input"
             />
           </div>
         </div>
 
         {/* Tags */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="advanced-search-field">
             Tags
           </label>
           <input
             type="text"
             value={searchData.tags}
             onChange={(e) => handleInputChange('tags', e.target.value)}
-            className="input"
+            className="advanced-search-input"
             placeholder="Enter tags separated by commas (e.g., work, travel, urgent)"
           />
         </div>
 
         {/* Sort Options */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="advanced-search-grid-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="advanced-search-field">
               Sort By
             </label>
             <select
               value={searchData.sortBy}
               onChange={(e) => handleInputChange('sortBy', e.target.value)}
-              className="input"
+              className="advanced-search-input"
             >
               {sortOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -203,13 +204,13 @@ const AdvancedSearch = ({ onSearch, onFilter, onSort, onClear }) => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="advanced-search-field">
               Sort Order
             </label>
             <select
               value={searchData.sortOrder}
               onChange={(e) => handleInputChange('sortOrder', e.target.value)}
-              className="input"
+              className="advanced-search-input"
             >
               <option value="desc">Descending (Newest/High to Low)</option>
               <option value="asc">Ascending (Oldest/Low to High)</option>
@@ -218,45 +219,45 @@ const AdvancedSearch = ({ onSearch, onFilter, onSort, onClear }) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-3">
+        <div className="advanced-search-actions">
           <button
             onClick={handleSearch}
-            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-md"
+            className="advanced-search-button"
           >
             Search
           </button>
           <button
             onClick={handleFilter}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md"
+            className="advanced-search-button-blue"
           >
             Apply Filters
           </button>
           <button
             onClick={handleSort}
-            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md"
+            className="advanced-search-button-green"
           >
             Sort
           </button>
           <button
             onClick={handleClear}
-            className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-md"
+            className="advanced-search-button-gray"
           >
             Clear
           </button>
         </div>
 
         {/* Quick Filters */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+        <div className="advanced-search-quick-filters">
+          <h4 className="advanced-search-quick-filters-title">
             Quick Filters
           </h4>
-          <div className="flex flex-wrap gap-2">
+          <div className="advanced-search-quick-filters-list">
             <button
               onClick={() => {
                 const today = new Date().toISOString().split('T')[0];
                 setSearchData(prev => ({ ...prev, startDate: today, endDate: today }));
               }}
-              className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
+              className="advanced-search-quick-filter-button"
             >
               Today
             </button>
@@ -270,7 +271,7 @@ const AdvancedSearch = ({ onSearch, onFilter, onSort, onClear }) => {
                   endDate: today.toISOString().split('T')[0] 
                 }));
               }}
-              className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
+              className="advanced-search-quick-filter-button"
             >
               Last 7 Days
             </button>
@@ -284,7 +285,7 @@ const AdvancedSearch = ({ onSearch, onFilter, onSort, onClear }) => {
                   endDate: today.toISOString().split('T')[0] 
                 }));
               }}
-              className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
+              className="advanced-search-quick-filter-button"
             >
               Last 30 Days
             </button>
@@ -292,7 +293,7 @@ const AdvancedSearch = ({ onSearch, onFilter, onSort, onClear }) => {
               onClick={() => {
                 setSearchData(prev => ({ ...prev, minAmount: '100' }));
               }}
-              className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
+              className="advanced-search-quick-filter-button"
             >
               $100+
             </button>
@@ -300,7 +301,7 @@ const AdvancedSearch = ({ onSearch, onFilter, onSort, onClear }) => {
               onClick={() => {
                 setSearchData(prev => ({ ...prev, category: 'Food & Dining' }));
               }}
-              className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
+              className="advanced-search-quick-filter-button"
             >
               Food & Dining
             </button>

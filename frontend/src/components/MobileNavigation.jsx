@@ -4,11 +4,11 @@ import { useDarkMode } from '../context/DarkModeContext';
 import { useCurrency } from '../context/CurrencyContext';
 import ProfileDropdown from './ProfileDropdown';
 import DarkModeToggle from './DarkModeToggle';
+import './MobileNavigation.css';
 
 const MobileNavigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isAuthenticated } = useAuth();
-  const { isDarkMode } = useDarkMode();
   const { selectedCurrency } = useCurrency();
 
   const toggleMenu = () => {

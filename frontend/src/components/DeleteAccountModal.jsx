@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import './DeleteAccountModal.css';
 
 const DeleteAccountModal = ({ isOpen, onClose }) => {
   const { deleteAccount } = useAuth();

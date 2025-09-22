@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import './ReceiptManager.css';
 
 const ReceiptManager = ({ onReceiptUpload, onReceiptDelete, receipts = [] }) => {
   const [uploading, setUploading] = useState(false);

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useTimezone } from '../context/TimezoneContext';
+import './UserSettings.css';
 
 const UserSettings = ({ isOpen, onClose }) => {
   const { user } = useAuth();

@@ -1,0 +1,282 @@
+/* BudgetMonitoring.css - Styles for BudgetMonitoring component */
+
+/* Main Container */
+.budget-monitoring-container {
+  @apply space-y-6;
+}
+
+/* Header */
+.budget-monitoring-header {
+  @apply flex flex-col sm:flex-row sm:items-center sm:justify-between;
+}
+
+.budget-monitoring-title {
+  @apply text-2xl font-bold text-gray-900 dark:text-white;
+}
+
+.budget-monitoring-subtitle {
+  @apply text-sm text-gray-600 dark:text-gray-400 mt-1;
+}
+
+/* Controls */
+.budget-monitoring-controls {
+  @apply flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0;
+}
+
+/* Month Selector */
+.month-selector {
+  @apply flex items-center space-x-2;
+}
+
+.month-selector-button {
+  @apply p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none focus:text-gray-600 dark:focus:text-gray-300;
+}
+
+.month-selector-icon {
+  @apply h-5 w-5;
+}
+
+.month-selector-display {
+  @apply text-lg font-medium text-gray-900 dark:text-white;
+}
+
+/* Budget Summary */
+.budget-summary {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow p-6;
+}
+
+.budget-summary-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+.budget-summary-title {
+  @apply text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.budget-summary-subtitle {
+  @apply text-sm text-gray-600 dark:text-gray-400;
+}
+
+.budget-summary-stats {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6;
+}
+
+.budget-summary-stat {
+  @apply text-center;
+}
+
+.budget-summary-stat-value {
+  @apply text-2xl font-bold text-gray-900 dark:text-white;
+}
+
+.budget-summary-stat-label {
+  @apply text-sm text-gray-600 dark:text-gray-400 mt-1;
+}
+
+.budget-summary-stat-change {
+  @apply text-sm mt-1;
+}
+
+.budget-summary-stat-change-positive {
+  @apply text-green-600 dark:text-green-400;
+}
+
+.budget-summary-stat-change-negative {
+  @apply text-red-600 dark:text-red-400;
+}
+
+.budget-summary-stat-change-neutral {
+  @apply text-gray-600 dark:text-gray-400;
+}
+
+/* Budget Cards */
+.budget-cards {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+}
+
+.budget-card {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow p-6;
+}
+
+.budget-card-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+.budget-card-title {
+  @apply text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.budget-card-amount {
+  @apply text-sm text-gray-600 dark:text-gray-400;
+}
+
+/* Budget Progress */
+.budget-progress {
+  @apply mb-4;
+}
+
+.budget-progress-header {
+  @apply flex items-center justify-between mb-2;
+}
+
+.budget-progress-label {
+  @apply text-sm font-medium text-gray-700 dark:text-gray-300;
+}
+
+.budget-progress-percentage {
+  @apply text-sm font-semibold text-gray-900 dark:text-white;
+}
+
+.budget-progress-bar {
+  @apply w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2;
+}
+
+.budget-progress-fill {
+  @apply h-2 rounded-full transition-all duration-300;
+}
+
+.budget-progress-fill-safe {
+  @apply bg-green-500;
+}
+
+.budget-progress-fill-warning {
+  @apply bg-yellow-500;
+}
+
+.budget-progress-fill-danger {
+  @apply bg-red-500;
+}
+
+/* Budget Stats */
+.budget-stats {
+  @apply grid grid-cols-2 gap-4;
+}
+
+.budget-stat {
+  @apply text-center;
+}
+
+.budget-stat-label {
+  @apply text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide;
+}
+
+.budget-stat-value {
+  @apply text-lg font-semibold text-gray-900 dark:text-white mt-1;
+}
+
+/* Budget Alerts */
+.budget-alerts {
+  @apply space-y-3;
+}
+
+.budget-alert {
+  @apply p-4 rounded-lg border-l-4;
+}
+
+.budget-alert-warning {
+  @apply bg-yellow-50 dark:bg-yellow-900/20 border-yellow-400;
+}
+
+.budget-alert-danger {
+  @apply bg-red-50 dark:bg-red-900/20 border-red-400;
+}
+
+.budget-alert-info {
+  @apply bg-blue-50 dark:bg-blue-900/20 border-blue-400;
+}
+
+.budget-alert-header {
+  @apply flex items-center;
+}
+
+.budget-alert-icon {
+  @apply h-5 w-5 mr-2;
+}
+
+.budget-alert-title {
+  @apply text-sm font-medium;
+}
+
+.budget-alert-title-warning {
+  @apply text-yellow-800 dark:text-yellow-200;
+}
+
+.budget-alert-title-danger {
+  @apply text-red-800 dark:text-red-200;
+}
+
+.budget-alert-title-info {
+  @apply text-blue-800 dark:text-blue-200;
+}
+
+.budget-alert-message {
+  @apply text-sm mt-1;
+}
+
+.budget-alert-message-warning {
+  @apply text-yellow-700 dark:text-yellow-300;
+}
+
+.budget-alert-message-danger {
+  @apply text-red-700 dark:text-red-300;
+}
+
+.budget-alert-message-info {
+  @apply text-blue-700 dark:text-blue-300;
+}
+
+/* Loading State */
+.loading-container {
+  @apply flex items-center justify-center h-64;
+}
+
+.loading-spinner {
+  @apply animate-spin h-8 w-8 text-indigo-600;
+}
+
+/* Error State */
+.error-container {
+  @apply flex items-center justify-center h-64;
+}
+
+.error-message {
+  @apply text-red-600 dark:text-red-400 text-center;
+}
+
+/* Empty State */
+.empty-container {
+  @apply flex items-center justify-center h-64;
+}
+
+.empty-message {
+  @apply text-gray-500 dark:text-gray-400 text-center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .budget-monitoring-controls {
+    @apply flex-col;
+  }
+  
+  .budget-summary-stats {
+    @apply grid-cols-2;
+  }
+  
+  .budget-cards {
+    @apply grid-cols-1;
+  }
+  
+  .budget-stats {
+    @apply grid-cols-1;
+  }
+}
+
+@media (max-width: 640px) {
+  .budget-summary-stats {
+    @apply grid-cols-1;
+  }
+  
+  .month-selector {
+    @apply flex-col space-x-0 space-y-2;
+  }
+}

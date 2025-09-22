@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import BulkOperations from './BulkOperations';
 import AdvancedSearch from './AdvancedSearch';
+import './ExpenseList.css';
 
 const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrency = 'USD' }) => {
   const [filteredExpenses, setFilteredExpenses] = useState([]);

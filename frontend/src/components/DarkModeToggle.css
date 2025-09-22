@@ -1,17 +1,77 @@
-/* DarkModeToggle Component Styles */
+/* DarkModeToggle.css - Styles for DarkModeToggle component */
+
+/* Toggle Container */
+.dark-mode-toggle {
+  @apply relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2;
+}
+
+.dark-mode-toggle-enabled {
+  @apply bg-indigo-600;
+}
+
+.dark-mode-toggle-disabled {
+  @apply bg-gray-200 dark:bg-gray-700;
+}
+
+/* Toggle Button */
 .dark-mode-toggle-button {
-  @apply flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900;
+  @apply inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ease-in-out;
 }
 
+.dark-mode-toggle-button-enabled {
+  @apply translate-x-6;
+}
+
+.dark-mode-toggle-button-disabled {
+  @apply translate-x-1;
+}
+
+/* Toggle Icons */
 .dark-mode-toggle-icon {
-  @apply w-5 h-5;
+  @apply absolute inset-0 flex items-center justify-center;
 }
 
-.dark-mode-toggle-sun-icon {
-  @apply w-5 h-5 text-yellow-500;
+.dark-mode-toggle-icon-sun {
+  @apply absolute left-1 h-3 w-3 text-yellow-500;
 }
 
-.dark-mode-toggle-moon-icon {
-  @apply w-5 h-5 text-gray-600 dark:text-gray-300;
+.dark-mode-toggle-icon-moon {
+  @apply absolute right-1 h-3 w-3 text-gray-400;
 }
 
+/* Toggle Label */
+.dark-mode-toggle-label {
+  @apply ml-2 text-sm font-medium text-gray-700 dark:text-gray-300;
+}
+
+/* Toggle Wrapper */
+.dark-mode-toggle-wrapper {
+  @apply flex items-center;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .dark-mode-toggle {
+    @apply h-5 w-9;
+  }
+  
+  .dark-mode-toggle-button {
+    @apply h-3 w-3;
+  }
+  
+  .dark-mode-toggle-button-enabled {
+    @apply translate-x-5;
+  }
+  
+  .dark-mode-toggle-button-disabled {
+    @apply translate-x-1;
+  }
+  
+  .dark-mode-toggle-icon-sun {
+    @apply h-2 w-2;
+  }
+  
+  .dark-mode-toggle-icon-moon {
+    @apply h-2 w-2;
+  }
+}

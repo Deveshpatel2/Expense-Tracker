@@ -1,49 +1,132 @@
-/* Login Component Styles */
+/* Login.css - Styles for Login component */
+
+/* Main Container */
 .login-container {
-  @apply flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 px-4 transition-colors duration-200;
+  @apply min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8;
 }
 
+/* Form Container */
 .login-form-container {
-  @apply bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md relative;
+  @apply max-w-md w-full space-y-8;
 }
 
-.login-dark-mode-toggle {
-  @apply absolute top-4 right-4;
+/* Header */
+.login-header {
+  @apply text-center;
 }
 
 .login-title {
-  @apply text-2xl font-bold mb-6 text-center text-gray-800 dark:text-white;
+  @apply text-3xl font-extrabold text-gray-900 dark:text-white;
 }
 
+.login-subtitle {
+  @apply mt-2 text-sm text-gray-600 dark:text-gray-400;
+}
+
+/* Form */
 .login-form {
-  /* Form styles are handled by individual elements */
+  @apply mt-8 space-y-6;
 }
 
-.login-field-container {
-  @apply mb-4;
+/* Form Group */
+.form-group {
+  @apply space-y-2;
 }
 
-.login-field-container-password {
-  @apply mb-6;
+/* Label */
+.form-label {
+  @apply block text-sm font-medium text-gray-700 dark:text-gray-300;
 }
 
-.login-label {
-  @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1;
+/* Input Container */
+.input-container {
+  @apply relative;
 }
 
-.login-input {
-  @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring focus:border-blue-400;
+/* Input Field */
+.form-input {
+  @apply appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm;
 }
 
-.login-button {
-  @apply w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition;
+/* Password Toggle Button */
+.password-toggle {
+  @apply absolute inset-y-0 right-0 pr-3 flex items-center;
 }
 
-.login-footer {
-  @apply mt-4 text-sm text-center text-gray-600 dark:text-gray-400;
+.password-toggle-button {
+  @apply text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none focus:text-gray-600 dark:focus:text-gray-300;
 }
 
-.login-link {
-  @apply text-blue-600 dark:text-blue-400 hover:underline;
+.password-toggle-icon {
+  @apply h-5 w-5;
 }
 
+/* Submit Button */
+.submit-button {
+  @apply relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.submit-button-loading {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  @apply animate-spin -ml-1 mr-3 h-5 w-5 text-white;
+}
+
+/* Error Message */
+.error-message {
+  @apply text-red-600 dark:text-red-400 text-sm mt-1;
+}
+
+/* Success Message */
+.success-message {
+  @apply text-green-600 dark:text-green-400 text-sm mt-1;
+}
+
+/* Link */
+.link {
+  @apply text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300;
+}
+
+/* Divider */
+.divider {
+  @apply relative my-6;
+}
+
+.divider-line {
+  @apply absolute inset-0 flex items-center;
+}
+
+.divider-line-content {
+  @apply w-full border-t border-gray-300 dark:border-gray-600;
+}
+
+.divider-text {
+  @apply relative flex justify-center text-sm;
+}
+
+.divider-text-content {
+  @apply px-2 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400;
+}
+
+/* Additional Options */
+.additional-options {
+  @apply text-center;
+}
+
+.additional-options-text {
+  @apply text-sm text-gray-600 dark:text-gray-400;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .login-container {
+    @apply px-4;
+  }
+  
+  .login-form-container {
+    @apply max-w-sm;
+  }
+}

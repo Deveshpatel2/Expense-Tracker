@@ -3,6 +3,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import ExpenseTemplates from './ExpenseTemplates';
 import ReceiptManager from './ReceiptManager';
 import CategoryManager from './CategoryManager';
+import './ExpenseManager.css';
 
 const ExpenseManager = ({ onAddExpense }) => {
   const { selectedCurrency, currencies } = useCurrency();
@@ -35,7 +36,6 @@ const ExpenseManager = ({ onAddExpense }) => {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [receipts, setReceipts] = useState([]);
-  const [customCategories, setCustomCategories] = useState([]);
   const fileInputRef = useRef(null);
 
   const defaultCategories = [

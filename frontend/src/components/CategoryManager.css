@@ -1,0 +1,260 @@
+/* CategoryManager.css - Styles for CategoryManager component */
+
+/* Main Container */
+.category-manager-container {
+  @apply space-y-6;
+}
+
+/* Header */
+.category-manager-header {
+  @apply flex flex-col sm:flex-row sm:items-center sm:justify-between;
+}
+
+.category-manager-title {
+  @apply text-2xl font-bold text-gray-900 dark:text-white;
+}
+
+.category-manager-subtitle {
+  @apply text-sm text-gray-600 dark:text-gray-400 mt-1;
+}
+
+/* Controls */
+.category-manager-controls {
+  @apply flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0;
+}
+
+/* Add Category Button */
+.add-category-button {
+  @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+}
+
+.add-category-icon {
+  @apply -ml-1 mr-2 h-5 w-5;
+}
+
+/* Categories Grid */
+.categories-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6;
+}
+
+/* Category Card */
+.category-card {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow p-4 hover:shadow-md transition-shadow duration-200;
+}
+
+.category-card-header {
+  @apply flex items-center justify-between mb-3;
+}
+
+.category-card-icon {
+  @apply h-8 w-8 rounded-full flex items-center justify-center text-white text-sm font-medium;
+}
+
+.category-card-actions {
+  @apply flex space-x-1;
+}
+
+.category-card-action-button {
+  @apply p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none focus:text-gray-600 dark:focus:text-gray-300;
+}
+
+.category-card-action-icon {
+  @apply h-4 w-4;
+}
+
+/* Category Info */
+.category-info {
+  @apply space-y-2;
+}
+
+.category-name {
+  @apply text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.category-description {
+  @apply text-sm text-gray-600 dark:text-gray-400;
+}
+
+.category-stats {
+  @apply flex items-center justify-between text-xs text-gray-500 dark:text-gray-400;
+}
+
+.category-expense-count {
+  @apply flex items-center space-x-1;
+}
+
+.category-total-amount {
+  @apply flex items-center space-x-1;
+}
+
+/* Category Form */
+.category-form {
+  @apply space-y-4;
+}
+
+.category-form-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+}
+
+.category-form-group {
+  @apply space-y-2;
+}
+
+.category-form-label {
+  @apply block text-sm font-medium text-gray-700 dark:text-gray-300;
+}
+
+.category-form-input {
+  @apply block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
+}
+
+.category-form-textarea {
+  @apply block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
+}
+
+.category-form-actions {
+  @apply flex justify-end space-x-3;
+}
+
+.category-form-button {
+  @apply px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+.category-form-button-primary {
+  @apply text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500;
+}
+
+.category-form-button-secondary {
+  @apply text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 focus:ring-gray-500;
+}
+
+/* Color Picker */
+.color-picker {
+  @apply grid grid-cols-6 gap-2;
+}
+
+.color-option {
+  @apply w-8 h-8 rounded-full border-2 border-gray-300 dark:border-gray-600 cursor-pointer hover:scale-110 transition-transform duration-200;
+}
+
+.color-option-selected {
+  @apply border-gray-900 dark:border-white;
+}
+
+/* Icon Picker */
+.icon-picker {
+  @apply grid grid-cols-8 gap-2;
+}
+
+.icon-option {
+  @apply w-8 h-8 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 flex items-center justify-center;
+}
+
+.icon-option-selected {
+  @apply border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20;
+}
+
+.icon-option-icon {
+  @apply h-4 w-4 text-gray-600 dark:text-gray-400;
+}
+
+.icon-option-selected .icon-option-icon {
+  @apply text-indigo-600 dark:text-indigo-400;
+}
+
+/* Category Usage */
+.category-usage {
+  @apply bg-gray-50 dark:bg-gray-700 rounded-lg p-4;
+}
+
+.category-usage-title {
+  @apply text-sm font-medium text-gray-700 dark:text-gray-300 mb-2;
+}
+
+.category-usage-list {
+  @apply space-y-2;
+}
+
+.category-usage-item {
+  @apply flex items-center justify-between text-sm;
+}
+
+.category-usage-date {
+  @apply text-gray-600 dark:text-gray-400;
+}
+
+.category-usage-amount {
+  @apply font-medium text-gray-900 dark:text-white;
+}
+
+/* Loading State */
+.loading-container {
+  @apply flex items-center justify-center h-64;
+}
+
+.loading-spinner {
+  @apply animate-spin h-8 w-8 text-indigo-600;
+}
+
+/* Error State */
+.error-container {
+  @apply flex items-center justify-center h-64;
+}
+
+.error-message {
+  @apply text-red-600 dark:text-red-400 text-center;
+}
+
+/* Empty State */
+.empty-container {
+  @apply flex items-center justify-center h-64;
+}
+
+.empty-message {
+  @apply text-gray-500 dark:text-gray-400 text-center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .category-manager-controls {
+    @apply flex-col;
+  }
+  
+  .categories-grid {
+    @apply grid-cols-2;
+  }
+  
+  .category-form-grid {
+    @apply grid-cols-1;
+  }
+  
+  .color-picker {
+    @apply grid-cols-4;
+  }
+  
+  .icon-picker {
+    @apply grid-cols-6;
+  }
+}
+
+@media (max-width: 640px) {
+  .categories-grid {
+    @apply grid-cols-1;
+  }
+  
+  .category-form-actions {
+    @apply flex-col space-x-0 space-y-2;
+  }
+  
+  .category-form-button {
+    @apply w-full;
+  }
+  
+  .color-picker {
+    @apply grid-cols-3;
+  }
+  
+  .icon-picker {
+    @apply grid-cols-4;
+  }
+}

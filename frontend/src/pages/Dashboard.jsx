@@ -10,12 +10,17 @@ import DarkModeToggle from '../components/DarkModeToggle';
 import EditExpenseModal from '../components/EditExpenseModal';
 import MobileNavigation from '../components/MobileNavigation';
 import CategoryManager from '../components/CategoryManager';
+import BudgetManager from '../components/BudgetManager';
+import AnalyticsDashboard from '../components/AnalyticsDashboard';
+import DataManagement from '../components/DataManagement';
+import RecurringExpenses from '../components/RecurringExpenses';
+import './Dashboard.css';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { selectedCurrency } = useCurrency();
   const [activeTab, setActiveTab] = useState('expenses');
-  const [categories, setCategories] = useState([]);
+  const [, setCategories] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingExpense, setEditingExpense] = useState(null);
@@ -169,6 +174,7 @@ const Dashboard = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Expense Tracker</h1>
               <p className="text-gray-600 dark:text-gray-300">Welcome back, {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.name || 'User'}!</p>
+              <p className="text-xs text-green-600">✅ All 8 tabs available: Expenses, Add, Reports, Categories, Budgets, Analytics, Data, Recurring</p>
             </div>
             
             {/* Dark Mode Toggle and Profile */}
@@ -186,116 +192,169 @@ const Dashboard = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:pt-8 pt-20">
         {/* Mobile Tabs - Bottom Navigation Style */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-40">
-          <div className="flex">
+        <div className="mobile-nav">
+          <div className="mobile-nav-container">
             <button
               onClick={() => setActiveTab('expenses')}
-              className={`flex-1 flex flex-col items-center py-3 px-2 ${
+              className={`mobile-nav-button ${
                 activeTab === 'expenses'
-                  ? 'text-indigo-600 dark:text-indigo-400'
-                  : 'text-gray-500 dark:text-gray-400'
+                  ? 'mobile-nav-button-active'
+                  : 'mobile-nav-button-inactive'
               }`}
             >
-              <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
-              <span className="text-xs font-medium">Expenses</span>
+              <span className="mobile-nav-text">Expenses</span>
             </button>
             <button
               onClick={() => setActiveTab('add')}
-              className={`flex-1 flex flex-col items-center py-3 px-2 ${
+              className={`mobile-nav-button ${
                 activeTab === 'add'
-                  ? 'text-indigo-600 dark:text-indigo-400'
-                  : 'text-gray-500 dark:text-gray-400'
+                  ? 'mobile-nav-button-active'
+                  : 'mobile-nav-button-inactive'
               }`}
             >
-              <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
-              <span className="text-xs font-medium">Add</span>
+              <span className="mobile-nav-text">Add</span>
             </button>
-                 <button
-                   onClick={() => setActiveTab('reports')}
-                   className={`flex-1 flex flex-col items-center py-3 px-2 ${
-                     activeTab === 'reports'
-                       ? 'text-indigo-600 dark:text-indigo-400'
-                       : 'text-gray-500 dark:text-gray-400'
-                   }`}
-                 >
-                   <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                   </svg>
-                   <span className="text-xs font-medium">Reports</span>
-                 </button>
-                 <button
-                   onClick={() => setActiveTab('categories')}
-                   className={`flex-1 flex flex-col items-center py-3 px-2 ${
-                     activeTab === 'categories'
-                       ? 'text-indigo-600 dark:text-indigo-400'
-                       : 'text-gray-500 dark:text-gray-400'
-                   }`}
-                 >
-                   <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                   </svg>
-                   <span className="text-xs font-medium">Categories</span>
-                 </button>
+            <button
+              onClick={() => setActiveTab('budgets')}
+              className={`mobile-nav-button ${
+                activeTab === 'budgets'
+                  ? 'mobile-nav-button-active'
+                  : 'mobile-nav-button-inactive'
+              }`}
+            >
+              <svg className="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+              </svg>
+              <span className="mobile-nav-text">Budgets</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`mobile-nav-button ${
+                activeTab === 'analytics'
+                  ? 'mobile-nav-button-active'
+                  : 'mobile-nav-button-inactive'
+              }`}
+            >
+              <svg className="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <span className="mobile-nav-text">Analytics</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('more')}
+              className={`mobile-nav-button ${
+                activeTab === 'more'
+                  ? 'mobile-nav-button-active'
+                  : 'mobile-nav-button-inactive'
+              }`}
+            >
+              <svg className="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+              </svg>
+              <span className="mobile-nav-text">More</span>
+            </button>
           </div>
         </div>
 
         {/* Desktop Tabs - Hidden on mobile */}
-        <div className="hidden lg:block border-b border-gray-200 dark:border-gray-700 mb-8">
-          <nav className="-mb-px flex space-x-8">
+        <div className="desktop-nav">
+          <nav className="desktop-nav-container">
             <button
               onClick={() => setActiveTab('expenses')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`desktop-nav-button ${
                 activeTab === 'expenses'
-                  ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                  ? 'desktop-nav-button-active'
+                  : 'desktop-nav-button-inactive'
               }`}
             >
               Expenses
             </button>
             <button
               onClick={() => setActiveTab('add')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`desktop-nav-button ${
                 activeTab === 'add'
-                  ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                  ? 'desktop-nav-button-active'
+                  : 'desktop-nav-button-inactive'
               }`}
             >
               Add Expenses
             </button>
                  <button
                    onClick={() => setActiveTab('reports')}
-                   className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                   className={`desktop-nav-button ${
                      activeTab === 'reports'
-                       ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                       : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                       ? 'desktop-nav-button-active'
+                       : 'desktop-nav-button-inactive'
                    }`}
                  >
                    Reports
                  </button>
-                 <button
-                   onClick={() => setActiveTab('categories')}
-                   className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                     activeTab === 'categories'
-                       ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                       : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-                   }`}
-                 >
-                   Categories
-                 </button>
+                   <button
+                     onClick={() => setActiveTab('categories')}
+                     className={`desktop-nav-button ${
+                       activeTab === 'categories'
+                         ? 'desktop-nav-button-active'
+                         : 'desktop-nav-button-inactive'
+                     }`}
+                   >
+                     Categories
+                   </button>
+                   <button
+                     onClick={() => setActiveTab('budgets')}
+                     className={`desktop-nav-button ${
+                       activeTab === 'budgets'
+                         ? 'desktop-nav-button-active'
+                         : 'desktop-nav-button-inactive'
+                     }`}
+                   >
+                     Budgets
+                   </button>
+                   <button
+                     onClick={() => setActiveTab('analytics')}
+                     className={`desktop-nav-button ${
+                       activeTab === 'analytics'
+                         ? 'desktop-nav-button-active'
+                         : 'desktop-nav-button-inactive'
+                     }`}
+                   >
+                     Analytics
+                   </button>
+                   <button
+                     onClick={() => setActiveTab('data')}
+                     className={`desktop-nav-button ${
+                       activeTab === 'data'
+                         ? 'desktop-nav-button-active'
+                         : 'desktop-nav-button-inactive'
+                     }`}
+                   >
+                     Data Management
+                   </button>
+                   <button
+                     onClick={() => setActiveTab('recurring')}
+                     className={`desktop-nav-button ${
+                       activeTab === 'recurring'
+                         ? 'desktop-nav-button-active'
+                         : 'desktop-nav-button-inactive'
+                     }`}
+                   >
+                     Recurring Expenses
+                   </button>
           </nav>
         </div>
 
         {/* Tab Content */}
-        <div className="pb-20 lg:pb-0">
+        <div className="tab-content">
           {loading ? (
-            <div className="text-center py-12">
-              <div className="text-gray-400 dark:text-gray-600 text-6xl mb-4">⏳</div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Loading...</h3>
-              <p className="text-gray-500 dark:text-gray-400">Please wait while we load your expenses.</p>
+            <div className="loading-container">
+              <div className="loading-icon">⏳</div>
+              <h3 className="loading-title">Loading...</h3>
+              <p className="loading-description">Please wait while we load your expenses.</p>
             </div>
           ) : (
             <>
@@ -318,17 +377,74 @@ const Dashboard = () => {
                        selectedCurrency={selectedCurrency}
                      />
                    )}
-                   {activeTab === 'categories' && (
-                     <div className="space-y-6">
-                       <CategoryManager 
-                         onCategorySelect={(category) => {
-                           // Handle category selection
-                         }}
-                         onCategoryUpdate={setCategories}
-                         expenses={expenses}
-                       />
-                     </div>
-                   )}
+                     {activeTab === 'categories' && (
+                       <div className="space-y-6">
+                         <CategoryManager 
+                           onCategorySelect={(category) => {
+                             // Handle category selection
+                           }}
+                           onCategoryUpdate={setCategories}
+                           expenses={expenses}
+                         />
+                       </div>
+                     )}
+                     {activeTab === 'budgets' && (
+                       <BudgetManager />
+                     )}
+                     {activeTab === 'analytics' && (
+                       <AnalyticsDashboard selectedCurrency={selectedCurrency} />
+                     )}
+                     {activeTab === 'data' && (
+                       <DataManagement />
+                     )}
+                     {activeTab === 'recurring' && (
+                       <RecurringExpenses onExpenseAdded={loadExpenses} />
+                     )}
+                     {activeTab === 'more' && (
+                       <div className="space-y-6">
+                         <div className="more-tab-grid">
+                           <button
+                             onClick={() => setActiveTab('reports')}
+                             className="more-tab-button"
+                           >
+                             <svg className="more-tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                             </svg>
+                             <span className="more-tab-text">Reports</span>
+                           </button>
+                           
+                           <button
+                             onClick={() => setActiveTab('categories')}
+                             className="more-tab-button"
+                           >
+                             <svg className="more-tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                             </svg>
+                             <span className="more-tab-text">Categories</span>
+                           </button>
+                           
+                           <button
+                             onClick={() => setActiveTab('data')}
+                             className="more-tab-button"
+                           >
+                             <svg className="more-tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                             </svg>
+                             <span className="more-tab-text">Data Management</span>
+                           </button>
+                           
+                           <button
+                             onClick={() => setActiveTab('recurring')}
+                             className="more-tab-button"
+                           >
+                             <svg className="more-tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                             </svg>
+                             <span className="more-tab-text">Recurring Expenses</span>
+                           </button>
+                         </div>
+                       </div>
+                     )}
             </>
           )}
         </div>

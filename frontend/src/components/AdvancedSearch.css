@@ -1,0 +1,100 @@
+/* AdvancedSearch.css - Styles for AdvancedSearch component */
+
+/* Main Container */
+.advanced-search-container {
+  @apply bg-white dark:bg-gray-800 shadow rounded-lg p-6;
+}
+
+/* Header */
+.advanced-search-header {
+  @apply flex items-center justify-between mb-6;
+}
+
+.advanced-search-title {
+  @apply text-lg font-medium text-gray-900 dark:text-white;
+}
+
+.advanced-search-clear {
+  @apply text-sm text-gray-600 dark:text-gray-400 hover:text-gray-500 dark:hover:text-gray-300;
+}
+
+/* Form */
+.advanced-search-form {
+  @apply space-y-6;
+}
+
+/* Form Field */
+.advanced-search-field {
+  @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2;
+}
+
+.advanced-search-input {
+  @apply w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent;
+  min-height: 44px;
+}
+
+/* Grid Layouts */
+.advanced-search-grid-3 {
+  @apply grid grid-cols-1 md:grid-cols-3 gap-4;
+}
+
+.advanced-search-grid-2 {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+}
+
+/* Action Buttons */
+.advanced-search-actions {
+  @apply flex flex-wrap gap-3;
+}
+
+.advanced-search-button {
+  @apply px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-md;
+}
+
+.advanced-search-button-blue {
+  @apply px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md;
+}
+
+.advanced-search-button-green {
+  @apply px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md;
+}
+
+.advanced-search-button-gray {
+  @apply px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-md;
+}
+
+/* Quick Filters */
+.advanced-search-quick-filters {
+  @apply border-t border-gray-200 dark:border-gray-700 pt-6;
+}
+
+.advanced-search-quick-filters-title {
+  @apply text-sm font-medium text-gray-700 dark:text-gray-300 mb-3;
+}
+
+.advanced-search-quick-filters-list {
+  @apply flex flex-wrap gap-2;
+}
+
+.advanced-search-quick-filter-button {
+  @apply px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .advanced-search-grid-3 {
+    @apply grid-cols-1;
+  }
+  
+  .advanced-search-grid-2 {
+    @apply grid-cols-1;
+  }
+  
+  .advanced-search-actions {
+    @apply flex-col;
+  }
+  
+  .advanced-search-quick-filters-list {
+    @apply flex-col;
+  }
+}

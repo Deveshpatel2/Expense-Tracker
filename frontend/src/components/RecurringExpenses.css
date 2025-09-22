@@ -1,0 +1,228 @@
+/* RecurringExpenses.css - Styles for RecurringExpenses component */
+
+/* Main Container */
+.recurring-expenses-container {
+  @apply space-y-6;
+}
+
+/* Header */
+.recurring-expenses-header {
+  @apply flex flex-col sm:flex-row sm:items-center sm:justify-between;
+}
+
+.recurring-expenses-title {
+  @apply text-2xl font-bold text-gray-900 dark:text-white;
+}
+
+.recurring-expenses-subtitle {
+  @apply text-sm text-gray-600 dark:text-gray-400 mt-1;
+}
+
+/* Controls */
+.recurring-expenses-controls {
+  @apply flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0;
+}
+
+/* Add Button */
+.add-recurring-button {
+  @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+}
+
+.add-recurring-icon {
+  @apply -ml-1 mr-2 h-5 w-5;
+}
+
+/* Recurring Expenses Grid */
+.recurring-expenses-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+}
+
+/* Recurring Expense Card */
+.recurring-expense-card {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow p-6;
+}
+
+.recurring-expense-card-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+.recurring-expense-card-title {
+  @apply text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.recurring-expense-card-actions {
+  @apply flex space-x-2;
+}
+
+.recurring-expense-card-action-button {
+  @apply p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none focus:text-gray-600 dark:focus:text-gray-300;
+}
+
+.recurring-expense-card-action-icon {
+  @apply h-4 w-4;
+}
+
+/* Recurring Expense Info */
+.recurring-expense-info {
+  @apply space-y-3;
+}
+
+.recurring-expense-info-item {
+  @apply flex items-center justify-between;
+}
+
+.recurring-expense-info-label {
+  @apply text-sm font-medium text-gray-600 dark:text-gray-400;
+}
+
+.recurring-expense-info-value {
+  @apply text-sm text-gray-900 dark:text-white;
+}
+
+/* Recurring Expense Status */
+.recurring-expense-status {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.recurring-expense-status-active {
+  @apply bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400;
+}
+
+.recurring-expense-status-paused {
+  @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400;
+}
+
+.recurring-expense-status-inactive {
+  @apply bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400;
+}
+
+/* Recurring Expense Form */
+.recurring-expense-form {
+  @apply space-y-4;
+}
+
+.recurring-expense-form-group {
+  @apply space-y-2;
+}
+
+.recurring-expense-form-label {
+  @apply block text-sm font-medium text-gray-700 dark:text-gray-300;
+}
+
+.recurring-expense-form-input {
+  @apply block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
+}
+
+.recurring-expense-form-select {
+  @apply block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
+}
+
+.recurring-expense-form-textarea {
+  @apply block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
+}
+
+.recurring-expense-form-actions {
+  @apply flex justify-end space-x-3;
+}
+
+.recurring-expense-form-button {
+  @apply px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+.recurring-expense-form-button-primary {
+  @apply text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500;
+}
+
+.recurring-expense-form-button-secondary {
+  @apply text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 focus:ring-gray-500;
+}
+
+/* Pattern Selector */
+.pattern-selector {
+  @apply grid grid-cols-2 gap-2;
+}
+
+.pattern-option {
+  @apply p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 transition-colors duration-200 cursor-pointer text-center;
+}
+
+.pattern-option-selected {
+  @apply border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20;
+}
+
+.pattern-option-icon {
+  @apply h-6 w-6 text-indigo-600 dark:text-indigo-400 mx-auto mb-2;
+}
+
+.pattern-option-label {
+  @apply text-sm font-medium text-gray-900 dark:text-white;
+}
+
+.pattern-option-description {
+  @apply text-xs text-gray-600 dark:text-gray-400 mt-1;
+}
+
+/* Next Occurrence */
+.next-occurrence {
+  @apply bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3;
+}
+
+.next-occurrence-title {
+  @apply text-sm font-medium text-blue-800 dark:text-blue-200;
+}
+
+.next-occurrence-date {
+  @apply text-sm text-blue-600 dark:text-blue-400 mt-1;
+}
+
+/* Loading State */
+.loading-container {
+  @apply flex items-center justify-center h-64;
+}
+
+.loading-spinner {
+  @apply animate-spin h-8 w-8 text-indigo-600;
+}
+
+/* Error State */
+.error-container {
+  @apply flex items-center justify-center h-64;
+}
+
+.error-message {
+  @apply text-red-600 dark:text-red-400 text-center;
+}
+
+/* Empty State */
+.empty-container {
+  @apply flex items-center justify-center h-64;
+}
+
+.empty-message {
+  @apply text-gray-500 dark:text-gray-400 text-center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .recurring-expenses-controls {
+    @apply flex-col;
+  }
+  
+  .recurring-expenses-grid {
+    @apply grid-cols-1;
+  }
+  
+  .pattern-selector {
+    @apply grid-cols-1;
+  }
+}
+
+@media (max-width: 640px) {
+  .recurring-expense-form-actions {
+    @apply flex-col space-x-0 space-y-2;
+  }
+  
+  .recurring-expense-form-button {
+    @apply w-full;
+  }
+}

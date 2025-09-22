@@ -1,0 +1,264 @@
+/* CategorySpendingSummary.css - Styles for CategorySpendingSummary component */
+
+/* Main Container */
+.category-spending-container {
+  @apply space-y-6;
+}
+
+/* Header */
+.category-spending-header {
+  @apply text-center;
+}
+
+.category-spending-title {
+  @apply text-lg font-medium text-gray-900 dark:text-white mb-2;
+}
+
+.category-spending-subtitle {
+  @apply text-sm text-gray-600 dark:text-gray-400;
+}
+
+/* Controls */
+.category-spending-controls {
+  @apply bg-white dark:bg-gray-800 rounded-lg p-4 shadow;
+}
+
+.category-spending-controls-grid {
+  @apply grid grid-cols-1 md:grid-cols-4 gap-4;
+}
+
+.category-spending-control-field {
+  @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2;
+}
+
+.category-spending-control-input {
+  @apply w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent;
+  min-height: 44px;
+}
+
+.category-spending-summary {
+  @apply text-sm text-gray-600 dark:text-gray-400;
+}
+
+/* Chart View */
+.category-spending-chart {
+  @apply space-y-4;
+}
+
+.category-spending-chart-title {
+  @apply text-lg font-medium text-gray-900 dark:text-white;
+}
+
+.category-spending-chart-list {
+  @apply space-y-3;
+}
+
+.category-spending-chart-item {
+  @apply bg-white dark:bg-gray-800 rounded-lg p-4 shadow;
+}
+
+.category-spending-chart-header {
+  @apply flex items-center justify-between mb-3;
+}
+
+.category-spending-chart-info {
+  @apply flex items-center space-x-3;
+}
+
+.category-spending-chart-icon {
+  @apply text-2xl;
+}
+
+.category-spending-chart-details {
+  @apply flex-1;
+}
+
+.category-spending-chart-name {
+  @apply font-medium text-gray-900 dark:text-white;
+}
+
+.category-spending-chart-count {
+  @apply text-sm text-gray-600 dark:text-gray-400;
+}
+
+.category-spending-chart-amount {
+  @apply text-right;
+}
+
+.category-spending-chart-amount-value {
+  @apply text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.category-spending-chart-percentage {
+  @apply text-sm text-gray-600 dark:text-gray-400;
+}
+
+.category-spending-chart-bar {
+  @apply w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3;
+}
+
+.category-spending-chart-bar-fill {
+  @apply h-3 rounded-full transition-all duration-300;
+}
+
+/* List View */
+.category-spending-list {
+  @apply space-y-4;
+}
+
+.category-spending-list-title {
+  @apply text-lg font-medium text-gray-900 dark:text-white;
+}
+
+.category-spending-list-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4;
+}
+
+.category-spending-list-item {
+  @apply bg-white dark:bg-gray-800 rounded-lg p-4 shadow;
+}
+
+.category-spending-list-header {
+  @apply flex items-center space-x-3 mb-3;
+}
+
+.category-spending-list-icon {
+  @apply text-3xl;
+}
+
+.category-spending-list-info {
+  @apply flex-1;
+}
+
+.category-spending-list-name {
+  @apply font-medium text-gray-900 dark:text-white;
+}
+
+.category-spending-list-count {
+  @apply text-sm text-gray-600 dark:text-gray-400;
+}
+
+.category-spending-list-color {
+  @apply w-4 h-4 rounded-full;
+}
+
+.category-spending-list-details {
+  @apply space-y-2;
+}
+
+.category-spending-list-detail {
+  @apply flex justify-between text-sm;
+}
+
+.category-spending-list-detail-label {
+  @apply text-gray-600 dark:text-gray-400;
+}
+
+.category-spending-list-detail-value {
+  @apply font-medium text-gray-900 dark:text-white;
+}
+
+/* Table View */
+.category-spending-table {
+  @apply space-y-4;
+}
+
+.category-spending-table-title {
+  @apply text-lg font-medium text-gray-900 dark:text-white;
+}
+
+.category-spending-table-container {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden;
+}
+
+.category-spending-table-wrapper {
+  @apply overflow-x-auto;
+}
+
+.category-spending-table-element {
+  @apply min-w-full divide-y divide-gray-200 dark:divide-gray-700;
+}
+
+.category-spending-table-header {
+  @apply bg-gray-50 dark:bg-gray-700;
+}
+
+.category-spending-table-header-cell {
+  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider;
+}
+
+.category-spending-table-body {
+  @apply bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700;
+}
+
+.category-spending-table-row {
+  @apply hover:bg-gray-50 dark:hover:bg-gray-700;
+}
+
+.category-spending-table-cell {
+  @apply px-6 py-4 whitespace-nowrap;
+}
+
+.category-spending-table-cell-info {
+  @apply flex items-center space-x-3;
+}
+
+.category-spending-table-cell-icon {
+  @apply text-xl;
+}
+
+.category-spending-table-cell-details {
+  @apply flex-1;
+}
+
+.category-spending-table-cell-name {
+  @apply text-sm font-medium text-gray-900 dark:text-white;
+}
+
+.category-spending-table-cell-description {
+  @apply text-sm text-gray-500 dark:text-gray-400;
+}
+
+.category-spending-table-cell-value {
+  @apply text-sm font-semibold text-gray-900 dark:text-white;
+}
+
+.category-spending-table-cell-text {
+  @apply text-sm text-gray-900 dark:text-white;
+}
+
+/* Empty State */
+.category-spending-empty {
+  @apply text-center py-12;
+}
+
+.category-spending-empty-icon {
+  @apply text-6xl mb-4;
+}
+
+.category-spending-empty-title {
+  @apply text-lg font-medium text-gray-900 dark:text-white mb-2;
+}
+
+.category-spending-empty-description {
+  @apply text-gray-600 dark:text-gray-400;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .category-spending-controls-grid {
+    @apply grid-cols-1;
+  }
+  
+  .category-spending-list-grid {
+    @apply grid-cols-1;
+  }
+  
+  .category-spending-chart-header {
+    @apply flex-col space-x-0 space-y-2;
+  }
+  
+  .category-spending-chart-amount {
+    @apply text-left;
+  }
+}

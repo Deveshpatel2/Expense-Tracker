@@ -1,0 +1,130 @@
+/* EditExpenseModal.css - Styles for EditExpenseModal component */
+
+/* Modal Overlay */
+.modal-overlay {
+  @apply fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50;
+}
+
+/* Modal Container */
+.modal-container {
+  @apply relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800;
+}
+
+/* Modal Header */
+.modal-header {
+  @apply flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-700;
+}
+
+.modal-title {
+  @apply text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.modal-close-button {
+  @apply text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none focus:text-gray-600 dark:focus:text-gray-300;
+}
+
+.modal-close-icon {
+  @apply h-6 w-6;
+}
+
+/* Modal Body */
+.modal-body {
+  @apply mt-4 space-y-4;
+}
+
+/* Form */
+.edit-expense-form {
+  @apply space-y-4;
+}
+
+.edit-expense-form-group {
+  @apply space-y-2;
+}
+
+.edit-expense-form-label {
+  @apply block text-sm font-medium text-gray-700 dark:text-gray-300;
+}
+
+.edit-expense-form-input {
+  @apply block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
+}
+
+.edit-expense-form-select {
+  @apply block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
+}
+
+.edit-expense-form-textarea {
+  @apply block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
+}
+
+/* Modal Footer */
+.modal-footer {
+  @apply flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700;
+}
+
+.modal-button {
+  @apply px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+.modal-button-primary {
+  @apply text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500;
+}
+
+.modal-button-secondary {
+  @apply text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 focus:ring-gray-500;
+}
+
+.modal-button-danger {
+  @apply text-white bg-red-600 hover:bg-red-700 focus:ring-red-500;
+}
+
+/* Form Validation */
+.form-error {
+  @apply text-red-600 dark:text-red-400 text-sm mt-1;
+}
+
+.form-success {
+  @apply text-green-600 dark:text-green-400 text-sm mt-1;
+}
+
+/* Loading State */
+.loading-container {
+  @apply flex items-center justify-center py-4;
+}
+
+.loading-spinner {
+  @apply animate-spin h-6 w-6 text-indigo-600;
+}
+
+/* Error State */
+.error-container {
+  @apply flex items-center justify-center py-4;
+}
+
+.error-message {
+  @apply text-red-600 dark:text-red-400 text-center;
+}
+
+/* Success State */
+.success-container {
+  @apply flex items-center justify-center py-4;
+}
+
+.success-message {
+  @apply text-green-600 dark:text-green-400 text-center;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .modal-container {
+    @apply w-full mx-4;
+  }
+  
+  .modal-footer {
+    @apply flex-col space-x-0 space-y-2;
+  }
+  
+  .modal-button {
+    @apply w-full;
+  }
+}

@@ -1,4 +1,5 @@
 import React from 'react';
+import './HistorySection.css';
 
 const HistorySection = ({ expenses, deletedExpenses, selectedCurrency }) => {
   const formatAmount = (amount, currencyCode = 'USD') => {
@@ -61,73 +62,73 @@ const HistorySection = ({ expenses, deletedExpenses, selectedCurrency }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="history-section-container">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                <span className="text-white text-sm font-medium">💰</span>
+      <div className="history-section-summary-grid">
+        <div className="history-section-summary-card">
+          <div className="history-section-summary-content">
+            <div className="history-section-summary-icon">
+              <div className="history-section-summary-icon-bg history-section-summary-icon-bg-green">
+                <span className="history-section-summary-icon-text">💰</span>
               </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total All Time</p>
-              <p className="text-2xl font-semibold text-gray-900">{formatAmount(getTotalAmount(), selectedCurrency)}</p>
+            <div className="history-section-summary-info">
+              <p className="history-section-summary-label">Total All Time</p>
+              <p className="history-section-summary-value">{formatAmount(getTotalAmount(), selectedCurrency)}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                <span className="text-white text-sm font-medium">✅</span>
+        <div className="history-section-summary-card">
+          <div className="history-section-summary-content">
+            <div className="history-section-summary-icon">
+              <div className="history-section-summary-icon-bg history-section-summary-icon-bg-blue">
+                <span className="history-section-summary-icon-text">✅</span>
               </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Active Expenses</p>
-              <p className="text-2xl font-semibold text-gray-900">{formatAmount(getActiveAmount(), selectedCurrency)}</p>
+            <div className="history-section-summary-info">
+              <p className="history-section-summary-label">Active Expenses</p>
+              <p className="history-section-summary-value">{formatAmount(getActiveAmount(), selectedCurrency)}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-red-500 rounded-md flex items-center justify-center">
-                <span className="text-white text-sm font-medium">🗑️</span>
+        <div className="history-section-summary-card">
+          <div className="history-section-summary-content">
+            <div className="history-section-summary-icon">
+              <div className="history-section-summary-icon-bg history-section-summary-icon-bg-red">
+                <span className="history-section-summary-icon-text">🗑️</span>
               </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Deleted Expenses</p>
-              <p className="text-2xl font-semibold text-gray-900">{formatAmount(getDeletedAmount(), selectedCurrency)}</p>
+            <div className="history-section-summary-info">
+              <p className="history-section-summary-label">Deleted Expenses</p>
+              <p className="history-section-summary-value">{formatAmount(getDeletedAmount(), selectedCurrency)}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* History Timeline */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Complete Expense History</h3>
-        <div className="space-y-4">
+      <div className="history-section-timeline">
+        <h3 className="history-section-timeline-title">Complete Expense History</h3>
+        <div className="history-section-timeline-list">
           {allExpenses.map((expense) => (
-            <div key={`${expense.status}-${expense.id}`} className="flex items-center space-x-4 p-4 border rounded-lg">
-              <div className={`w-3 h-3 rounded-full ${expense.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{expense.description}</p>
-                    <p className="text-xs text-gray-500">{expense.category} • {formatDate(expense.date)}</p>
+            <div key={`${expense.status}-${expense.id}`} className="history-section-timeline-item">
+              <div className={`history-section-timeline-status ${expense.status === 'active' ? 'history-section-timeline-status-active' : 'history-section-timeline-status-deleted'}`}></div>
+              <div className="history-section-timeline-content">
+                <div className="history-section-timeline-header">
+                  <div className="history-section-timeline-details">
+                    <p className="history-section-timeline-description">{expense.description}</p>
+                    <p className="history-section-timeline-meta">{expense.category} • {formatDate(expense.date)}</p>
                     {expense.notes && (
-                      <p className="text-xs text-gray-400 mt-1">{expense.notes}</p>
+                      <p className="history-section-timeline-notes">{expense.notes}</p>
                     )}
                   </div>
-                  <div className="text-right">
-                    <p className={`text-sm font-semibold ${expense.status === 'active' ? 'text-gray-900' : 'text-red-600'}`}>
+                  <div className="history-section-timeline-amount">
+                    <p className={`history-section-timeline-amount-value ${expense.status === 'active' ? 'history-section-timeline-amount-value-active' : 'history-section-timeline-amount-value-deleted'}`}>
                       {formatAmount(expense.amount, expense.currency)}
                     </p>
-                    <p className="text-xs text-gray-500">{expense.currency}</p>
+                    <p className="history-section-timeline-currency">{expense.currency}</p>
                   </div>
                 </div>
               </div>

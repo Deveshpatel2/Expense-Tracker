@@ -1,0 +1,228 @@
+/* CategoryMergeSplit.css - Styles for CategoryMergeSplit component */
+
+/* Main Container */
+.category-merge-split-container {
+  @apply space-y-6;
+}
+
+/* Header */
+.category-merge-split-header {
+  @apply text-center;
+}
+
+.category-merge-split-title {
+  @apply text-lg font-medium text-gray-900 dark:text-white mb-2;
+}
+
+.category-merge-split-subtitle {
+  @apply text-sm text-gray-600 dark:text-gray-400;
+}
+
+/* Tabs */
+.category-merge-split-tabs {
+  @apply flex border-b border-gray-200 dark:border-gray-700;
+}
+
+.category-merge-split-tab {
+  @apply flex-1 py-3 px-4 text-sm font-medium;
+}
+
+.category-merge-split-tab-active {
+  @apply text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400;
+}
+
+.category-merge-split-tab-inactive {
+  @apply text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300;
+}
+
+/* Warning Notice */
+.category-merge-split-warning {
+  @apply bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4;
+}
+
+.category-merge-split-warning-content {
+  @apply flex items-start space-x-3;
+}
+
+.category-merge-split-warning-icon {
+  @apply text-yellow-600 dark:text-yellow-400 text-xl;
+}
+
+.category-merge-split-warning-text {
+  @apply flex-1;
+}
+
+.category-merge-split-warning-title {
+  @apply text-sm font-medium text-yellow-800 dark:text-yellow-200;
+}
+
+.category-merge-split-warning-description {
+  @apply text-sm text-yellow-700 dark:text-yellow-300 mt-1;
+}
+
+/* Section Headers */
+.category-merge-split-section-title {
+  @apply text-lg font-medium text-gray-900 dark:text-white mb-4;
+}
+
+/* Category Selection Grid */
+.category-merge-split-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4;
+}
+
+.category-merge-split-category-card {
+  @apply border rounded-lg p-4 cursor-pointer transition-all;
+}
+
+.category-merge-split-category-card-selected {
+  @apply border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20;
+}
+
+.category-merge-split-category-card-unselected {
+  @apply border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600;
+}
+
+.category-merge-split-category-content {
+  @apply flex items-center space-x-3;
+}
+
+.category-merge-split-category-checkbox {
+  @apply rounded border-gray-300 text-indigo-600 focus:ring-indigo-500;
+}
+
+.category-merge-split-category-icon {
+  @apply text-2xl;
+}
+
+.category-merge-split-category-info {
+  @apply flex-1;
+}
+
+.category-merge-split-category-name {
+  @apply font-medium text-gray-900 dark:text-white;
+}
+
+.category-merge-split-category-count {
+  @apply text-sm text-gray-600 dark:text-gray-400;
+}
+
+/* Configuration Panel */
+.category-merge-split-config {
+  @apply bg-gray-50 dark:bg-gray-800 rounded-lg p-6;
+}
+
+.category-merge-split-config-title {
+  @apply text-lg font-medium text-gray-900 dark:text-white mb-4;
+}
+
+.category-merge-split-config-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+}
+
+.category-merge-split-config-field {
+  @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2;
+}
+
+.category-merge-split-config-input {
+  @apply w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent;
+  min-height: 44px;
+}
+
+/* Icon Selection */
+.category-merge-split-icon-grid {
+  @apply grid grid-cols-10 gap-2;
+}
+
+.category-merge-split-icon-button {
+  @apply p-2 text-lg rounded-md border-2;
+}
+
+.category-merge-split-icon-button-selected {
+  @apply border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20;
+}
+
+.category-merge-split-icon-button-unselected {
+  @apply border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500;
+}
+
+/* Color Selection */
+.category-merge-split-color-grid {
+  @apply grid grid-cols-5 gap-2;
+}
+
+.category-merge-split-color-button {
+  @apply w-8 h-8 rounded-full border-2;
+}
+
+.category-merge-split-color-button-selected {
+  @apply border-gray-800 dark:border-white;
+}
+
+.category-merge-split-color-button-unselected {
+  @apply border-gray-300 dark:border-gray-600;
+}
+
+/* Action Buttons */
+.category-merge-split-action-button {
+  @apply px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-md;
+}
+
+.category-merge-split-add-button {
+  @apply px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md;
+}
+
+.category-merge-split-remove-button {
+  @apply text-red-600 hover:text-red-700 text-sm;
+}
+
+/* Split Category Configuration */
+.category-merge-split-split-header {
+  @apply flex justify-between items-center mb-4;
+}
+
+.category-merge-split-split-title {
+  @apply text-lg font-medium text-gray-900 dark:text-white;
+}
+
+.category-merge-split-split-list {
+  @apply space-y-4;
+}
+
+.category-merge-split-split-item {
+  @apply border border-gray-200 dark:border-gray-700 rounded-lg p-4;
+}
+
+.category-merge-split-split-item-header {
+  @apply flex justify-between items-center mb-4;
+}
+
+.category-merge-split-split-item-title {
+  @apply font-medium text-gray-900 dark:text-white;
+}
+
+.category-merge-split-split-item-grid {
+  @apply grid grid-cols-1 md:grid-cols-3 gap-4;
+}
+
+.category-merge-split-split-icon-grid-small {
+  @apply grid grid-cols-5 gap-2;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .category-merge-split-grid {
+    @apply grid-cols-1;
+  }
+  
+  .category-merge-split-config-grid {
+    @apply grid-cols-1;
+  }
+  
+  .category-merge-split-split-item-grid {
+    @apply grid-cols-1;
+  }
+  
+  .category-merge-split-icon-grid {
+    @apply grid-cols-5;
+  }
+}

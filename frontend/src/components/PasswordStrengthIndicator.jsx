@@ -1,4 +1,5 @@
 import React from 'react';
+import './PasswordStrengthIndicator.css';
 
 const PasswordStrengthIndicator = ({ password }) => {
   const getPasswordStrength = (password) => {
@@ -8,7 +9,7 @@ const PasswordStrengthIndicator = ({ password }) => {
       uppercase: /[A-Z]/.test(password),
       lowercase: /[a-z]/.test(password),
       number: /\d/.test(password),
-      special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+      special: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)
     };
 
     score = Object.values(checks).filter(Boolean).length;

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import './CategorySpendingSummary.css';
 
 const CategorySpendingSummary = ({ categories, expenses, selectedCurrency = 'USD' }) => {
   const [timeRange, setTimeRange] = useState('all');
@@ -128,27 +129,27 @@ const CategorySpendingSummary = ({ categories, expenses, selectedCurrency = 'USD
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+    <div className="category-spending-container">
+      <div className="category-spending-header">
+        <h3 className="category-spending-title">
           Category Spending Summary
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="category-spending-subtitle">
           Analyze your spending patterns by category
         </p>
       </div>
 
       {/* Controls */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="category-spending-controls">
+        <div className="category-spending-controls-grid">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="category-spending-control-field">
               Time Range
             </label>
             <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
-              className="input"
+              className="category-spending-control-input"
             >
               <option value="all">All Time</option>
               <option value="today">Today</option>
@@ -159,13 +160,13 @@ const CategorySpendingSummary = ({ categories, expenses, selectedCurrency = 'USD
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="category-spending-control-field">
               Sort By
             </label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="input"
+              className="category-spending-control-input"
             >
               <option value="amount">Amount</option>
               <option value="count">Count</option>
@@ -175,13 +176,13 @@ const CategorySpendingSummary = ({ categories, expenses, selectedCurrency = 'USD
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="category-spending-control-field">
               View Mode
             </label>
             <select
               value={viewMode}
               onChange={(e) => setViewMode(e.target.value)}
-              className="input"
+              className="category-spending-control-input"
             >
               <option value="chart">Chart View</option>
               <option value="list">List View</option>
@@ -190,10 +191,10 @@ const CategorySpendingSummary = ({ categories, expenses, selectedCurrency = 'USD
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="category-spending-control-field">
               Summary
             </label>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="category-spending-summary">
               <div>{sortedSpending.length} categories</div>
               <div>{formatCurrency(sortedSpending.reduce((sum, item) => sum + item.amount, 0))} total</div>
             </div>
@@ -203,39 +204,39 @@ const CategorySpendingSummary = ({ categories, expenses, selectedCurrency = 'USD
 
       {/* Chart View */}
       {viewMode === 'chart' && (
-        <div className="space-y-4">
-          <h4 className="text-lg font-medium text-gray-900 dark:text-white">
+        <div className="category-spending-chart">
+          <h4 className="category-spending-chart-title">
             Spending by Category - {getTimeRangeLabel()}
           </h4>
           
-          <div className="space-y-3">
+          <div className="category-spending-chart-list">
             {sortedSpending.map((item) => (
-              <div key={item.category.id} className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">{item.category.icon}</span>
-                    <div>
-                      <h5 className="font-medium text-gray-900 dark:text-white">
+              <div key={item.category.id} className="category-spending-chart-item">
+                <div className="category-spending-chart-header">
+                  <div className="category-spending-chart-info">
+                    <span className="category-spending-chart-icon">{item.category.icon}</span>
+                    <div className="category-spending-chart-details">
+                      <h5 className="category-spending-chart-name">
                         {item.category.name}
                       </h5>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="category-spending-chart-count">
                         {item.count} expenses
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <div className="category-spending-chart-amount">
+                    <div className="category-spending-chart-amount-value">
                       {formatCurrency(item.amount)}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="category-spending-chart-percentage">
                       {item.percentage.toFixed(1)}%
                     </div>
                   </div>
                 </div>
                 
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                <div className="category-spending-chart-bar">
                   <div
-                    className="h-3 rounded-full transition-all duration-300"
+                    className="category-spending-chart-bar-fill"
                     style={{
                       width: `${Math.min(item.percentage, 100)}%`,
                       backgroundColor: item.category.color

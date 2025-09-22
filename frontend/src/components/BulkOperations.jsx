@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './BulkOperations.css';
 
 const BulkOperations = ({ 
   selectedExpenses, 
@@ -52,45 +53,45 @@ const BulkOperations = ({
   }
 
   return (
-    <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-4">
-          <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
+    <div className="bulk-operations-container">
+      <div className="bulk-operations-header">
+        <div className="bulk-operations-info">
+          <span className="bulk-operations-count">
             {selectedExpenses.length} expense{selectedExpenses.length !== 1 ? 's' : ''} selected
           </span>
           <button
             onClick={handleSelectAll}
-            className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300"
+            className="bulk-operations-button"
           >
             Select All ({totalExpenses})
           </button>
           <button
             onClick={onClearSelection}
-            className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+            className="bulk-operations-button-secondary"
           >
             Clear Selection
           </button>
         </div>
         <button
           onClick={() => setShowBulkActions(!showBulkActions)}
-          className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300"
+          className="bulk-operations-toggle"
         >
           {showBulkActions ? 'Hide Actions' : 'Show Actions'}
         </button>
       </div>
 
       {showBulkActions && (
-        <div className="space-y-4">
+        <div className="bulk-edit-form">
           {/* Bulk Edit Form */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bulk-edit-grid">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="bulk-edit-field">
                 Update Category
               </label>
               <select
                 value={bulkEditData.category}
                 onChange={(e) => setBulkEditData({ ...bulkEditData, category: e.target.value })}
-                className="input"
+                className="bulk-edit-input"
               >
                 <option value="">Keep existing</option>
                 {categories.map((category) => (
@@ -101,66 +102,66 @@ const BulkOperations = ({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="bulk-edit-field">
                 Add Tags
               </label>
               <input
                 type="text"
                 value={bulkEditData.tags}
                 onChange={(e) => setBulkEditData({ ...bulkEditData, tags: e.target.value })}
-                className="input"
+                className="bulk-edit-input"
                 placeholder="tag1, tag2, tag3"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="bulk-edit-field">
                 Add Notes
               </label>
               <input
                 type="text"
                 value={bulkEditData.notes}
                 onChange={(e) => setBulkEditData({ ...bulkEditData, notes: e.target.value })}
-                className="input"
+                className="bulk-edit-input"
                 placeholder="Additional notes"
               />
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex space-x-3">
+          <div className="bulk-actions">
             <button
               onClick={handleBulkEdit}
               disabled={!bulkEditData.category && !bulkEditData.tags && !bulkEditData.notes}
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-md"
+              className="bulk-action-button"
             >
               Apply Changes
             </button>
             <button
               onClick={handleBulkDelete}
-              className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md"
+              className="bulk-action-button-danger"
             >
               Delete Selected
             </button>
             <button
               onClick={onClearSelection}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md"
+              className="bulk-action-button-secondary"
             >
               Cancel
             </button>
           </div>
 
           {/* Selected Expenses Preview */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-3">
-            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+          <div className="bulk-preview-container">
+            <h4 className="bulk-preview-title">
               Selected Expenses:
             </h4>
-            <div className="space-y-1 max-h-32 overflow-y-auto">
+            <div className="bulk-preview-list">
               {selectedExpenses.map((expense) => (
-                <div key={expense.id} className="flex items-center justify-between text-sm">
-                  <span className="text-gray-700 dark:text-gray-300">
+                <div key={expense.id} className="bulk-preview-item">
+                  <span className="bulk-preview-description">
                     {expense.description}
                   </span>
-                  <span className="font-medium text-gray-900 dark:text-white">
+                  <span className="bulk-preview-amount">
                     ${expense.amount}
                   </span>
                 </div>
