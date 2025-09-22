@@ -1,0 +1,41 @@
+{
+    "name": "expense-tracker",
+    "version": "1.0.0",
+    "description": "Full-stack expense tracking application with React frontend and Node.js backend",
+    "main": "index.js",
+    "scripts": {
+        "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+        "start:backend": "cd backend && npm start",
+        "start:frontend": "cd frontend && npm start",
+        "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+        "build": "cd frontend && npm run build",
+        "test": "cd frontend && npm test",
+        "dev": "concurrently \"npm run start:backend\" \"npm run start:frontend\""
+    },
+    "keywords": [
+        "expense-tracker",
+        "react",
+        "nodejs",
+        "express",
+        "sqlite",
+        "jwt",
+        "fullstack"
+    ],
+    "author": "Your Name",
+    "license": "MIT",
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    },
+    "engines": {
+        "node": ">=14.0.0",
+        "npm": ">=6.0.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/yourusername/expense-tracker.git"
+    },
+    "bugs": {
+        "url": "https://github.com/yourusername/expense-tracker/issues"
+    },
+    "homepage": "https://github.com/yourusername/expense-tracker#readme"
+}
