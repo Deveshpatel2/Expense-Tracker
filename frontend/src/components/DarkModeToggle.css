@@ -1,0 +1,17 @@
+/* DarkModeToggle Component Styles */
+.dark-mode-toggle-button {
+  @apply flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900;
+}
+
+.dark-mode-toggle-icon {
+  @apply w-5 h-5;
+}
+
+.dark-mode-toggle-sun-icon {
+  @apply w-5 h-5 text-yellow-500;
+}
+
+.dark-mode-toggle-moon-icon {
+  @apply w-5 h-5 text-gray-600 dark:text-gray-300;
+}
+

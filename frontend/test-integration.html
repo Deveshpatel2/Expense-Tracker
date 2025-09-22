@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Integration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+        }
+
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Expense Tracker Integration Test</h1>
+
+    <div class="test-section">
+        <h3>1. Test Backend Health</h3>
+        <button onclick="testHealth()">Test Health</button>
+        <div id="health-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Test Guest User Creation</h3>
+        <button onclick="testGuestUser()">Create Guest User</button>
+        <div id="guest-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Test Expense Creation</h3>
+        <button onclick="testExpenseCreation()">Create Test Expense</button>
+        <div id="expense-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Test Expense Retrieval</h3>
+        <button onclick="testExpenseRetrieval()">Get All Expenses</button>
+        <div id="retrieval-result"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8080/api';
+        let currentToken = null;
+
+        async function testHealth() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                const data = await response.json();
+
+                const resultDiv = document.getElementById('health-result');
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="success">✅ Backend is healthy: ${data.message}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Backend health check failed</div>`;
+                }
+            } catch (error) {
+                document.getElementById('health-result').innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testGuestUser() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/guest`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+
+                const resultDiv = document.getElementById('guest-result');
+                if (response.ok && data.success) {
+                    currentToken = data.data.token;
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Guest user created successfully<br>
+                            <strong>Token:</strong> ${currentToken.substring(0, 50)}...<br>
+                            <strong>User ID:</strong> ${data.data.user.id}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Guest user creation failed: ${data.message}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('guest-result').innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testExpenseCreation() {
+            if (!currentToken) {
+                document.getElementById('expense-result').innerHTML = `<div class="error">❌ Please create a guest user first</div>`;
+                return;
+            }
+
+            try {
+                const expenseData = {
+                    description: 'Test Expense from Integration Test',
+                    amount: 25.50,
+                    category: 'Food & Dining',
+                    expenseDate: '2024-01-15',
+                    notes: 'This is a test expense',
+                    currency: 'USD'
+                };
+
+                const response = await fetch(`${API_BASE_URL}/expenses`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(expenseData)
+                });
+                const data = await response.json();
+
+                const resultDiv = document.getElementById('expense-result');
+                if (response.ok && data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Expense created successfully<br>
+                            <strong>Expense ID:</strong> ${data.data.id}<br>
+                            <strong>Description:</strong> ${data.data.description}<br>
+                            <strong>Amount:</strong> ${data.data.currency} ${data.data.amount}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Expense creation failed: ${data.message}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('expense-result').innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testExpenseRetrieval() {
+            if (!currentToken) {
+                document.getElementById('retrieval-result').innerHTML = `<div class="error">❌ Please create a guest user first</div>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/expenses`, {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+                const data = await response.json();
+
+                const resultDiv = document.getElementById('retrieval-result');
+                if (response.ok && data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Expenses retrieved successfully<br>
+                            <strong>Count:</strong> ${data.data.length} expenses<br>
+                            <pre>${JSON.stringify(data.data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Expense retrieval failed: ${data.message}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('retrieval-result').innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+
+</html>

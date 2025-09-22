@@ -1,0 +1,49 @@
+/* Login Component Styles */
+.login-container {
+  @apply flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 px-4 transition-colors duration-200;
+}
+
+.login-form-container {
+  @apply bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md relative;
+}
+
+.login-dark-mode-toggle {
+  @apply absolute top-4 right-4;
+}
+
+.login-title {
+  @apply text-2xl font-bold mb-6 text-center text-gray-800 dark:text-white;
+}
+
+.login-form {
+  /* Form styles are handled by individual elements */
+}
+
+.login-field-container {
+  @apply mb-4;
+}
+
+.login-field-container-password {
+  @apply mb-6;
+}
+
+.login-label {
+  @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1;
+}
+
+.login-input {
+  @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring focus:border-blue-400;
+}
+
+.login-button {
+  @apply w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition;
+}
+
+.login-footer {
+  @apply mt-4 text-sm text-center text-gray-600 dark:text-gray-400;
+}
+
+.login-link {
+  @apply text-blue-600 dark:text-blue-400 hover:underline;
+}
+
