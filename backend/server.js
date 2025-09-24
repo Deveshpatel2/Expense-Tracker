@@ -753,7 +753,7 @@ app.post('/api/auth/guest', (req, res) => {
 
 app.post('/api/auth/google', async (req, res) => {
     try {
-        const { email, firstName, lastName, profilePicture } = req.body;
+        const { email, firstName, lastName, profilePicture, googleId } = req.body;
 
         // Check if user exists
         let user = await getUserByEmail(email);
