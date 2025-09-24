@@ -10,10 +10,6 @@ import DarkModeToggle from '../components/DarkModeToggle';
 import EditExpenseModal from '../components/EditExpenseModal';
 import MobileNavigation from '../components/MobileNavigation';
 import CategoryManager from '../components/CategoryManager';
-import BudgetManager from '../components/BudgetManager';
-import AnalyticsDashboard from '../components/AnalyticsDashboard';
-import DataManagement from '../components/DataManagement';
-import RecurringExpenses from '../components/RecurringExpenses';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -174,7 +170,7 @@ const Dashboard = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Expense Tracker</h1>
               <p className="text-gray-600 dark:text-gray-300">Welcome back, {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.name || 'User'}!</p>
-              <p className="text-xs text-green-600">✅ All 8 tabs available: Expenses, Add, Reports, Categories, Budgets, Analytics, Data, Recurring</p>
+              <p className="text-xs text-green-600">✅ Core features available: Expenses, Add, Reports, Categories</p>
             </div>
             
             {/* Dark Mode Toggle and Profile */}
@@ -219,32 +215,6 @@ const Dashboard = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
               <span className="mobile-nav-text">Add</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('budgets')}
-              className={`mobile-nav-button ${
-                activeTab === 'budgets'
-                  ? 'mobile-nav-button-active'
-                  : 'mobile-nav-button-inactive'
-              }`}
-            >
-              <svg className="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-              </svg>
-              <span className="mobile-nav-text">Budgets</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('analytics')}
-              className={`mobile-nav-button ${
-                activeTab === 'analytics'
-                  ? 'mobile-nav-button-active'
-                  : 'mobile-nav-button-inactive'
-              }`}
-            >
-              <svg className="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              <span className="mobile-nav-text">Analytics</span>
             </button>
             <button
               onClick={() => setActiveTab('more')}
@@ -305,46 +275,6 @@ const Dashboard = () => {
                    >
                      Categories
                    </button>
-                   <button
-                     onClick={() => setActiveTab('budgets')}
-                     className={`desktop-nav-button ${
-                       activeTab === 'budgets'
-                         ? 'desktop-nav-button-active'
-                         : 'desktop-nav-button-inactive'
-                     }`}
-                   >
-                     Budgets
-                   </button>
-                   <button
-                     onClick={() => setActiveTab('analytics')}
-                     className={`desktop-nav-button ${
-                       activeTab === 'analytics'
-                         ? 'desktop-nav-button-active'
-                         : 'desktop-nav-button-inactive'
-                     }`}
-                   >
-                     Analytics
-                   </button>
-                   <button
-                     onClick={() => setActiveTab('data')}
-                     className={`desktop-nav-button ${
-                       activeTab === 'data'
-                         ? 'desktop-nav-button-active'
-                         : 'desktop-nav-button-inactive'
-                     }`}
-                   >
-                     Data Management
-                   </button>
-                   <button
-                     onClick={() => setActiveTab('recurring')}
-                     className={`desktop-nav-button ${
-                       activeTab === 'recurring'
-                         ? 'desktop-nav-button-active'
-                         : 'desktop-nav-button-inactive'
-                     }`}
-                   >
-                     Recurring Expenses
-                   </button>
           </nav>
         </div>
 
@@ -388,18 +318,6 @@ const Dashboard = () => {
                          />
                        </div>
                      )}
-                     {activeTab === 'budgets' && (
-                       <BudgetManager />
-                     )}
-                     {activeTab === 'analytics' && (
-                       <AnalyticsDashboard selectedCurrency={selectedCurrency} />
-                     )}
-                     {activeTab === 'data' && (
-                       <DataManagement />
-                     )}
-                     {activeTab === 'recurring' && (
-                       <RecurringExpenses onExpenseAdded={loadExpenses} />
-                     )}
                      {activeTab === 'more' && (
                        <div className="space-y-6">
                          <div className="more-tab-grid">
@@ -423,25 +341,6 @@ const Dashboard = () => {
                              <span className="more-tab-text">Categories</span>
                            </button>
                            
-                           <button
-                             onClick={() => setActiveTab('data')}
-                             className="more-tab-button"
-                           >
-                             <svg className="more-tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-                             </svg>
-                             <span className="more-tab-text">Data Management</span>
-                           </button>
-                           
-                           <button
-                             onClick={() => setActiveTab('recurring')}
-                             className="more-tab-button"
-                           >
-                             <svg className="more-tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                             </svg>
-                             <span className="more-tab-text">Recurring Expenses</span>
-                           </button>
                          </div>
                        </div>
                      )}

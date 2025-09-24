@@ -36,6 +36,7 @@ const ExpenseManager = ({ onAddExpense }) => {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [receipts, setReceipts] = useState([]);
+  const [customCategories, setCustomCategories] = useState([]);
   const fileInputRef = useRef(null);
 
   const defaultCategories = [
