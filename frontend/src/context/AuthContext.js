@@ -130,26 +130,23 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const googleSignIn = async () => {
+    const googleSignIn = async (googleUserData) => {
         try {
-            // Mock Google Sign-In for demo purposes
-            // In a real app, you would integrate with Google OAuth
-            const mockGoogleData = {
-                email: 'googleuser@gmail.com',
-                firstName: 'Google',
-                lastName: 'User',
-                profilePicture: 'https://via.placeholder.com/40x40/4285f4/ffffff?text=G'
-            };
+            console.log('AuthContext: Real Google Sign-In initiated with data:', googleUserData);
 
-            const response = await authAPI.googleSignIn(mockGoogleData);
+            const response = await authAPI.googleSignIn(googleUserData);
+            console.log('AuthContext: Google API response:', response);
+
             if (response.success) {
+                console.log('AuthContext: Google Sign-In successful, logging in user');
                 login(response.data.user, response.data.token, 'google');
                 return { success: true, user: response.data.user };
             } else {
+                console.log('AuthContext: Google Sign-In failed:', response.message);
                 return { success: false, error: response.message };
             }
         } catch (error) {
-            console.error('Google Sign-In failed:', error);
+            console.error('AuthContext: Google Sign-In error:', error);
             return { success: false, error: error.message || 'Google Sign-In failed' };
         }
     };

@@ -40,8 +40,26 @@ const UserRegister = () => {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    // Validate password complexity to match backend requirements
+    const passwordErrors = [];
+    if (formData.password.length < 8) {
+      passwordErrors.push('Password must be at least 8 characters long');
+    }
+    if (!/[A-Z]/.test(formData.password)) {
+      passwordErrors.push('Password must contain at least one uppercase letter');
+    }
+    if (!/[a-z]/.test(formData.password)) {
+      passwordErrors.push('Password must contain at least one lowercase letter');
+    }
+    if (!/\d/.test(formData.password)) {
+      passwordErrors.push('Password must contain at least one number');
+    }
+    if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(formData.password)) {
+      passwordErrors.push('Password must contain at least one special character');
+    }
+    
+    if (passwordErrors.length > 0) {
+      setError(passwordErrors.join('. '));
       setLoading(false);
       return;
     }
@@ -186,7 +204,7 @@ const UserRegister = () => {
                   autoComplete="new-password"
                   required
                   className="register-input pr-10"
-                  placeholder="Password (min 8 characters with uppercase, lowercase, number, and special character)"
+                  placeholder="Password (min 8 chars: A-Z, a-z, 0-9, special char)"
                   value={formData.password}
                   onChange={handleChange}
                 />

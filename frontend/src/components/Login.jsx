@@ -3,21 +3,66 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import DarkModeToggle from './DarkModeToggle';
 import PasswordResetModal from './PasswordResetModal';
+import useGoogleAuth from '../hooks/useGoogleAuth';
 import './Login.css';
 
 const Login = () => {
   const [form, setForm] = useState({ email: '', password: '' });
+  const [signupForm, setSignupForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showSignupConfirmPassword, setShowSignupConfirmPassword] = useState(false);
   const [activeTab, setActiveTab] = useState('signin');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
   const navigate = useNavigate();
-  const { loginWithEmail, loginAsGuest, googleSignIn } = useAuth();
+  const { loginWithEmail, loginAsGuest, googleSignIn, register } = useAuth();
+
+  // Google OAuth handlers
+  const handleGoogleSuccess = async (userData) => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      console.log('Google OAuth success, processing user data:', userData);
+      const result = await googleSignIn(userData);
+      
+      if (result.success) {
+        console.log('Google Sign-In successful, navigating to dashboard');
+        navigate('/dashboard');
+      } else {
+        setError(result.error || 'Google Sign-In failed');
+      }
+    } catch (error) {
+      console.error('Google Sign-In processing error:', error);
+      setError('Google Sign-In failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = (error) => {
+    console.error('Google OAuth error:', error);
+    setError('Google Sign-In failed. Please try again.');
+    setLoading(false);
+  };
+
+  const { signIn: googleSignInHandler } = useGoogleAuth(handleGoogleSuccess, handleGoogleError);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSignupChange = (e) => {
+    setSignupForm({ ...signupForm, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
@@ -53,19 +98,57 @@ const Login = () => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleSignupSubmit = async (e) => {
+    e.preventDefault();
     setLoading(true);
     setError('');
+
+    if (signupForm.password !== signupForm.confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    // Validate password complexity to match backend requirements
+    const passwordErrors = [];
+    if (signupForm.password.length < 8) {
+      passwordErrors.push('Password must be at least 8 characters long');
+    }
+    if (!/[A-Z]/.test(signupForm.password)) {
+      passwordErrors.push('Password must contain at least one uppercase letter');
+    }
+    if (!/[a-z]/.test(signupForm.password)) {
+      passwordErrors.push('Password must contain at least one lowercase letter');
+    }
+    if (!/\d/.test(signupForm.password)) {
+      passwordErrors.push('Password must contain at least one number');
+    }
+    if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(signupForm.password)) {
+      passwordErrors.push('Password must contain at least one special character');
+    }
     
+    if (passwordErrors.length > 0) {
+      setError(passwordErrors.join('. '));
+      setLoading(false);
+      return;
+    }
+
     try {
-      const result = await googleSignIn();
+      const result = await register({
+        firstName: signupForm.firstName,
+        lastName: signupForm.lastName,
+        email: signupForm.email,
+        password: signupForm.password
+      });
+      
       if (result.success) {
         navigate('/dashboard');
       } else {
-        setError(result.error || 'Google Sign-In failed');
+        setError(result.error || 'Registration failed');
       }
-    } catch (error) {
-      setError('Google Sign-In failed. Please try again.');
+      
+    } catch (err) {
+      setError('Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -144,6 +227,8 @@ const Login = () => {
             </div>
           )}
 
+          {/* Sign In Form */}
+          {activeTab === 'signin' && (
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -236,6 +321,144 @@ const Login = () => {
               </button>
             </div>
           </form>
+          )}
+
+          {/* Sign Up Form */}
+          {activeTab === 'signup' && (
+            <form className="space-y-4" onSubmit={handleSignupSubmit}>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="signup-firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    First Name
+                  </label>
+                  <input
+                    id="signup-firstName"
+                    name="firstName"
+                    type="text"
+                    required
+                    value={signupForm.firstName}
+                    onChange={handleSignupChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="First Name"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="signup-lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    id="signup-lastName"
+                    name="lastName"
+                    type="text"
+                    required
+                    value={signupForm.lastName}
+                    onChange={handleSignupChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="Last Name"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label htmlFor="signup-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Email Address
+                </label>
+                <input
+                  id="signup-email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={signupForm.email}
+                  onChange={handleSignupChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="Enter your email"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="signup-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    id="signup-password"
+                    name="password"
+                    type={showSignupPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    required
+                    value={signupForm.password}
+                    onChange={handleSignupChange}
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="Password (min 8 chars: A-Z, a-z, 0-9, special char)"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSignupPassword(!showSignupPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 focus:outline-none"
+                    title={showSignupPassword ? "Hide password" : "Show password"}
+                  >
+                    {showSignupPassword ? (
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                      </svg>
+                    ) : (
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <label htmlFor="signup-confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <input
+                    id="signup-confirmPassword"
+                    name="confirmPassword"
+                    type={showSignupConfirmPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    required
+                    value={signupForm.confirmPassword}
+                    onChange={handleSignupChange}
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="Confirm Password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSignupConfirmPassword(!showSignupConfirmPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 focus:outline-none"
+                    title={showSignupConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showSignupConfirmPassword ? (
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                      </svg>
+                    ) : (
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Creating account...' : 'Create Account'}
+                </button>
+              </div>
+            </form>
+          )}
 
           {/* Divider */}
           <div className="relative my-6">
@@ -251,7 +474,7 @@ const Login = () => {
           <div className="space-y-3">
             {/* Google Sign-In */}
             <button
-              onClick={handleGoogleSignIn}
+              onClick={googleSignInHandler}
               disabled={loading}
               className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
