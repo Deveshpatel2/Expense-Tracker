@@ -179,8 +179,12 @@ const Login = () => {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
+                  onClick={() => {
+                    console.log('Password toggle clicked! Current state:', showPassword);
+                    setShowPassword(!showPassword);
+                  }}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100 focus:outline-none z-10 bg-gray-50 dark:bg-gray-600 rounded-r-md border-l border-gray-200 dark:border-gray-500"
+                  title={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
