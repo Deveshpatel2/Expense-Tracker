@@ -2533,9 +2533,10 @@ app.post('/api/recurring-expenses/generate', authenticateToken, (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
     console.log(`API available at http://localhost:${PORT}/api`);
+    console.log(`Mobile access: http://10.1.10.191:${PORT}/api`);
 });
 
 // Graceful shutdown

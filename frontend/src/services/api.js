@@ -1,4 +1,14 @@
-const API_BASE_URL = 'http://localhost:8080/api';
+// Dynamic API URL that works for both desktop and mobile
+const getApiBaseUrl = () => {
+    // If we're on localhost (desktop), use localhost
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:8080/api';
+    }
+    // If we're on mobile/network, use the same hostname but port 8080
+    return `http://${window.location.hostname}:8080/api`;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Helper function to validate JWT token format
 const isValidJWT = (token) => {
