@@ -124,12 +124,12 @@ const ProfileDropdown = () => {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-gray-600 z-50">
+        <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-gray-600 z-50">
           <div className="py-1">
             {/* User Info Section */}
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
               <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-medium">
+                <div className="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-medium flex-shrink-0">
                   {user?.profilePicture ? (
                     <img
                       src={user.profilePicture}
@@ -140,11 +140,11 @@ const ProfileDropdown = () => {
                     getUserInitials()
                   )}
                 </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
                     {getUserDisplayName()}
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
                     {getUserEmail()}
                   </div>
                 </div>
