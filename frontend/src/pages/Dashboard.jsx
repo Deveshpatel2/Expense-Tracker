@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -170,7 +171,6 @@ const Dashboard = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Expense Tracker</h1>
               <p className="text-gray-600 dark:text-gray-300">Welcome back, {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.name || 'User'}!</p>
-              <p className="text-xs text-green-600">✅ Core features available: Expenses, Add, Reports, Categories</p>
             </div>
             
             {/* Dark Mode Toggle and Profile */}
