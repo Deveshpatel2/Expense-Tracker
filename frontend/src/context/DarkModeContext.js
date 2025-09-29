@@ -11,30 +11,43 @@ export const useDarkMode = () => {
 };
 
 export const DarkModeProvider = ({ children }) => {
-    const [isDarkMode, setIsDarkMode] = useState(false);
-
-    useEffect(() => {
-        // Check for saved dark mode preference or default to light mode
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+        // Initialize with cached preference or system preference
         const savedDarkMode = localStorage.getItem('darkMode');
         if (savedDarkMode !== null) {
-            setIsDarkMode(JSON.parse(savedDarkMode));
+            return JSON.parse(savedDarkMode);
         } else {
             // Check system preference
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            setIsDarkMode(prefersDark);
+            return prefersDark;
         }
-    }, []);
+    });
 
     useEffect(() => {
         // Update localStorage and document class when dark mode changes
         localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
-        
+
         if (isDarkMode) {
             document.documentElement.classList.add('dark');
         } else {
             document.documentElement.classList.remove('dark');
         }
     }, [isDarkMode]);
+
+    // Listen for system theme changes
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const handleChange = (e) => {
+            // Only update if user hasn't manually set a preference
+            const savedDarkMode = localStorage.getItem('darkMode');
+            if (savedDarkMode === null) {
+                setIsDarkMode(e.matches);
+            }
+        };
+
+        mediaQuery.addEventListener('change', handleChange);
+        return () => mediaQuery.removeEventListener('change', handleChange);
+    }, []);
 
     const toggleDarkMode = () => {
         setIsDarkMode(!isDarkMode);

@@ -6,18 +6,35 @@ import PasswordResetModal from './PasswordResetModal';
 import './Login.css';
 
 const Login = () => {
-  const [form, setForm] = useState({ email: '', password: '' });
+  // Initialize form with cached email (never cache password)
+  const [form, setForm] = useState(() => {
+    const savedEmail = localStorage.getItem('savedEmail');
+    return { 
+      email: savedEmail || '', 
+      password: '' 
+    };
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [activeTab, setActiveTab] = useState('signin');
-  const [rememberMe, setRememberMe] = useState(false);
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('loginActiveTab') || 'signin';
+  });
+  const [rememberMe, setRememberMe] = useState(() => {
+    return localStorage.getItem('rememberMe') === 'true';
+  });
   const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
   const navigate = useNavigate();
   const { loginWithEmail, loginAsGuest, googleSignIn } = useAuth();
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const newForm = { ...form, [e.target.name]: e.target.value };
+    setForm(newForm);
+    
+    // Cache email only (never cache password)
+    if (e.target.name === 'email') {
+      localStorage.setItem('savedEmail', e.target.value);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -117,7 +134,10 @@ const Login = () => {
           {/* Tabs */}
           <div className="flex border-b border-gray-200 dark:border-gray-600 mb-6">
             <button
-              onClick={() => setActiveTab('signin')}
+              onClick={() => {
+                setActiveTab('signin');
+                localStorage.setItem('loginActiveTab', 'signin');
+              }}
               className={`flex-1 py-2 px-4 text-sm font-medium text-center border-b-2 ${
                 activeTab === 'signin'
                   ? 'border-blue-600 text-blue-600 dark:text-blue-400'
@@ -127,7 +147,10 @@ const Login = () => {
               Sign In
             </button>
             <button
-              onClick={() => setActiveTab('signup')}
+              onClick={() => {
+                setActiveTab('signup');
+                localStorage.setItem('loginActiveTab', 'signup');
+              }}
               className={`flex-1 py-2 px-4 text-sm font-medium text-center border-b-2 ${
                 activeTab === 'signup'
                   ? 'border-blue-600 text-blue-600 dark:text-blue-400'
@@ -205,7 +228,11 @@ const Login = () => {
                   name="remember-me"
                   type="checkbox"
                   checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setRememberMe(checked);
+                    localStorage.setItem('rememberMe', checked.toString());
+                  }}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">

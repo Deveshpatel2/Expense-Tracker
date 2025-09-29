@@ -253,6 +253,17 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('authMethod');
+
+        // Clear cached form data on logout for security
+        // Keep user preferences like dark mode, currency, etc.
+        localStorage.removeItem('savedEmail');
+        localStorage.removeItem('rememberMe');
+        localStorage.removeItem('loginActiveTab');
+
+        // Clear API cache on logout
+        if (typeof window !== 'undefined' && window.cacheUtils) {
+            window.cacheUtils.clearAllCaches();
+        }
     };
 
     const value = {

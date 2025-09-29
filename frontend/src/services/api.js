@@ -1,3 +1,6 @@
+// Import cache utilities
+import { cacheUtils, cacheKeys } from '../utils/cacheUtils';
+
 // Dynamic API URL that works for both desktop and mobile
 const getApiBaseUrl = () => {
     // If we're on localhost (desktop), use localhost
@@ -18,8 +21,8 @@ const isValidJWT = (token) => {
     return parts.length === 3;
 };
 
-// Helper function to make API calls
-const apiCall = async (endpoint, options = {}) => {
+// Helper function to make API calls with caching
+const apiCall = async (endpoint, options = {}, cacheKey = null, cacheDuration = null) => {
     const token = localStorage.getItem('token');
 
     // Validate token format before sending
@@ -30,6 +33,16 @@ const apiCall = async (endpoint, options = {}) => {
         localStorage.removeItem('authMethod');
         // Don't send the request if token is invalid
         throw new Error('Invalid token format');
+    }
+
+    // Check cache for GET requests
+    if (options.method === 'GET' || !options.method) {
+        const key = cacheKey || `api_${endpoint}`;
+        const cachedData = cacheUtils.getApiCache(key);
+        if (cachedData) {
+            console.log('Returning cached data for:', endpoint);
+            return cachedData;
+        }
     }
 
     const config = {
@@ -49,6 +62,12 @@ const apiCall = async (endpoint, options = {}) => {
 
         if (!response.ok) {
             throw new Error(data.message || 'API call failed');
+        }
+
+        // Cache successful GET responses
+        if (response.ok && (options.method === 'GET' || !options.method)) {
+            const key = cacheKey || `api_${endpoint}`;
+            cacheUtils.setApiCache(key, data, cacheDuration);
         }
 
         return data;
@@ -99,27 +118,45 @@ export const expenseAPI = {
         });
 
         const queryString = params.toString();
-        return apiCall(`/expenses${queryString ? `?${queryString}` : ''}`);
+        const endpoint = `/expenses${queryString ? `?${queryString}` : ''}`;
+
+        // Generate cache key based on filters
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const cacheKey = cacheKeys.expenses(user.id, filters);
+
+        return apiCall(endpoint, {}, cacheKey);
     },
 
     createExpense: async (expenseData) => {
-        return apiCall('/expenses', {
+        const result = await apiCall('/expenses', {
             method: 'POST',
             body: JSON.stringify(expenseData),
         });
+
+        // Clear expenses cache after creating new expense
+        cacheUtils.clearApiCache('expenses_');
+        return result;
     },
 
     updateExpense: async (id, expenseData) => {
-        return apiCall(`/expenses/${id}`, {
+        const result = await apiCall(`/expenses/${id}`, {
             method: 'PUT',
             body: JSON.stringify(expenseData),
         });
+
+        // Clear expenses cache after updating expense
+        cacheUtils.clearApiCache('expenses_');
+        return result;
     },
 
     deleteExpense: async (id) => {
-        return apiCall(`/expenses/${id}`, {
+        const result = await apiCall(`/expenses/${id}`, {
             method: 'DELETE',
         });
+
+        // Clear expenses cache after deleting expense
+        cacheUtils.clearApiCache('expenses_');
+        return result;
     },
 
     getExpense: async (id) => {
@@ -127,9 +164,13 @@ export const expenseAPI = {
     },
 
     getStatistics: async () => {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const totalsCacheKey = cacheKeys.statistics(user.id, 'totals');
+        const categoriesCacheKey = cacheKeys.statistics(user.id, 'categories');
+
         const [totals, categories] = await Promise.all([
-            apiCall('/expenses/statistics/totals'),
-            apiCall('/expenses/statistics/categories'),
+            apiCall('/expenses/statistics/totals', {}, totalsCacheKey),
+            apiCall('/expenses/statistics/categories', {}, categoriesCacheKey),
         ]);
 
         return {
