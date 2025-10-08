@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './EmailVerification.css';
@@ -13,12 +13,6 @@ const EmailVerification = () => {
   const [isVerified, setIsVerified] = useState(false);
 
   const token = searchParams.get('token');
-
-  useEffect(() => {
-    if (token) {
-      verifyEmail();
-    }
-  }, [token, verifyEmail]);
 
   const verifyEmail = useCallback(async () => {
     setLoading(true);
@@ -50,6 +44,12 @@ const EmailVerification = () => {
       setLoading(false);
     }
   }, [token, navigate]);
+
+  React.useEffect(() => {
+    if (token) {
+      verifyEmail();
+    }
+  }, [token, verifyEmail]);
 
   const resendVerification = async () => {
     setLoading(true);

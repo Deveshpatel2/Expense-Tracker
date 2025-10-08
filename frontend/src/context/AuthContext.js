@@ -84,6 +84,7 @@ export const AuthProvider = ({ children }) => {
     const loginAsGuest = async () => {
         try {
             const response = await authAPI.createGuest();
+
             if (response.success) {
                 login(response.data.user, response.data.token, 'guest');
                 return { success: true, user: response.data.user };
@@ -91,8 +92,7 @@ export const AuthProvider = ({ children }) => {
                 return { success: false, error: response.message };
             }
         } catch (error) {
-            console.error('Guest login failed:', error);
-            return { success: false, error: 'Guest login failed' };
+            return { success: false, error: error.message || 'Guest login failed' };
         }
     };
 

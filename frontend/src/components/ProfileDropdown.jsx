@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useCurrency } from '../context/CurrencyContext';
 import PasswordResetModal from './PasswordResetModal';
 import DeleteAccountModal from './DeleteAccountModal';
 import UserSettings from './UserSettings';

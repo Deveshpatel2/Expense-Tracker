@@ -122,7 +122,7 @@ const Login = () => {
             </svg>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Expense Tracker
+            Spendora
           </h1>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             Track your expenses with ease
@@ -314,17 +314,16 @@ const Login = () => {
       {/* Footer */}
       <div className="absolute bottom-4 left-0 right-0 text-center">
         <div className="flex justify-center space-x-6 text-sm text-gray-500 dark:text-gray-400">
-          <a href="#" className="hover:text-gray-700 dark:hover:text-gray-300">Help Center</a>
-          <a href="#" className="hover:text-gray-700 dark:hover:text-gray-300">Privacy Policy</a>
-          <a href="#" className="hover:text-gray-700 dark:hover:text-gray-300">Terms of Service</a>
+          <button className="hover:text-gray-700 dark:hover:text-gray-300">Help Center</button>
+          <button className="hover:text-gray-700 dark:hover:text-gray-300">Privacy Policy</button>
+          <button className="hover:text-gray-700 dark:hover:text-gray-300">Terms of Service</button>
         </div>
         <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
-          © 2025 Expense Tracker. All rights reserved.
+          © 2025 Spendora. All rights reserved.
         </p>
       </div>
 
       {/* Password Reset Modal */}
-      {console.log('Modal state:', showPasswordResetModal)}
       <PasswordResetModal 
         isOpen={showPasswordResetModal}
         onClose={() => setShowPasswordResetModal(false)}

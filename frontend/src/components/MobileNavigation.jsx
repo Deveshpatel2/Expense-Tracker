@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useDarkMode } from '../context/DarkModeContext';
 import { useCurrency } from '../context/CurrencyContext';
 import ProfileDropdown from './ProfileDropdown';
 import DarkModeToggle from './DarkModeToggle';
