@@ -5,6 +5,7 @@ import { expenseAPI } from '../services/api';
 import ExpenseManager from '../components/ExpenseManager';
 import ExpenseList from '../components/ExpenseList';
 import Report from '../components/Report';
+import AnalyticsDashboard from '../components/AnalyticsDashboard';
 import ProfileDropdown from '../components/ProfileDropdown';
 import DarkModeToggle from '../components/DarkModeToggle';
 import EditExpenseModal from '../components/EditExpenseModal';
@@ -15,7 +16,7 @@ import './Dashboard.css';
 const Dashboard = () => {
   const { user } = useAuth();
   const { selectedCurrency } = useCurrency();
-  const [activeTab, setActiveTab] = useState('expenses');
+  const [activeTab, setActiveTab] = useState('analytics');
   const [, setCategories] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -256,6 +257,16 @@ const Dashboard = () => {
               Add Expenses
             </button>
                  <button
+                   onClick={() => setActiveTab('analytics')}
+                   className={`desktop-nav-button ${
+                     activeTab === 'analytics'
+                       ? 'desktop-nav-button-active'
+                       : 'desktop-nav-button-inactive'
+                   }`}
+                 >
+                   Analytics
+                 </button>
+                 <button
                    onClick={() => setActiveTab('reports')}
                    className={`desktop-nav-button ${
                      activeTab === 'reports'
@@ -301,6 +312,9 @@ const Dashboard = () => {
                   onAddExpense={handleAddExpense}
                 />
               )}
+                   {activeTab === 'analytics' && (
+                     <AnalyticsDashboard />
+                   )}
                    {activeTab === 'reports' && (
                      <Report 
                        expenses={expenses}
@@ -321,6 +335,16 @@ const Dashboard = () => {
                      {activeTab === 'more' && (
                        <div className="space-y-6">
                          <div className="more-tab-grid">
+                           <button
+                             onClick={() => setActiveTab('analytics')}
+                             className="more-tab-button"
+                           >
+                             <svg className="more-tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                             </svg>
+                             <span className="more-tab-text">Analytics</span>
+                           </button>
+                           
                            <button
                              onClick={() => setActiveTab('reports')}
                              className="more-tab-button"

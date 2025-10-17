@@ -25,7 +25,7 @@ const isValidJWT = (token) => {
 const apiCall = async (endpoint, options = {}, cacheKey = null, cacheDuration = null) => {
     const token = localStorage.getItem('token');
 
-    // Validate token format before sending
+    // Validate token format before sending (only if token exists and endpoint requires auth)
     if (token && !isValidJWT(token)) {
         console.warn('Invalid token format detected, clearing token');
         localStorage.removeItem('token');
@@ -69,6 +69,7 @@ const apiCall = async (endpoint, options = {}, cacheKey = null, cacheDuration = 
 
         return data;
     } catch (error) {
+        console.error('API call error:', error);
         throw error;
     }
 };
