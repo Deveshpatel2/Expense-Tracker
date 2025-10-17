@@ -2,16 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
-import { cacheUtils } from './utils/cacheUtils';
-
-// Make cache utils available globally for debugging
-if (process.env.NODE_ENV === 'development') {
-  window.cacheUtils = cacheUtils;
-
-  // Add development helpers
-  window.clearAllCaches = () => cacheUtils.forceClearAllCaches();
-  window.cacheStats = () => cacheUtils.getCacheStats();
-}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

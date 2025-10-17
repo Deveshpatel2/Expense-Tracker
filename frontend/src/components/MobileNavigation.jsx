@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useCurrency } from '../context/CurrencyContext';
 import ProfileDropdown from './ProfileDropdown';
 import DarkModeToggle from './DarkModeToggle';
 import './MobileNavigation.css';
 
 const MobileNavigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, isAuthenticated } = useAuth();
-  const { selectedCurrency } = useCurrency();
+  
+  // Mock user data
+  const user = {
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john.doe@example.com'
+  };
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -18,10 +21,6 @@ const MobileNavigation = () => {
     setIsMenuOpen(false);
   };
 
-  if (!isAuthenticated) {
-    return null;
-  }
-
   return (
     <>
       {/* Mobile Header */}
@@ -30,17 +29,12 @@ const MobileNavigation = () => {
           {/* Logo/Title */}
           <div className="flex items-center space-x-3">
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-              Expense Tracker
+              Spendora
             </h1>
           </div>
 
           {/* Right side controls */}
           <div className="flex items-center space-x-3">
-            {/* Currency Display */}
-            <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              {selectedCurrency}
-            </div>
-
             {/* Dark Mode Toggle */}
             <DarkModeToggle />
 
@@ -109,19 +103,11 @@ const MobileNavigation = () => {
             <div className="p-4 space-y-4">
               {/* User Info */}
               <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                {user?.profilePicture ? (
-                  <img
-                    src={user.profilePicture}
-                    alt="Profile"
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-medium text-sm">
-                      {user?.firstName?.charAt(0) || 'U'}
-                    </span>
-                  </div>
-                )}
+                <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-medium text-sm">
+                    {user?.firstName?.charAt(0) || 'U'}
+                  </span>
+                </div>
                 <div>
                   <p className="font-medium text-gray-900 dark:text-white">
                     {user?.firstName} {user?.lastName}
@@ -136,11 +122,11 @@ const MobileNavigation = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">This Month</p>
-                  <p className="text-lg font-bold text-blue-700 dark:text-blue-300">$0</p>
+                  <p className="text-lg font-bold text-blue-700 dark:text-blue-300">$1,250</p>
                 </div>
                 <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                   <p className="text-xs text-green-600 dark:text-green-400 font-medium">Total Expenses</p>
-                  <p className="text-lg font-bold text-green-700 dark:text-green-300">$0</p>
+                  <p className="text-lg font-bold text-green-700 dark:text-green-300">$5,420</p>
                 </div>
               </div>
 
@@ -191,4 +177,3 @@ const MobileNavigation = () => {
 };
 
 export default MobileNavigation;
-
