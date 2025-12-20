@@ -3,11 +3,22 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
-const sqlite3 = require('sqlite3').verbose();
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+require('dotenv').config();
+
+// Database setup - SQLite only
+const sqlite3 = require('sqlite3').verbose();
+console.log('📊 Using SQLite database');
+const db = new sqlite3.Database('expense_tracker.db', (err) => {
+    if (err) {
+        console.error('❌ Database connection error:', err);
+    } else {
+        console.log('✅ Connected to SQLite database');
+    }
+});
 
 // Rate limiting
 const rateLimit = require('express-rate-limit');
@@ -69,11 +80,16 @@ const emailTemplates = {
     })
 };
 
-// Middleware
+// Middleware - CORS with better error handling
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost:3004'],
-    credentials: true
+    origin: ['http://localhost:3000', 'http://localhost:3004', 'http://127.0.0.1:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Handle preflight requests
+app.options('*', cors());
 app.use(express.json());
 app.use(express.static('uploads'));
 
@@ -116,10 +132,7 @@ app.use('/api/', generalLimiter);
 app.use('/api/auth/', authLimiter);
 app.use('/api/upload/', uploadLimiter);
 
-// Database setup
-const db = new sqlite3.Database('expense_tracker.db');
-
-// Initialize database tables
+// Initialize database tables - SQLite
 db.serialize(() => {
     // Users table
     db.run(`CREATE TABLE IF NOT EXISTS users (
@@ -574,7 +587,12 @@ const getUserById = (id) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-    res.json({ success: true, message: 'Server is running' });
+    res.json({ 
+        success: true, 
+        message: 'Server is running',
+        database: 'SQLite',
+        status: 'ok'
+    });
 });
 
 // Auth routes
@@ -714,22 +732,50 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-app.post('/api/auth/guest', (req, res) => {
+app.post('/api/auth/guest', async (req, res) => {
+    console.log('🔵 Guest login request received');
     try {
         const userId = uuidv4();
         const guestEmail = `guest-${Date.now()}@expensetracker.com`;
+        
+        console.log('🔵 Creating guest user:', { userId, guestEmail });
+        
+        // Hash password for guest user
+        const hashedPassword = await bcrypt.hash('guest-password', 10);
+        console.log('🔵 Password hashed');
 
         db.run(
-            'INSERT INTO users (id, firstName, lastName, email, password, isGoogleUser, isGuest) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [userId, 'Guest', 'User', guestEmail, 'guest-password', false, true],
+            'INSERT INTO users (id, firstName, lastName, email, password, isGoogleUser, isGuest, isEmailVerified, failedLoginAttempts, timezone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [userId, 'Guest', 'User', guestEmail, hashedPassword, false, true, false, 0, 'UTC'],
             function (err) {
                 if (err) {
-                    return res.status(500).json({ success: false, message: 'Guest user creation failed' });
+                    console.error('❌ Guest user creation error:', err);
+                    console.error('Error code:', err.code);
+                    console.error('Error message:', err.message);
+                    // Check for duplicate email error
+                    if (err.code === 'SQLITE_CONSTRAINT' || err.code === '23505') {
+                        // If email already exists, try again with a new timestamp
+                        console.log('⚠️ Duplicate email, retrying...');
+                        return res.status(500).json({ 
+                            success: false, 
+                            message: 'Guest user creation failed. Please try again.' 
+                        });
+                    }
+                    return res.status(500).json({ 
+                        success: false, 
+                        message: 'Guest user creation failed',
+                        error: err.message 
+                    });
                 }
 
-                const token = jwt.sign({ id: userId, email: guestEmail }, JWT_SECRET, { expiresIn: '24h' });
+                console.log('✅ Guest user inserted successfully');
+                console.log('Last ID:', this.lastID);
+                console.log('Changes:', this.changes);
 
-                res.json({
+                const token = jwt.sign({ id: userId, email: guestEmail }, JWT_SECRET, { expiresIn: '24h' });
+                console.log('✅ Token generated');
+
+                const response = {
                     success: true,
                     message: 'Guest user created successfully',
                     data: {
@@ -740,14 +786,24 @@ app.post('/api/auth/guest', (req, res) => {
                             lastName: 'User',
                             email: guestEmail,
                             isGoogleUser: false,
-                            isGuest: true
+                            isGuest: true,
+                            isEmailVerified: false
                         }
                     }
-                });
+                };
+
+                console.log('✅ Sending response:', JSON.stringify(response, null, 2));
+                res.json(response);
             }
         );
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Guest user creation failed' });
+        console.error('❌ Guest user creation exception:', error);
+        console.error('Stack:', error.stack);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Guest user creation failed',
+            error: error.message 
+        });
     }
 });
 
@@ -1155,6 +1211,132 @@ app.post('/api/auth/reset-password', (req, res) => {
             );
         }
     );
+});
+
+// Change password (for authenticated users)
+app.post('/api/user/change-password', authenticateToken, async (req, res) => {
+    const userId = req.user.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ success: false, message: 'Current password and new password are required' });
+    }
+
+    // Validate password complexity
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+        return res.status(400).json({
+            success: false,
+            message: 'Password does not meet requirements',
+            errors: passwordValidation.errors
+        });
+    }
+
+    // Get user from database
+    db.get('SELECT * FROM users WHERE id = ?', [userId], async (err, user) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Verify current password
+        const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+        if (!isValidPassword) {
+            return res.status(400).json({ success: false, message: 'Current password is incorrect' });
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update password
+        db.run(
+            'UPDATE users SET password = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
+            [hashedPassword, userId],
+            (err) => {
+                if (err) {
+                    return res.status(500).json({ success: false, message: 'Password update failed' });
+                }
+
+                res.json({ success: true, message: 'Password updated successfully' });
+            }
+        );
+    });
+});
+
+// Delete user account
+app.delete('/api/user/account', authenticateToken, async (req, res) => {
+    const userId = req.user.id;
+    const { password } = req.body;
+
+    if (!password) {
+        return res.status(400).json({ success: false, message: 'Password is required to delete account' });
+    }
+
+    // Get user from database
+    db.get('SELECT * FROM users WHERE id = ?', [userId], async (err, user) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Verify password (skip for guest users)
+        if (!user.isGuest) {
+            const isValidPassword = await bcrypt.compare(password, user.password);
+            if (!isValidPassword) {
+                return res.status(400).json({ success: false, message: 'Incorrect password' });
+            }
+        }
+
+        // Delete user's expenses
+        db.run('DELETE FROM expenses WHERE userId = ?', [userId], (err) => {
+            if (err) {
+                console.error('Error deleting expenses:', err);
+            }
+        });
+
+        // Delete user's budgets
+        db.run('DELETE FROM budgets WHERE userId = ?', [userId], (err) => {
+            if (err) {
+                console.error('Error deleting budgets:', err);
+            }
+        });
+
+        // Delete user's recurring expenses
+        db.run('DELETE FROM recurring_expenses WHERE userId = ?', [userId], (err) => {
+            if (err) {
+                console.error('Error deleting recurring expenses:', err);
+            }
+        });
+
+        // Delete user's categories
+        db.run('DELETE FROM categories WHERE userId = ?', [userId], (err) => {
+            if (err) {
+                console.error('Error deleting categories:', err);
+            }
+        });
+
+        // Delete user's settings
+        db.run('DELETE FROM user_settings WHERE userId = ?', [userId], (err) => {
+            if (err) {
+                console.error('Error deleting user settings:', err);
+            }
+        });
+
+        // Delete user account
+        db.run('DELETE FROM users WHERE id = ?', [userId], (err) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Failed to delete account' });
+            }
+
+            res.json({ success: true, message: 'Account deleted successfully' });
+        });
+    });
 });
 
 // Update user settings (timezone, etc.)
@@ -2533,10 +2715,11 @@ app.post('/api/recurring-expenses/generate', authenticateToken, (req, res) => {
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log(`API available at http://localhost:${PORT}/api`);
-    console.log(`Mobile access: http://10.1.10.191:${PORT}/api`);
+app.listen(PORT, 'localhost', () => {
+    console.log(`\n✅ Server is running on port ${PORT}`);
+    console.log(`📡 API available at http://localhost:${PORT}/api`);
+    console.log(`👤 Guest login: http://localhost:${PORT}/api/auth/guest`);
+    console.log(`🏥 Health check: http://localhost:${PORT}/api/health\n`);
 });
 
 // Graceful shutdown

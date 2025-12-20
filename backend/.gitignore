@@ -1,11 +1,8 @@
 # Dependencies
 node_modules/
 
-# Build artifacts
-build/
-dist/
-target/
-*.class
+# Environment variables
+.env
 
 # Database files
 *.db
@@ -13,10 +10,8 @@ target/
 *.db-wal
 *.db-shm
 
-# Environment variables
-.env
-.env.*
-*.backup
+# Uploads
+uploads/
 
 # Logs
 *.log
@@ -32,6 +27,9 @@ Thumbs.db
 *.swp
 *.swo
 
-# Temporary files
-*.tmp
-*.temp
+# Build
+dist/
+build/
+
+
+

@@ -97,19 +97,19 @@ const UserRegister = () => {
           <DarkModeToggle />
         </div>
         
-        <div>
+        <div className="text-center mb-6">
           <h2 className="register-header">
             Create Your Account
           </h2>
           <p className="register-subtitle">
-            Choose how you'd like to get started
+            Get started by creating a new account
           </p>
         </div>
 
-        {/* Manual Registration Form - FIRST */}
+        {/* Manual Registration Form */}
         <div className="register-form-container">
           <h3 className="register-form-title">
-            Create account with email
+            Sign up with Email
           </h3>
           
           <form className="register-form" onSubmit={handleSubmit}>
@@ -127,7 +127,7 @@ const UserRegister = () => {
             <div className="register-field-grid">
               <div>
                 <label htmlFor="firstName" className="register-label">
-                  First Name
+                  First Name <span style={{color: '#dc2626'}}>*</span>
                 </label>
                 <input
                   id="firstName"
@@ -135,14 +135,14 @@ const UserRegister = () => {
                   type="text"
                   required
                   className="register-input"
-                  placeholder="First Name"
+                  placeholder="John"
                   value={formData.firstName}
                   onChange={handleChange}
                 />
               </div>
               <div>
                 <label htmlFor="lastName" className="register-label">
-                  Last Name
+                  Last Name <span style={{color: '#dc2626'}}>*</span>
                 </label>
                 <input
                   id="lastName"
@@ -150,7 +150,7 @@ const UserRegister = () => {
                   type="text"
                   required
                   className="register-input"
-                  placeholder="Last Name"
+                  placeholder="Doe"
                   value={formData.lastName}
                   onChange={handleChange}
                 />
@@ -159,7 +159,7 @@ const UserRegister = () => {
             
             <div>
               <label htmlFor="email" className="register-label">
-                Email address
+                Email Address <span style={{color: '#dc2626'}}>*</span>
               </label>
               <input
                 id="email"
@@ -168,7 +168,7 @@ const UserRegister = () => {
                 autoComplete="email"
                 required
                 className="register-input"
-                placeholder="Email address"
+                placeholder="you@example.com"
                 value={formData.email}
                 onChange={handleChange}
               />
@@ -176,7 +176,10 @@ const UserRegister = () => {
             
             <div>
               <label htmlFor="password" className="register-label">
-                Password
+                Password <span style={{color: '#dc2626'}}>*</span>
+                <span style={{fontSize: '0.75rem', color: '#6b7280', marginLeft: '0.5rem', display: 'block', marginTop: '0.25rem'}}>
+                  Must include: uppercase, lowercase, number, and special character
+                </span>
               </label>
               <div className="relative">
                 <input
@@ -186,7 +189,7 @@ const UserRegister = () => {
                   autoComplete="new-password"
                   required
                   className="register-input pr-10"
-                  placeholder="Password (min 8 characters with uppercase, lowercase, number, and special character)"
+                  placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleChange}
                 />
@@ -212,7 +215,7 @@ const UserRegister = () => {
             
             <div>
               <label htmlFor="confirmPassword" className="register-label">
-                Confirm Password
+                Confirm Password <span style={{color: '#dc2626'}}>*</span>
               </label>
               <div className="relative">
                 <input
@@ -222,7 +225,7 @@ const UserRegister = () => {
                   autoComplete="new-password"
                   required
                   className="register-input pr-10"
-                  placeholder="Confirm Password"
+                  placeholder="Re-enter your password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
                 />

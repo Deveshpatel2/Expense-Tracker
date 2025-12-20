@@ -1,14 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './ProfileDropdown.css';
 
 const ProfileDropdown = () => {
-  // Mock user data
-  const user = {
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@example.com'
-  };
-
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -27,9 +24,9 @@ const ProfileDropdown = () => {
   }, []);
 
   const handleLogout = () => {
-    // Mock logout - you can implement this later
-    console.log('Logout clicked');
+    logout();
     setIsOpen(false);
+    navigate('/login');
   };
 
   // Get user initials for avatar

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAuth } from '../context/AuthContext';
 import AnalyticsDashboard from '../components/AnalyticsDashboard';
 import ProfileDropdown from '../components/ProfileDropdown';
 import DarkModeToggle from '../components/DarkModeToggle';
@@ -6,12 +7,7 @@ import MobileNavigation from '../components/MobileNavigation';
 import './Dashboard.css';
 
 const Dashboard = () => {
-  // Mock user data for now
-  const user = {
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@example.com'
-  };
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
