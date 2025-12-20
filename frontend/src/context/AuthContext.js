@@ -34,6 +34,14 @@ export const AuthProvider = ({ children }) => {
         );
         const decoded = JSON.parse(jsonPayload);
         
+        // Check if token is expired
+        if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+          console.warn('Token expired, removing from storage');
+          localStorage.removeItem('token');
+          setLoading(false);
+          return;
+        }
+        
         // Set user from token
         setUser({
           id: decoded.id,

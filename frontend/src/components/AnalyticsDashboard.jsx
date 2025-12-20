@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import ExpenseList from './ExpenseList';
 import EditExpenseModal from './EditExpenseModal';
+import Report from './Report';
 import './AnalyticsDashboard.css';
 
 const AnalyticsDashboard = () => {
@@ -66,25 +67,63 @@ const AnalyticsDashboard = () => {
       
       if (!token) {
         console.error('No authentication token found');
+        // Set default user even without token
+        setUser({
+          firstName: 'User',
+          lastName: '',
+          email: 'guest@example.com'
+        });
+        setExpenses([]);
+        setStatistics({
+          today: { amount: 0, count: 0 },
+          thisWeek: { amount: 0, count: 0 },
+          thisMonth: { amount: 0, count: 0 },
+          categories: []
+        });
         setLoading(false);
         return;
       }
 
       // Get user from token
       const userData = getUserFromToken();
-      setUser(userData);
-
-      // Fetch expenses from API
-      const response = await fetch('http://localhost:8080/api/expenses', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      setUser(userData || {
+        firstName: 'User',
+        lastName: '',
+        email: 'user@example.com'
       });
 
+      // Fetch expenses from API with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      let response;
+      try {
+        response = await fetch('http://localhost:8080/api/expenses', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Request timeout: Backend server may not be running. Please check if the backend is started on port 8080.');
+        }
+        throw new Error(`Network error: ${fetchError.message}. Make sure the backend server is running on http://localhost:8080`);
+      }
+
       if (!response.ok) {
-        throw new Error(`Failed to fetch expenses: ${response.statusText}`);
+        if (response.status === 401 || response.status === 403) {
+          // Token expired or invalid - clear it and redirect to login
+          localStorage.removeItem('token');
+          const errorData = await response.json().catch(() => ({}));
+          window.location.href = '/login?expired=true';
+          throw new Error(errorData.message || 'Session expired. Please log in again.');
+        }
+        throw new Error(`Failed to fetch expenses: ${response.statusText} (${response.status})`);
       }
 
       const data = await response.json();
@@ -157,6 +196,7 @@ const AnalyticsDashboard = () => {
       });
     } catch (error) {
       console.error('Error loading analytics data:', error);
+      
       // Set default user if token decode fails
       const currentUser = getUserFromToken();
       if (!currentUser) {
@@ -166,14 +206,31 @@ const AnalyticsDashboard = () => {
           email: 'user@example.com'
         });
       }
+      
+      // Set empty data on error so dashboard can still render
+      setExpenses([]);
+      setStatistics({
+        today: { amount: 0, count: 0 },
+        thisWeek: { amount: 0, count: 0 },
+        thisMonth: { amount: 0, count: 0 },
+        categories: []
+      });
+      
+      // Don't show alert for token expiration (handled by redirect)
+      if (!error.message.includes('Session expired') && !error.message.includes('Token expired')) {
+        // Only log other errors, don't show intrusive alerts
+        console.warn('Dashboard loading error:', error.message);
+      }
     } finally {
       setLoading(false);
     }
   }, [getUserFromToken]);
 
   useEffect(() => {
+    // Load data on component mount
     loadAnalyticsData();
-  }, [loadAnalyticsData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - only run once on mount
 
   // Helper to get token with better error handling
   const getAuthToken = () => {
@@ -184,6 +241,17 @@ const AnalyticsDashboard = () => {
       throw new Error(errorMsg);
     }
     return token;
+  };
+
+  // Helper to handle API responses and token expiration
+  const handleApiResponse = async (response) => {
+    if (response.status === 401 || response.status === 403) {
+      localStorage.removeItem('token');
+      window.location.href = '/login?expired=true';
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Session expired. Please log in again.');
+    }
+    return response;
   };
 
   // Expense CRUD operations
@@ -207,11 +275,9 @@ const AnalyticsDashboard = () => {
         })
       });
 
+      await handleApiResponse(response);
+
       if (!response.ok) {
-        if (response.status === 401) {
-          localStorage.removeItem('token');
-          throw new Error('Session expired. Please log in again.');
-        }
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || `Failed to add expense: ${response.statusText}`);
       }
@@ -258,6 +324,8 @@ const AnalyticsDashboard = () => {
         })
       });
 
+      await handleApiResponse(response);
+
       if (!response.ok) {
         throw new Error(`Failed to update expense: ${response.statusText}`);
       }
@@ -287,6 +355,8 @@ const AnalyticsDashboard = () => {
           'Content-Type': 'application/json'
         }
       });
+
+      await handleApiResponse(response);
 
       if (!response.ok) {
         throw new Error(`Failed to delete expense: ${response.statusText}`);
@@ -322,11 +392,39 @@ const AnalyticsDashboard = () => {
     await handleAddExpense(expenseForm);
   };
 
+  // Removed duplicate timeout - handled in loadAnalyticsData useEffect
+
   if (loading) {
     return (
       <div className="expensio-loading">
         <div className="loading-spinner"></div>
         <h3>Loading Dashboard...</h3>
+        <p style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
+          If this takes too long, check the browser console (F12) for errors
+        </p>
+        <button 
+          onClick={() => {
+            setLoading(false);
+            setExpenses([]);
+            setStatistics({
+              today: { amount: 0, count: 0 },
+              thisWeek: { amount: 0, count: 0 },
+              thisMonth: { amount: 0, count: 0 },
+              categories: []
+            });
+          }}
+          style={{ 
+            marginTop: '20px', 
+            padding: '8px 16px', 
+            background: '#007bff', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Skip Loading (Show Empty Dashboard)
+        </button>
       </div>
     );
   }
@@ -436,27 +534,42 @@ const AnalyticsDashboard = () => {
                 <h3>Expense Statistics</h3>
               </div>
               <div className="card-content">
-                <div className="stat-item">
-                  <div className="stat-info">
-                    <span className="stat-label">Today</span>
-                    <span className="stat-value">${statistics.today.amount.toFixed(2)}</span>
-                    <span className="stat-count">{statistics.today.count} expense{statistics.today.count !== 1 ? 's' : ''}</span>
+                {expenses.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+                    <p>No expenses found. Start by adding your first expense!</p>
+                    <button 
+                      className="btn-primary" 
+                      onClick={() => setActiveNav('expenses')}
+                      style={{ marginTop: '10px' }}
+                    >
+                      Go to Expenses
+                    </button>
                   </div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-info">
-                    <span className="stat-label">This Week</span>
-                    <span className="stat-value">${statistics.thisWeek.amount.toFixed(2)}</span>
-                    <span className="stat-count">{statistics.thisWeek.count} expense{statistics.thisWeek.count !== 1 ? 's' : ''}</span>
-                  </div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-info">
-                    <span className="stat-label">This Month</span>
-                    <span className="stat-value">${statistics.thisMonth.amount.toFixed(2)}</span>
-                    <span className="stat-count">{statistics.thisMonth.count} expense{statistics.thisMonth.count !== 1 ? 's' : ''}</span>
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="stat-item">
+                      <div className="stat-info">
+                        <span className="stat-label">Today</span>
+                        <span className="stat-value">${statistics.today.amount.toFixed(2)}</span>
+                        <span className="stat-count">{statistics.today.count} expense{statistics.today.count !== 1 ? 's' : ''}</span>
+                      </div>
+                    </div>
+                    <div className="stat-item">
+                      <div className="stat-info">
+                        <span className="stat-label">This Week</span>
+                        <span className="stat-value">${statistics.thisWeek.amount.toFixed(2)}</span>
+                        <span className="stat-count">{statistics.thisWeek.count} expense{statistics.thisWeek.count !== 1 ? 's' : ''}</span>
+                      </div>
+                    </div>
+                    <div className="stat-item">
+                      <div className="stat-info">
+                        <span className="stat-label">This Month</span>
+                        <span className="stat-value">${statistics.thisMonth.amount.toFixed(2)}</span>
+                        <span className="stat-count">{statistics.thisMonth.count} expense{statistics.thisMonth.count !== 1 ? 's' : ''}</span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -488,13 +601,36 @@ const AnalyticsDashboard = () => {
         )}
 
         {activeNav === 'reports' && (
-          <div className="card">
-            <div className="card-header">
-              <h3>Reports</h3>
-            </div>
-            <div className="card-content">
-              <p>Reports section coming soon...</p>
-            </div>
+          <div className="reports-section">
+            {expenses && expenses.length > 0 ? (
+              <Report 
+                expenses={expenses.map(exp => ({
+                  ...exp,
+                  date: exp.expenseDate || exp.date,
+                  amount: parseFloat(exp.amount) || 0,
+                  currency: exp.currency || 'USD'
+                }))}
+              />
+            ) : (
+              <div className="card">
+                <div className="card-header">
+                  <h3>Reports</h3>
+                </div>
+                <div className="card-content" style={{ padding: '40px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '20px' }}>📊</div>
+                  <h3 style={{ marginBottom: '10px', color: '#333' }}>No Data Available</h3>
+                  <p style={{ color: '#666', marginBottom: '20px' }}>
+                    Add some expenses to generate detailed reports and insights!
+                  </p>
+                  <button 
+                    className="btn-primary" 
+                    onClick={() => setActiveNav('expenses')}
+                  >
+                    Go to Expenses
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

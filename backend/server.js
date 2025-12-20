@@ -301,10 +301,25 @@ const authenticateToken = (req, res, next) => {
 
     jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) {
-            console.error('JWT verification error:', err);
-            return res.status(403).json({ success: false, message: 'Invalid token' });
+            // Handle expired token specifically - don't log as error, it's expected
+            if (err.name === 'TokenExpiredError') {
+                // Silently handle expired tokens - don't spam logs
+                return res.status(401).json({ 
+                    success: false, 
+                    message: 'Token expired. Please log in again.',
+                    code: 'TOKEN_EXPIRED'
+                });
+            }
+            // Handle other JWT errors - only log unexpected errors
+            if (err.name !== 'JsonWebTokenError') {
+                console.error('JWT verification error:', err.name, err.message);
+            }
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Invalid or expired token. Please log in again.',
+                code: 'INVALID_TOKEN'
+            });
         }
-        console.log('Authenticated user:', user);
         req.user = user;
         next();
     });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import DarkModeToggle from './DarkModeToggle';
@@ -14,6 +14,16 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { login, googleSignIn, guestLogin } = useAuth();
+  
+  // Check if redirected due to expired token
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('expired') === 'true') {
+      setError('Your session has expired. Please log in again.');
+      // Clean URL
+      window.history.replaceState({}, document.title, '/login');
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData({

@@ -302,6 +302,15 @@
 }
 
 /* Expenses Section */
+.reports-section {
+  width: 100%;
+  padding: 0;
+}
+
+.reports-section .space-y-6 > * {
+  margin-bottom: 1.5rem;
+}
+
 .expenses-section {
   width: 100%;
 }

@@ -4,6 +4,7 @@ import {
   PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
 import { useDarkMode } from '../context/DarkModeContext';
+import { useCurrency } from '../context/CurrencyContext';
 import './Report.css';
 
 const currencies = [
@@ -41,8 +42,18 @@ const formatAmount = (amount, currencyCode = 'USD') => {
   }).format(amount);
 };
 
-const Report = ({ expenses, selectedCurrency = 'USD' }) => {
+const Report = ({ expenses = [] }) => {
   const { isDarkMode } = useDarkMode();
+  
+  // Safely get currency with fallback
+  let selectedCurrency = 'USD';
+  try {
+    const currencyContext = useCurrency();
+    selectedCurrency = currencyContext?.selectedCurrency || 'USD';
+  } catch (error) {
+    console.warn('CurrencyContext not available, using default USD');
+    selectedCurrency = 'USD';
+  }
   const [timeRange, setTimeRange] = useState('month');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [chartType, setChartType] = useState('bar');
@@ -67,19 +78,43 @@ const Report = ({ expenses, selectedCurrency = 'USD' }) => {
   }, [timeRange, customStartDate, customEndDate]);
 
 
-  // Move categories to useMemo to prevent recreation on every render
-  const categories = useMemo(() => [
-    'Food & Dining',
-    'Transportation',
-    'Shopping',
-    'Entertainment',
-    'Healthcare',
-    'Utilities',
-    'Housing',
-    'Education',
-    'Travel',
-    'Other'
-  ], []);
+  // Get categories dynamically from expenses, with fallback to default categories
+  const categories = useMemo(() => {
+    const defaultCategories = [
+      'Food & Dining',
+      'Transportation',
+      'Shopping',
+      'Entertainment',
+      'Healthcare',
+      'Utilities',
+      'Housing',
+      'Education',
+      'Travel',
+      'Other'
+    ];
+    
+    if (!expenses || expenses.length === 0) {
+      return defaultCategories;
+    }
+    
+    // Extract unique categories from expenses
+    const expenseCategories = new Set();
+    expenses.forEach(expense => {
+      if (expense.category) {
+        expenseCategories.add(expense.category);
+      }
+    });
+    
+    // Combine default categories with expense categories
+    const allCategories = [...defaultCategories];
+    expenseCategories.forEach(cat => {
+      if (!allCategories.includes(cat)) {
+        allCategories.push(cat);
+      }
+    });
+    
+    return allCategories;
+  }, [expenses]);
 
   const filteredExpenses = useMemo(() => {
     let filtered = [...expenses];
@@ -125,7 +160,7 @@ const Report = ({ expenses, selectedCurrency = 'USD' }) => {
     }
     
     filtered = filtered.filter(expense => {
-      const expenseDate = new Date(expense.date);
+      const expenseDate = new Date(expense.expenseDate || expense.date);
       return expenseDate >= startDate && expenseDate <= endDate;
     });
     
@@ -189,7 +224,7 @@ const Report = ({ expenses, selectedCurrency = 'USD' }) => {
       weeks[weekKey] = 0;
       
       filteredExpenses.forEach(expense => {
-        const expenseDate = new Date(expense.date);
+        const expenseDate = new Date(expense.expenseDate || expense.date);
         if (expenseDate >= weekStart && expenseDate <= weekEnd) {
           weeks[weekKey] += parseFloat(expense.amount);
         }
@@ -215,7 +250,7 @@ const Report = ({ expenses, selectedCurrency = 'USD' }) => {
       days[dayKey] = 0;
       
       filteredExpenses.forEach(expense => {
-        const expenseDate = new Date(expense.date);
+        const expenseDate = new Date(expense.expenseDate || expense.date);
         if (expenseDate.toDateString() === day.toDateString()) {
           days[dayKey] += parseFloat(expense.amount);
         }
@@ -232,7 +267,7 @@ const Report = ({ expenses, selectedCurrency = 'USD' }) => {
   const monthlyTrend = useMemo(() => {
     const months = {};
     filteredExpenses.forEach(expense => {
-      const month = new Date(expense.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+      const month = new Date(expense.expenseDate || expense.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
       months[month] = (months[month] || 0) + parseFloat(expense.amount);
     });
     
@@ -613,7 +648,7 @@ const Report = ({ expenses, selectedCurrency = 'USD' }) => {
                 <span className="text-lg font-bold text-indigo-600 mr-3">#{index + 1}</span>
                 <div>
                   <p className="text-sm font-medium text-gray-900">{expense.description}</p>
-                  <p className="text-xs text-gray-500">{expense.category} • {new Date(expense.date).toLocaleDateString()}</p>
+                  <p className="text-xs text-gray-500">{expense.category} • {new Date(expense.expenseDate || expense.date).toLocaleDateString()}</p>
                 </div>
               </div>
               <span className="text-lg font-semibold text-gray-900">{formatAmount(expense.amount, expense.currency || selectedCurrency)}</span>
