@@ -4,6 +4,7 @@ import './App.css';
 import Dashboard from './pages/Dashboard';
 import Login from './components/Login';
 import UserRegister from './components/UserRegister';
+import EmailVerification from './components/EmailVerification';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 import { DarkModeProvider } from './context/DarkModeContext';
@@ -27,21 +28,22 @@ function App() {
                       {/* Public Routes */}
                       <Route path="/login" element={<Login />} />
                       <Route path="/register" element={<UserRegister />} />
-                      
+                      <Route path="/verify-email" element={<EmailVerification />} />
+
                       {/* Protected Routes */}
-                      <Route 
-                        path="/dashboard" 
+                      <Route
+                        path="/dashboard"
                         element={
                           <ProtectedRoute>
                             <Dashboard />
                           </ProtectedRoute>
-                        } 
+                        }
                       />
-                      
+
                       {/* Default redirect */}
                       <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     </Routes>
-                    
+
                     {/* AI Chat Assistant - Available on all pages */}
                     <AIChatAssistant />
                   </div>

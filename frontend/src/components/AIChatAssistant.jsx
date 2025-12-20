@@ -30,12 +30,15 @@ const AIChatAssistant = () => {
     }
   }, [isOpen]);
 
-  const handleSend = async (e) => {
+  const handleSend = async (e, messageOverride = null) => {
     e.preventDefault();
-    if (!input.trim() || loading) return;
+    const messageToSend = messageOverride || input.trim();
+    if (!messageToSend || loading) return;
 
-    const userMessage = input.trim();
-    setInput('');
+    const userMessage = messageToSend;
+    if (!messageOverride) {
+      setInput('');
+    }
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setLoading(true);
 
@@ -316,8 +319,7 @@ const AIChatAssistant = () => {
                   key={index}
                   className="ai-chat-quick-button"
                   onClick={() => {
-                    setInput(question);
-                    handleSend({ preventDefault: () => {} });
+                    handleSend({ preventDefault: () => {} }, question);
                   }}
                 >
                   {question}

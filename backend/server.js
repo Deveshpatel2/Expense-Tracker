@@ -304,8 +304,8 @@ const authenticateToken = (req, res, next) => {
             // Handle expired token specifically - don't log as error, it's expected
             if (err.name === 'TokenExpiredError') {
                 // Silently handle expired tokens - don't spam logs
-                return res.status(401).json({ 
-                    success: false, 
+                return res.status(401).json({
+                    success: false,
                     message: 'Token expired. Please log in again.',
                     code: 'TOKEN_EXPIRED'
                 });
@@ -314,8 +314,8 @@ const authenticateToken = (req, res, next) => {
             if (err.name !== 'JsonWebTokenError') {
                 console.error('JWT verification error:', err.name, err.message);
             }
-            return res.status(401).json({ 
-                success: false, 
+            return res.status(401).json({
+                success: false,
                 message: 'Invalid or expired token. Please log in again.',
                 code: 'INVALID_TOKEN'
             });
@@ -602,8 +602,8 @@ const getUserById = (id) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-    res.json({ 
-        success: true, 
+    res.json({
+        success: true,
         message: 'Server is running',
         database: 'SQLite',
         status: 'ok'
@@ -752,9 +752,9 @@ app.post('/api/auth/guest', async (req, res) => {
     try {
         const userId = uuidv4();
         const guestEmail = `guest-${Date.now()}@expensetracker.com`;
-        
+
         console.log('🔵 Creating guest user:', { userId, guestEmail });
-        
+
         // Hash password for guest user
         const hashedPassword = await bcrypt.hash('guest-password', 10);
         console.log('🔵 Password hashed');
@@ -771,15 +771,15 @@ app.post('/api/auth/guest', async (req, res) => {
                     if (err.code === 'SQLITE_CONSTRAINT' || err.code === '23505') {
                         // If email already exists, try again with a new timestamp
                         console.log('⚠️ Duplicate email, retrying...');
-                        return res.status(500).json({ 
-                            success: false, 
-                            message: 'Guest user creation failed. Please try again.' 
+                        return res.status(500).json({
+                            success: false,
+                            message: 'Guest user creation failed. Please try again.'
                         });
                     }
-                    return res.status(500).json({ 
-                        success: false, 
+                    return res.status(500).json({
+                        success: false,
                         message: 'Guest user creation failed',
-                        error: err.message 
+                        error: err.message
                     });
                 }
 
@@ -814,10 +814,10 @@ app.post('/api/auth/guest', async (req, res) => {
     } catch (error) {
         console.error('❌ Guest user creation exception:', error);
         console.error('Stack:', error.stack);
-        res.status(500).json({ 
-            success: false, 
+        res.status(500).json({
+            success: false,
             message: 'Guest user creation failed',
-            error: error.message 
+            error: error.message
         });
     }
 });
@@ -830,7 +830,7 @@ app.post('/api/auth/google', async (req, res) => {
         let user = await getUserByEmail(email);
 
         if (!user) {
-            // Create new user
+            // Create new user - use promise to handle async database operation
             const userId = uuidv4();
             user = {
                 id: userId,
@@ -842,15 +842,20 @@ app.post('/api/auth/google', async (req, res) => {
                 isGuest: false
             };
 
-            db.run(
-                'INSERT INTO users (id, firstName, lastName, email, password, profilePicture, isGoogleUser, isGuest) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                [userId, firstName, lastName, email, 'google-password', profilePicture, true, false],
-                function (err) {
-                    if (err) {
-                        return res.status(500).json({ success: false, message: 'Google sign-in failed' });
+            // Wait for database insert to complete before sending response
+            await new Promise((resolve, reject) => {
+                db.run(
+                    'INSERT INTO users (id, firstName, lastName, email, password, profilePicture, isGoogleUser, isGuest) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                    [userId, firstName, lastName, email, 'google-password', profilePicture, true, false],
+                    function (err) {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve();
+                        }
                     }
-                }
-            );
+                );
+            });
         }
 
         const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '24h' });
