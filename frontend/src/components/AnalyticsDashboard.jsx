@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import ExpenseList from './ExpenseList';
 import EditExpenseModal from './EditExpenseModal';
 import Report from './Report';
+import SettingsPage from './SettingsPage';
 import './AnalyticsDashboard.css';
 
 const AnalyticsDashboard = () => {
@@ -646,13 +647,8 @@ const AnalyticsDashboard = () => {
         )}
 
         {activeNav === 'settings' && (
-          <div className="card">
-            <div className="card-header">
-              <h3>Settings</h3>
-            </div>
-            <div className="card-content">
-              <p>Settings section coming soon...</p>
-            </div>
+          <div className="settings-section-wrapper">
+            <SettingsPage />
           </div>
         )}
 

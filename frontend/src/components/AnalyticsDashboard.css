@@ -315,6 +315,11 @@
   width: 100%;
 }
 
+.settings-section-wrapper {
+  width: 100%;
+  padding: 0;
+}
+
 /* Modal Styles */
 .modal-overlay {
   position: fixed;
