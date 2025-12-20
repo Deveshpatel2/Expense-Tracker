@@ -11,6 +11,7 @@ import { CurrencyProvider } from './context/CurrencyContext';
 import { TimezoneProvider } from './context/TimezoneContext';
 import { NotificationProvider } from './components/NotificationSystem';
 import { LoadingProvider } from './components/LoadingStates';
+import AIChatAssistant from './components/AIChatAssistant';
 
 function App() {
   return (
@@ -40,6 +41,9 @@ function App() {
                       {/* Default redirect */}
                       <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     </Routes>
+                    
+                    {/* AI Chat Assistant - Available on all pages */}
+                    <AIChatAssistant />
                   </div>
                 </Router>
               </LoadingProvider>
