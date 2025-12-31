@@ -353,10 +353,9 @@ const AnalyticsDashboard = () => {
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
                 <SidebarItem id="dashboard" icon={LayoutDashboard} label="Dashboard" />
                 <SidebarItem id="expenses" icon={Receipt} label="Expenses" />
-                <SidebarItem id="split" icon={Users} label="Split" />
                 <SidebarItem id="budget" icon={CreditCard} label="Budget" />
-                <SidebarItem id="reports" icon={PieChart} label="Reports" />
-                <SidebarItem id="categories" icon={Tag} label="Categories" />
+                <SidebarItem id="split" icon={Users} label="Split" />
+                <SidebarItem id="reports" icon={PieChart} label="Report" />
                 
                 <div className="pt-8 mt-8 border-t border-slate-100 dark:border-slate-800">
                     <SidebarItem id="settings" icon={Settings} label="Settings" />
@@ -515,13 +514,13 @@ const AnalyticsDashboard = () => {
                 )}
 
                 {/* Placeholders for other sections */}
-                {['reports', 'categories', 'settings'].includes(activeNav) && (
+                {['reports', 'settings'].includes(activeNav) && (
                      <div className="glass-card p-12 text-center animate-fade-in">
                         <div className="mx-auto w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
                             <Settings className="w-8 h-8 text-slate-400" />
                         </div>
-                        <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Work in Progress</h2>
-                        <p className="text-slate-500">The {activeNav} section is currently being redesigned.</p>
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Work in Progress</h2>
+                        <p className="text-slate-500">The {activeNav === 'reports' ? 'Report' : activeNav} section is currently being redesigned.</p>
                      </div>
                 )}
             </div>
