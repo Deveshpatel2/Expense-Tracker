@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
 import DarkModeToggle from './DarkModeToggle';
 
 const Login = () => {
@@ -15,6 +16,27 @@ const Login = () => {
   const navigate = useNavigate();
   const { login, googleSignIn, guestLogin } = useAuth();
   
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (codeResponse) => {
+      const result = await googleSignIn(codeResponse.code);
+      if (result.success) {
+        navigate('/dashboard');
+      } else {
+        setError(result.error || 'Google Sign-In failed');
+      }
+    },
+    onError: () => {
+      setError('Google Sign-In failed');
+    },
+    flow: 'auth-code',
+  });
+
+  const handleGoogleBtnClick = () => {
+    setLoading(true);
+    setError('');
+    googleLogin();
+  };
+
   // Check if redirected due to expired token
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -52,24 +74,6 @@ const Login = () => {
       }
     } catch (err) {
       setError('Login failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    setError('');
-    
-    try {
-      const result = await googleSignIn();
-      if (result.success) {
-        navigate('/dashboard');
-      } else {
-        setError(result.error || 'Google Sign-In failed');
-      }
-    } catch (err) {
-      setError('Google Sign-In failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -172,7 +176,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full flex items-center justify-center gap-2"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-bold rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-primary-600/40 hover:-translate-y-0.5 transition-all"
             >
               {loading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -193,7 +197,7 @@ const Login = () => {
             <div className="grid grid-cols-2 gap-4">
               <button
                 type="button"
-                onClick={handleGoogleSignIn}
+                onClick={handleGoogleBtnClick}
                 disabled={loading}
                 className="btn-secondary flex items-center justify-center gap-2 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700"
               >
@@ -205,7 +209,7 @@ const Login = () => {
                 </svg>
                 <span className="hidden sm:inline">Google</span>
               </button>
-
+              
               <button
                 type="button"
                 onClick={handleGuestLogin}

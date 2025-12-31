@@ -822,22 +822,52 @@ app.post('/api/auth/guest', async (req, res) => {
     }
 });
 
+const { OAuth2Client } = require('google-auth-library');
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '600242847712-liumaiomcajui3jrc6do2ivk7dpq2vfk.apps.googleusercontent.com';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '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';
+const client = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, 'postmessage');
+
 app.post('/api/auth/google', async (req, res) => {
     try {
-        const { email, firstName, lastName, profilePicture, googleId } = req.body;
+        const { token } = req.body; // 'token' here is the authorization code
+
+        if (!token) {
+            return res.status(400).json({ success: false, message: 'Google auth code is required' });
+        }
+
+        // Exchange authorization code for tokens
+        const { tokens } = await client.getToken(token);
+        const idToken = tokens.id_token;
+
+        if (!idToken) {
+            return res.status(400).json({ success: false, message: 'Failed to retrieve ID token from Google' });
+        }
+
+        // Verify the ID token
+        const ticket = await client.verifyIdToken({
+            idToken: idToken,
+            audience: GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+
+        const { email, given_name, family_name, picture, sub: googleId } = payload;
+
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Google account does not have an email address' });
+        }
 
         // Check if user exists
         let user = await getUserByEmail(email);
 
         if (!user) {
-            // Create new user - use promise to handle async database operation
+            // Create new user
             const userId = uuidv4();
             user = {
                 id: userId,
-                firstName,
-                lastName,
+                firstName: given_name || 'Google',
+                lastName: family_name || 'User',
                 email,
-                profilePicture,
+                profilePicture: picture,
                 isGoogleUser: true,
                 isGuest: false
             };
@@ -845,8 +875,8 @@ app.post('/api/auth/google', async (req, res) => {
             // Wait for database insert to complete before sending response
             await new Promise((resolve, reject) => {
                 db.run(
-                    'INSERT INTO users (id, firstName, lastName, email, password, profilePicture, isGoogleUser, isGuest) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                    [userId, firstName, lastName, email, 'google-password', profilePicture, true, false],
+                    'INSERT INTO users (id, firstName, lastName, email, password, profilePicture, isGoogleUser, isGuest, isEmailVerified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    [userId, user.firstName, user.lastName, email, 'google-password', picture, true, false, true], // Auto-verify email for Google Users
                     function (err) {
                         if (err) {
                             reject(err);
@@ -856,28 +886,41 @@ app.post('/api/auth/google', async (req, res) => {
                     }
                 );
             });
+        } else {
+            // Update existing user's profile picture if it changed (optional)
+            // strict check for existing account linking would be better, but for now we assume email matches = same user
+            if (!user.isGoogleUser) {
+                // You might want to ask user to link accounts, but for simplicity here we can allow or block. 
+                // Let's allow and update flag? Or just log them in. 
+                // Let's update `isGoogleUser` to true if they sign in with Google
+                await new Promise((resolve) => {
+                    db.run('UPDATE users SET isGoogleUser = 1 WHERE id = ?', [user.id], () => resolve());
+                });
+            }
         }
 
-        const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '24h' });
+        const jwtToken = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '24h' });
 
         res.json({
             success: true,
             message: 'Google sign-in successful',
             data: {
-                token,
+                token: jwtToken,
                 user: {
                     id: user.id,
                     firstName: user.firstName,
                     lastName: user.lastName,
                     email: user.email,
                     profilePicture: user.profilePicture,
-                    isGoogleUser: user.isGoogleUser,
-                    isGuest: user.isGuest
+                    isGoogleUser: true,
+                    isGuest: user.isGuest,
+                    isEmailVerified: true
                 }
             }
         });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Google sign-in failed' });
+        console.error('Google Auth Error:', error);
+        res.status(500).json({ success: false, message: 'Google sign-in failed', error: error.message });
     }
 });
 

@@ -378,35 +378,37 @@ const AnalyticsDashboard = () => {
 
             <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 
-                {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                    <div>
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
-                            {activeNav === 'dashboard' ? 'Dashboard' : activeNav.charAt(0).toUpperCase() + activeNav.slice(1)}
-                        </h1>
-                        <p className="text-slate-500 dark:text-slate-400">
-                            Welcome back, {user?.firstName}
-                        </p>
+                {/* Header - Hidden for Expenses as it has its own header */}
+                {activeNav !== 'expenses' && (
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                        <div>
+                            <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
+                                {activeNav === 'dashboard' ? 'Dashboard' : activeNav.charAt(0).toUpperCase() + activeNav.slice(1)}
+                            </h1>
+                            <p className="text-slate-500 dark:text-slate-400">
+                                Welcome back, {user?.firstName}
+                            </p>
+                        </div>
+                        <button 
+                            onClick={() => {
+                                setEditingExpense(null);
+                                setExpenseForm({
+                                    description: '',
+                                    amount: '',
+                                    category: '',
+                                    expenseDate: new Date().toISOString().split('T')[0],
+                                    notes: '',
+                                    currency: 'USD'
+                                });
+                                setShowAddExpense(true);
+                            }}
+                            className="btn-primary flex items-center gap-2 self-start md:self-auto"
+                        >
+                            <Plus className="w-5 h-5" />
+                            Add New Expense
+                        </button>
                     </div>
-                    <button 
-                        onClick={() => {
-                            setEditingExpense(null);
-                            setExpenseForm({
-                                description: '',
-                                amount: '',
-                                category: '',
-                                expenseDate: new Date().toISOString().split('T')[0],
-                                notes: '',
-                                currency: 'USD'
-                            });
-                            setShowAddExpense(true);
-                        }}
-                        className="btn-primary flex items-center gap-2 self-start md:self-auto"
-                    >
-                        <Plus className="w-5 h-5" />
-                        Add New Expense
-                    </button>
-                </div>
+                )}
 
                 {activeNav === 'dashboard' && (
                     <div className="space-y-8 animate-slide-up">
@@ -476,6 +478,19 @@ const AnalyticsDashboard = () => {
                             onDeleteExpense={confirmDelete}
                             onEditExpense={openEditModal}
                             selectedCurrency="USD"
+                            user={user || { firstName: 'User' }}
+                            onAddExpense={() => {
+                                setEditingExpense(null);
+                                setExpenseForm({
+                                    description: '',
+                                    amount: '',
+                                    category: '',
+                                    expenseDate: new Date().toISOString().split('T')[0],
+                                    notes: '',
+                                    currency: 'USD'
+                                });
+                                setShowAddExpense(true);
+                            }}
                         />
                      </div>
                 )}

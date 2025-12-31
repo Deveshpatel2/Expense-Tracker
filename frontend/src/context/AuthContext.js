@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
             .join('')
         );
         const decoded = JSON.parse(jsonPayload);
-        
+
         // Check if token is expired
         if (decoded.exp && decoded.exp * 1000 < Date.now()) {
           console.warn('Token expired, removing from storage');
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
           setLoading(false);
           return;
         }
-        
+
         // Set user from token
         setUser({
           id: decoded.id,
@@ -113,16 +113,11 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
   };
 
-  // Google Sign-In (mock implementation - can be enhanced with actual Google OAuth)
-  const googleSignIn = async () => {
+  // Google Sign-In
+  const googleSignIn = async (token) => {
     try {
-      // For now, create a guest user or use the backend Google endpoint
       const response = await axios.post(`${API_BASE_URL}/auth/google`, {
-        email: `google-${Date.now()}@example.com`,
-        firstName: 'Google',
-        lastName: 'User',
-        profilePicture: '',
-        googleId: `google-${Date.now()}`
+        token
       });
 
       if (response.data.success) {
@@ -145,7 +140,7 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('🔵 Frontend: Attempting guest login...');
       console.log('🔵 Frontend: API URL:', `${API_BASE_URL}/auth/guest`);
-      
+
       const response = await axios.post(`${API_BASE_URL}/auth/guest`, {}, {
         headers: {
           'Content-Type': 'application/json'
@@ -172,7 +167,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
       console.error('Error message:', error.message);
-      
+
       let errorMessage = 'Guest login failed';
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -183,7 +178,7 @@ export const AuthProvider = ({ children }) => {
       } else if (error.code === 'ETIMEDOUT') {
         errorMessage = 'Request timed out. Please try again.';
       }
-      
+
       return { success: false, error: errorMessage };
     }
   };
@@ -228,7 +223,7 @@ export const AuthProvider = ({ children }) => {
           data: { password }
         }
       );
-      
+
       if (response.data.success) {
         logout();
         return { success: true, message: response.data.message };
