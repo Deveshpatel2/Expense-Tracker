@@ -21,6 +21,8 @@ import ExpenseList from './ExpenseList';
 import EditExpenseModal from './EditExpenseModal';
 import Report from './Report';
 import SettingsPage from './SettingsPage';
+import BudgetPage from './BudgetPage';
+import SplitPage from './SplitPage';
 
 const AnalyticsDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -378,8 +380,8 @@ const AnalyticsDashboard = () => {
 
             <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 
-                {/* Header - Hidden for Expenses as it has its own header */}
-                {activeNav !== 'expenses' && (
+                {/* Header - Hidden for Expenses and Budget as they have their own headers */}
+                {!['expenses', 'budget', 'split'].includes(activeNav) && (
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                         <div>
                             <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
@@ -495,8 +497,25 @@ const AnalyticsDashboard = () => {
                      </div>
                 )}
 
+                {activeNav === 'budget' && (
+                    <div className="animate-fade-in">
+                        <BudgetPage 
+                            expenses={expenses}
+                            user={user}
+                        />
+                    </div>
+                )}
+
+                {activeNav === 'split' && (
+                    <div className="animate-fade-in">
+                        <SplitPage 
+                            user={user}
+                        />
+                    </div>
+                )}
+
                 {/* Placeholders for other sections */}
-                {['budget', 'reports', 'categories', 'settings', 'split'].includes(activeNav) && (
+                {['reports', 'categories', 'settings'].includes(activeNav) && (
                      <div className="glass-card p-12 text-center animate-fade-in">
                         <div className="mx-auto w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
                             <Settings className="w-8 h-8 text-slate-400" />
@@ -585,11 +604,15 @@ const AnalyticsDashboard = () => {
                                     required
                                 >
                                     <option value="" disabled>Select Category</option>
-                                    <option value="Food">Food</option>
-                                    <option value="Travel">Travel</option>
-                                    <option value="Utilities">Utilities</option>
-                                    <option value="Entertainment">Entertainment</option>
+                                    <option value="Food & Dining">Food & Dining</option>
+                                    <option value="Transportation">Transportation</option>
                                     <option value="Shopping">Shopping</option>
+                                    <option value="Entertainment">Entertainment</option>
+                                    <option value="Healthcare">Healthcare</option>
+                                    <option value="Utilities">Utilities</option>
+                                    <option value="Housing">Housing</option>
+                                    <option value="Education">Education</option>
+                                    <option value="Travel">Travel</option>
                                     <option value="Other">Other</option>
                                 </select>
                             </div>

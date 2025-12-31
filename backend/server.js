@@ -233,6 +233,58 @@ db.serialize(() => {
     UNIQUE(userId, settingKey)
   )`);
 
+    // Split feature: Groups table
+    db.run(`CREATE TABLE IF NOT EXISTS groups (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    createdBy TEXT NOT NULL,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (createdBy) REFERENCES users (id)
+  )`);
+
+    // Split feature: Group members table
+    db.run(`CREATE TABLE IF NOT EXISTS group_members (
+    id TEXT PRIMARY KEY,
+    groupId TEXT NOT NULL,
+    userId TEXT NOT NULL,
+    role TEXT DEFAULT 'member',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (groupId) REFERENCES groups (id),
+    FOREIGN KEY (userId) REFERENCES users (id),
+    UNIQUE(groupId, userId)
+  )`);
+
+    // Split feature: Group expenses table
+    db.run(`CREATE TABLE IF NOT EXISTS group_expenses (
+    id TEXT PRIMARY KEY,
+    groupId TEXT NOT NULL,
+    payerId TEXT NOT NULL,
+    amount REAL NOT NULL,
+    description TEXT NOT NULL,
+    expenseDate DATE NOT NULL,
+    category TEXT NOT NULL,
+    splitType TEXT DEFAULT 'even',
+    notes TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (groupId) REFERENCES groups (id),
+    FOREIGN KEY (payerId) REFERENCES users (id)
+  )`);
+
+    // Split feature: Expense splits (who owes what)
+    db.run(`CREATE TABLE IF NOT EXISTS expense_splits (
+    id TEXT PRIMARY KEY,
+    expenseId TEXT NOT NULL,
+    userId TEXT NOT NULL,
+    amount REAL NOT NULL,
+    isSettled BOOLEAN DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (expenseId) REFERENCES group_expenses (id),
+    FOREIGN KEY (userId) REFERENCES users (id)
+  )`);
+
     // Insert default categories for all users
     const defaultCategories = [
         { name: 'Food & Dining', description: 'Restaurants, groceries, food delivery', color: '#EF4444', icon: 'utensils' },
@@ -2065,7 +2117,240 @@ app.get('/api/budgets/summary', authenticateToken, (req, res) => {
     );
 });
 
-// Analytics API endpoints
+// --- Split Feature Routes ---
+
+// Search users for groups
+app.get('/api/users/search', authenticateToken, (req, res) => {
+    const query = req.query.q;
+    if (!query || query.length < 2) {
+        return res.json({ success: true, data: [] });
+    }
+
+    const searchTerm = `%${query}%`;
+    db.all(
+        'SELECT id, firstName, lastName, email, profilePicture FROM users WHERE (firstName LIKE ? OR lastName LIKE ? OR email LIKE ?) AND id != ? LIMIT 10',
+        [searchTerm, searchTerm, searchTerm, req.user.id],
+        (err, rows) => {
+            if (err) return handleError(res, err, 'User search failed');
+            res.json({ success: true, data: rows });
+        }
+    );
+});
+
+// List groups
+app.get('/api/groups', authenticateToken, (req, res) => {
+    const query = `
+        SELECT g.*, 
+        (SELECT COUNT(*) FROM group_members WHERE groupId = g.id) as memberCount,
+        (SELECT MAX(expenseDate) FROM group_expenses WHERE groupId = g.id) as lastExpenseDate,
+        (SELECT description FROM group_expenses WHERE groupId = g.id ORDER BY expenseDate DESC, createdAt DESC LIMIT 1) as lastExpenseSummary
+        FROM groups g
+        JOIN group_members gm ON g.id = gm.groupId
+        WHERE gm.userId = ?
+        ORDER BY g.updatedAt DESC
+    `;
+
+    db.all(query, [req.user.id], (err, groups) => {
+        if (err) return handleError(res, err, 'Failed to list groups');
+
+        // For each group, calculate the user's balance
+        const groupsWithBalance = [];
+        const processGroup = (index) => {
+            if (index >= groups.length) {
+                return res.json({ success: true, data: groupsWithBalance });
+            }
+
+            const group = groups[index];
+            const balanceQuery = `
+                SELECT 
+                    (SELECT IFNULL(SUM(amount), 0) FROM group_expenses WHERE groupId = ? AND payerId = ?) as totalPaid,
+                    (SELECT IFNULL(SUM(amount), 0) FROM expense_splits es JOIN group_expenses ge ON es.expenseId = ge.id WHERE ge.groupId = ? AND es.userId = ?) as totalOwed
+            `;
+            db.get(balanceQuery, [group.id, req.user.id, group.id, req.user.id], (err, balance) => {
+                const myBalance = (balance?.totalPaid || 0) - (balance?.totalOwed || 0);
+
+                // Also get icons/avatars for members
+                db.all('SELECT u.profilePicture, u.firstName FROM users u JOIN group_members gm ON u.id = gm.userId WHERE gm.groupId = ? LIMIT 3', [group.id], (err, members) => {
+                    groupsWithBalance.push({
+                        ...group,
+                        myBalance,
+                        members: members || []
+                    });
+                    processGroup(index + 1);
+                });
+            });
+        };
+
+        processGroup(0);
+    });
+});
+
+// Create group
+app.post('/api/groups', authenticateToken, (req, res) => {
+    const { name, description, memberIds } = req.body;
+    if (!name) return res.status(400).json({ success: false, message: 'Group name is required' });
+
+    const groupId = uuidv4();
+    const createdBy = req.user.id;
+
+    db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
+
+        db.run(
+            'INSERT INTO groups (id, name, description, createdBy) VALUES (?, ?, ?, ?)',
+            [groupId, name, description, createdBy]
+        );
+
+        // Add creator as admin
+        db.run(
+            'INSERT INTO group_members (id, groupId, userId, role) VALUES (?, ?, ?, ?)',
+            [uuidv4(), groupId, createdBy, 'admin']
+        );
+
+        // Add other members
+        if (memberIds && Array.isArray(memberIds)) {
+            memberIds.forEach(userId => {
+                if (userId !== createdBy) {
+                    db.run(
+                        'INSERT INTO group_members (id, groupId, userId, role) VALUES (?, ?, ?, ?)',
+                        [uuidv4(), groupId, userId, 'member']
+                    );
+                }
+            });
+        }
+
+        db.run('COMMIT', (err) => {
+            if (err) {
+                db.run('ROLLBACK');
+                return handleError(res, err, 'Failed to create group');
+            }
+            res.json({ success: true, data: { id: groupId, name, description } });
+        });
+    });
+});
+
+// Get group details
+app.get('/api/groups/:id', authenticateToken, (req, res) => {
+    const groupId = req.params.id;
+
+    // Verify membership
+    db.get('SELECT * FROM group_members WHERE groupId = ? AND userId = ?', [groupId, req.user.id], (err, membership) => {
+        if (err || !membership) return res.status(403).json({ success: false, message: 'Access denied' });
+
+        db.get('SELECT * FROM groups WHERE id = ?', [groupId], (err, group) => {
+            if (err || !group) return res.status(404).json({ success: false, message: 'Group not found' });
+
+            // Get members
+            db.all(
+                'SELECT u.id, u.firstName, u.lastName, u.email, u.profilePicture, gm.role FROM users u JOIN group_members gm ON u.id = gm.userId WHERE gm.groupId = ?',
+                [groupId],
+                (err, members) => {
+                    // Get expenses
+                    db.all(
+                        'SELECT ge.*, u.firstName as payerName, u.profilePicture as payerAvatar FROM group_expenses ge JOIN users u ON ge.payerId = u.id WHERE ge.groupId = ? ORDER BY ge.expenseDate DESC, ge.createdAt DESC',
+                        [groupId],
+                        (err, expenses) => {
+                            // Calculate balances
+                            const balanceQuery = `
+                                SELECT 
+                                    (SELECT IFNULL(SUM(amount), 0) FROM group_expenses WHERE groupId = ? AND payerId = ?) as totalPaid,
+                                    (SELECT IFNULL(SUM(amount), 0) FROM expense_splits es JOIN group_expenses ge ON es.expenseId = ge.id WHERE ge.groupId = ? AND es.userId = ?) as totalOwed
+                            `;
+                            db.get(balanceQuery, [groupId, req.user.id, groupId, req.user.id], (err, balance) => {
+                                res.json({
+                                    success: true,
+                                    data: {
+                                        ...group,
+                                        members,
+                                        expenses,
+                                        myBalance: (balance?.totalPaid || 0) - (balance?.totalOwed || 0)
+                                    }
+                                });
+                            });
+                        }
+                    );
+                }
+            );
+        });
+    });
+});
+
+// Add shared expense
+app.post('/api/groups/:id/expenses', authenticateToken, (req, res) => {
+    const groupId = req.params.id;
+    const { description, amount, category, expenseDate, payerId, splits, notes } = req.body;
+
+    if (!description || !amount || !payerId || !splits) {
+        return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    const expenseId = uuidv4();
+
+    db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
+
+        db.run(
+            'INSERT INTO group_expenses (id, groupId, payerId, amount, description, expenseDate, category, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [expenseId, groupId, payerId, amount, description, expenseDate, category, notes]
+        );
+
+        splits.forEach(split => {
+            db.run(
+                'INSERT INTO expense_splits (id, expenseId, userId, amount) VALUES (?, ?, ?, ?)',
+                [uuidv4(), expenseId, split.userId, split.amount]
+            );
+        });
+
+        // Update group timestamp
+        db.run('UPDATE groups SET updatedAt = CURRENT_TIMESTAMP WHERE id = ?', [groupId]);
+
+        db.run('COMMIT', (err) => {
+            if (err) {
+                db.run('ROLLBACK');
+                return handleError(res, err, 'Failed to add shared expense');
+            }
+            res.json({ success: true, message: 'Expense added successfully' });
+        });
+    });
+});
+
+// Settle balance
+app.post('/api/groups/:id/settle', authenticateToken, (req, res) => {
+    const groupId = req.params.id;
+    const { amount, toUserId } = req.body;
+
+    if (!amount || !toUserId) return res.status(400).json({ success: false, message: 'Amount and target user required' });
+
+    const expenseId = uuidv4();
+    const description = 'Settlement';
+    const date = new Date().toISOString().split('T')[0];
+
+    db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
+
+        db.run(
+            'INSERT INTO group_expenses (id, groupId, payerId, amount, description, expenseDate, category, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [expenseId, groupId, req.user.id, amount, description, date, 'Other', 'Balance settlement']
+        );
+
+        db.run(
+            'INSERT INTO expense_splits (id, expenseId, userId, amount, isSettled) VALUES (?, ?, ?, ?, ?)',
+            [uuidv4(), expenseId, toUserId, amount, 1]
+        );
+
+        db.run('UPDATE groups SET updatedAt = CURRENT_TIMESTAMP WHERE id = ?', [groupId]);
+
+        db.run('COMMIT', (err) => {
+            if (err) {
+                db.run('ROLLBACK');
+                return handleError(res, err, 'Settlement failed');
+            }
+            res.json({ success: true, message: 'Settlement recorded' });
+        });
+    });
+});
+
+// --- Analytics API endpoints ---
 app.get('/api/analytics/spending-overview', authenticateToken, (req, res) => {
     const userId = req.user.id;
     const { timeRange = 'month' } = req.query;
