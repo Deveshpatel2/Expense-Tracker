@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Users, Plus, MoreHorizontal, User, 
-  ArrowUpRight, ArrowDownRight, Clock,
-  ChevronRight, Search, X, Check,
-  CreditCard, PieChart, Activity
+  Clock,
+  ChevronRight, Search, X,
+  CreditCard, Activity
 } from 'lucide-react';
 
 const SplitPage = ({ user }) => {
   const [groups, setGroups] = useState([]);
-  const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);

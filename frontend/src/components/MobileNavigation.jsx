@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import ProfileDropdown from './ProfileDropdown';
 import DarkModeToggle from './DarkModeToggle';
 import { Menu, X, Home, Receipt, PieChart, Tag, Settings, CreditCard } from 'lucide-react';
@@ -83,7 +82,7 @@ const MobileNavigation = ({ activeNav, setActiveNav }) => {
           </div>
 
           {/* Menu Content */}
-          <div className="p-4 space-y-6 overflow-y-auto h-[calc(100%-80px)]">
+          <div className="p-4 space-y-6 overflow-y-auto flex-1 h-full">
             {/* User Info */}
             <div className="flex items-center space-x-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
               <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center shadow-md">

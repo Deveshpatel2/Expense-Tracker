@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Plus, Calendar, PieChart, BarChart3, 
-  ArrowUpRight, ArrowDownRight, AlertCircle, 
-  PiggyBank, Wallet, Trash2, Edit2, ChevronLeft, ChevronRight,
-  Coffee, Car, ShoppingBag, Heart, Zap, Home, GraduationCap, Plane, Receipt, X
+  Plus, PieChart, BarChart3, 
+  ArrowDownRight, AlertCircle, 
+  PiggyBank, Wallet, Trash2, Edit2, ChevronLeft, ChevronRight, X
 } from 'lucide-react';
 import { 
-  PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip,
+  PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid
 } from 'recharts';
+import { Card, SectionHeader, PrimaryButton, SecondaryButton, ProgressBar, EmptyState, Input, Select } from './CoreUI';
+import { CATEGORIES, getCategoryConfig } from '../theme/ThemeConfig';
 
 const BudgetPage = ({ expenses, user }) => {
   const [budgets, setBudgets] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
   const [showAddModal, setShowAddModal] = useState(false);
   const [rolloverEnabled, setRolloverEnabled] = useState(false);
@@ -25,49 +25,9 @@ const BudgetPage = ({ expenses, user }) => {
     alertThreshold: 80
   });
 
-  const categories = [
-    'Food & Dining',
-    'Transportation',
-    'Shopping',
-    'Entertainment',
-    'Healthcare',
-    'Utilities',
-    'Housing',
-    'Education',
-    'Travel',
-    'Other'
-  ];
-
-  const getCategoryIcon = (category) => {
-    switch (category) {
-      case 'Food & Dining': return Coffee;
-      case 'Transportation': return Car;
-      case 'Shopping': return ShoppingBag;
-      case 'Entertainment': return Heart;
-      case 'Healthcare': return Heart;
-      case 'Utilities': return Zap;
-      case 'Housing': return Home;
-      case 'Education': return GraduationCap;
-      case 'Travel': return Plane;
-      default: return Receipt;
-    }
-  };
-
-  const getCategoryColor = (category) => {
-    const colors = {
-      'Food & Dining': '#10b981', // emerald-500
-      'Transportation': '#3b82f6', // blue-500
-      'Shopping': '#8b5cf6', // violet-500
-      'Entertainment': '#ec4899', // pink-500
-      'Healthcare': '#ef4444', // red-500
-      'Utilities': '#f59e0b', // amber-500
-      'Other': '#64748b' // slate-500
-    };
-    return colors[category] || colors['Other'];
-  };
+  const categoryOptions = Object.keys(CATEGORIES).map(cat => ({ value: cat, label: cat }));
 
   const loadBudgets = useCallback(async () => {
-    setLoading(true);
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
@@ -82,7 +42,7 @@ const BudgetPage = ({ expenses, user }) => {
     } catch (error) {
       console.error('Error loading budgets:', error);
     } finally {
-      setLoading(false);
+        // loading state removed
     }
   }, [selectedMonth]);
 
@@ -153,7 +113,6 @@ const BudgetPage = ({ expenses, user }) => {
 
   const totalBudgeted = budgets.reduce((sum, b) => sum + b.amount, 0);
   const totalSpent = categorySpending.reduce((sum, b) => sum + b.spent, 0);
-  const overallPercent = totalBudgeted > 0 ? (totalSpent / totalBudgeted) * 100 : 0;
 
   // Chart Data
   const pieData = categorySpending.map(b => ({
@@ -166,31 +125,29 @@ const BudgetPage = ({ expenses, user }) => {
     { name: 'Spent', amount: totalSpent }
   ];
 
-  const COLORS = budgets.map(b => getCategoryColor(b.category));
-
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-[var(--space-lg)] pb-[var(--space-xl)]">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 animate-fade-in">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-[var(--space-md)]">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800 dark:text-white">Budget</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">
+          <h1 className="text-[var(--text-page-title)] font-[var(--weight-bold)] text-[var(--color-text-main)]">Budget</h1>
+          <p className="text-[var(--text-muted)] text-[var(--color-text-muted)] mt-[var(--space-xs)]">
             Setting goals for {new Date(selectedMonth + '-02').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </p>
         </div>
-        <div className="flex items-center gap-4">
-             <div className="flex items-center bg-white dark:bg-slate-800 rounded-xl p-1 shadow-sm border border-slate-200 dark:border-slate-700">
+        <div className="flex items-center gap-[var(--space-md)]">
+             <div className="flex items-center bg-[var(--color-surface)] rounded-[var(--radius-btn)] p-[var(--space-xs)] border border-[var(--color-border)]">
                 <button 
                     onClick={() => {
                         const d = new Date(selectedMonth + '-02');
                         d.setMonth(d.getMonth() - 1);
                         setSelectedMonth(d.toISOString().slice(0, 7));
                     }}
-                    className="p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                    className="p-[var(--space-xs)] hover:bg-[var(--color-bg)] rounded-[var(--radius-btn)] transition-colors"
                 >
                     <ChevronLeft className="w-4 h-4" />
                 </button>
-                <div className="px-4 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                <div className="px-[var(--space-md)] text-[var(--text-body)] font-[var(--weight-semibold)] text-[var(--color-text-main)]">
                     {new Date(selectedMonth + '-02').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                 </div>
                 <button 
@@ -199,112 +156,106 @@ const BudgetPage = ({ expenses, user }) => {
                         d.setMonth(d.getMonth() + 1);
                         setSelectedMonth(d.toISOString().slice(0, 7));
                     }}
-                    className="p-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                    className="p-[var(--space-xs)] hover:bg-[var(--color-bg)] rounded-[var(--radius-btn)] transition-colors"
                 >
                     <ChevronRight className="w-4 h-4" />
                 </button>
             </div>
-            <button
+            <PrimaryButton
                 onClick={() => {
                     setEditingBudget(null);
                     setBudgetForm({ category: '', amount: '', notes: '', alertThreshold: 80 });
                     setShowAddModal(true);
                 }}
-                className="btn-primary flex items-center gap-2 shadow-lg shadow-primary-500/20"
+                className="flex items-center gap-2"
             >
                 <Plus className="w-5 h-5" />
                 Add Budget
-            </button>
+            </PrimaryButton>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-up">
-        <div className="glass-card p-6 border-l-4 border-primary-500">
-            <div className="flex items-center gap-3 mb-2 text-slate-500 dark:text-slate-400">
-                <Wallet className="w-5 h-5" />
-                <span className="text-sm font-medium">Total Budgeted</span>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[var(--space-md)]">
+        <Card padding="var(--space-md)" className="border-l-4 border-l-[var(--color-primary)]">
+            <div className="flex items-center gap-[var(--space-xs)] mb-[var(--space-xs)] text-[var(--color-text-muted)]">
+                <Wallet className="w-4 h-4" />
+                <span className="text-[var(--text-muted)] font-[var(--weight-medium)]">Total Budgeted</span>
             </div>
-            <h3 className="text-2xl font-bold">${totalBudgeted.toLocaleString()}</h3>
-        </div>
-        <div className="glass-card p-6 border-l-4 border-emerald-500">
-            <div className="flex items-center gap-3 mb-2 text-slate-500 dark:text-slate-400">
-                <ArrowDownRight className="w-5 h-5 text-emerald-500" />
-                <span className="text-sm font-medium">Total Spent</span>
+            <h3 className="text-[var(--text-monetary-md)] font-[var(--weight-bold)] text-[var(--color-text-main)]">
+              ${totalBudgeted.toLocaleString()}
+            </h3>
+        </Card>
+        <Card padding="var(--space-md)" className="border-l-4 border-l-[var(--color-success)]">
+            <div className="flex items-center gap-[var(--space-xs)] mb-[var(--space-xs)] text-[var(--color-text-muted)]">
+                <ArrowDownRight className="w-4 h-4 text-[var(--color-success)]" />
+                <span className="text-[var(--text-muted)] font-[var(--weight-medium)]">Total Spent</span>
             </div>
-            <h3 className="text-2xl font-bold">${totalSpent.toLocaleString()}</h3>
-        </div>
-        <div className="glass-card p-6 border-l-4 border-amber-500">
-            <div className="flex items-center gap-3 mb-2 text-slate-500 dark:text-slate-400">
-                <PiggyBank className="w-5 h-5 text-amber-500" />
-                <span className="text-sm font-medium">Remaining</span>
+            <h3 className="text-[var(--text-monetary-md)] font-[var(--weight-bold)] text-[var(--color-text-main)]">
+              ${totalSpent.toLocaleString()}
+            </h3>
+        </Card>
+        <Card padding="var(--space-md)" className="border-l-4 border-l-[var(--color-warning)]">
+            <div className="flex items-center gap-[var(--space-xs)] mb-[var(--space-xs)] text-[var(--color-text-muted)]">
+                <PiggyBank className="w-4 h-4 text-[var(--color-warning)]" />
+                <span className="text-[var(--text-muted)] font-[var(--weight-medium)]">Remaining</span>
             </div>
-            <h3 className="text-2xl font-bold">${(totalBudgeted - totalSpent).toLocaleString()}</h3>
-        </div>
+            <h3 className="text-[var(--text-monetary-md)] font-[var(--weight-bold)] text-[var(--color-text-main)]">
+              ${(totalBudgeted - totalSpent).toLocaleString()}
+            </h3>
+        </Card>
       </div>
 
       {/* Main Budget Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="space-y-4">
-            <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white">Category Budgets</h2>
-                <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-500 font-medium">Rollover</span>
-                    <button 
-                        onClick={() => setRolloverEnabled(!rolloverEnabled)}
-                        className={`w-10 h-5 rounded-full relative transition-colors ${rolloverEnabled ? 'bg-primary-500' : 'bg-slate-200 dark:bg-slate-700'}`}
-                    >
-                        <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${rolloverEnabled ? 'left-6' : 'left-1'}`} />
-                    </button>
-                </div>
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-[var(--space-lg)]">
+        <div className="space-y-[var(--space-md)]">
+            <SectionHeader 
+              title="Category Budgets" 
+              actionLabel={rolloverEnabled ? "Rollover Enabled" : "Rollover Disabled"}
+              onActionClick={() => setRolloverEnabled(!rolloverEnabled)}
+            />
 
             {categorySpending.length === 0 ? (
-                <div className="glass-card p-12 text-center">
-                    <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1">No budgets yet</h3>
-                    <p className="text-slate-500 text-sm">Start by adding a budget for a category.</p>
-                </div>
+                <EmptyState 
+                    message="You haven't set any budgets for this month yet. Setting a budget helps you keep track of your spending goals."
+                    ctaLabel="Step 1: Create a Budget"
+                    onCtaClick={() => setShowAddModal(true)}
+                />
             ) : (
                 categorySpending.map((budget) => {
-                    const Icon = getCategoryIcon(budget.category);
+                    const { icon: Icon } = getCategoryConfig(budget.category);
                     const isOver = budget.percent > 100;
                     const isNear = budget.percent > budget.alertThreshold && !isOver;
+                    const progressColor = isOver ? 'var(--color-danger)' : isNear ? 'var(--color-warning)' : 'var(--color-success)';
 
                     return (
-                        <div key={budget.id} className="glass-card p-5 group hover:scale-[1.01] transition-all">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800">
-                                        <Icon className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+                        <Card key={budget.id} padding="var(--space-md)" className="group relative">
+                            <div className="flex justify-between items-start mb-[var(--space-sm)]">
+                                <div className="flex items-center gap-[var(--space-sm)]">
+                                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--color-bg)] text-[var(--color-text-muted)] border border-[var(--color-border)]">
+                                        <Icon className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-slate-900 dark:text-white">{budget.category}</h4>
-                                        <p className="text-xs text-slate-500">{budget.notes || 'Monthly target'}</p>
+                                        <h4 className="font-[var(--weight-semibold)] text-[var(--color-text-main)]">{budget.category}</h4>
+                                        <p className="text-[var(--text-muted)] text-[var(--color-text-muted)]">{budget.notes || 'Monthly target'}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-sm font-bold text-slate-900 dark:text-white">
+                                    <div className="text-[var(--text-body)] font-[var(--weight-bold)] text-[var(--color-text-main)]">
                                         ${budget.spent.toLocaleString()} / ${budget.amount.toLocaleString()}
                                     </div>
-                                    <div className={`text-xs font-bold ${isOver ? 'text-red-500' : isNear ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                    <div className={`text-[var(--text-muted)] font-[var(--weight-semibold)]`} style={{ color: progressColor }}>
                                         {Math.round(budget.percent)}% Used
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Progress Bar */}
-                            <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mb-4 shadow-inner">
-                                <div 
-                                    className={`h-full rounded-full transition-all duration-1000 ${isOver ? 'bg-red-500' : isNear ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                                    style={{ width: `${Math.min(budget.percent, 100)}%` }}
-                                />
-                            </div>
+                            <ProgressBar value={budget.percent} color={progressColor} className="mb-[var(--space-sm)]" />
 
-                            <div className="flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex justify-between items-center sm:opacity-0 group-hover:opacity-100 transition-opacity">
                                 <div className="flex gap-2">
                                      {isOver && (
-                                        <span className="px-2 py-0.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-lg flex items-center gap-1">
+                                        <span className="text-[var(--text-muted)] text-[var(--color-danger)] font-[var(--weight-semibold)] flex items-center gap-1">
                                             <AlertCircle className="w-3 h-3" /> Overspent
                                         </span>
                                     )}
@@ -321,138 +272,126 @@ const BudgetPage = ({ expenses, user }) => {
                                             });
                                             setShowAddModal(true);
                                         }}
-                                        className="p-1.5 text-slate-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
+                                        className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-colors"
                                     >
                                         <Edit2 className="w-4 h-4" />
                                     </button>
                                     <button 
                                         onClick={() => handleDeleteBudget(budget.id)}
-                                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                        className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        </Card>
                     );
                 })
             )}
         </div>
 
         {/* Charts & Analytics */}
-        <div className="space-y-8">
-            <div className="glass-card p-6">
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
-                    <PieChart className="w-5 h-5 text-primary-500" />
-                    Budget Distribution
-                </h2>
-                <div className="h-[300px] w-full">
-                    {pieData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                            <RePieChart>
-                                <Pie
-                                    data={pieData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={100}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {pieData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip
-                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                                />
-                                <Legend verticalAlign="bottom" height={36}/>
-                            </RePieChart>
-                        </ResponsiveContainer>
-                    ) : (
-                        <div className="h-full flex items-center justify-center text-slate-400 italic">
-                            No data to display
-                        </div>
-                    )}
-                </div>
-            </div>
+        {categorySpending.length > 0 && (
+          <div className="space-y-[var(--space-lg)]">
+              <Card padding="var(--space-md)">
+                  <h2 className="text-[var(--text-section-title)] font-[var(--weight-semibold)] text-[var(--color-text-main)] mb-[var(--space-md)] flex items-center gap-2">
+                      <PieChart className="w-4 h-4 text-[var(--color-primary)]" />
+                      Budget Distribution
+                  </h2>
+                  <div className="h-[200px] sm:h-[250px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                          <RePieChart>
+                              <Pie
+                                  data={pieData}
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={70}
+                                  outerRadius={90}
+                                  paddingAngle={2}
+                                  dataKey="value"
+                                  isAnimationActive={false}
+                              >
+                                  {pieData.map((entry, index) => (
+                                      <Cell 
+                                        key={`cell-${index}`} 
+                                        fill={index === 0 ? 'var(--color-primary)' : 'var(--color-chart-muted)'} 
+                                      />
+                                  ))}
+                              </Pie>
+                              <Tooltip
+                                  contentStyle={{ borderRadius: 'var(--radius-btn)', border: 'none', boxShadow: 'var(--shadow-sm)' }}
+                              />
+                          </RePieChart>
+                      </ResponsiveContainer>
+                  </div>
+                  <p className="text-[12px] text-[var(--color-text-muted)] mt-[var(--space-sm)] italic text-center">
+                    Distribution of budgeted funds across primary spending categories.
+                  </p>
+              </Card>
 
-             <div className="glass-card p-6">
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5 text-emerald-500" />
-                    Spending Overview
-                </h2>
-                <div className="h-[300px] w-full">
-                   {totalBudgeted > 0 ? (
-                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={barData}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                            <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                            <YAxis axisLine={false} tickLine={false} />
-                            <Tooltip
-                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                            />
-                            <Bar dataKey="amount" radius={[8, 8, 0, 0]}>
-                                {barData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={index === 0 ? '#6366f1' : '#10b981'} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                   ) : (
-                    <div className="h-full flex items-center justify-center text-slate-400 italic">
-                        No data to display
-                    </div>
-                   )}
-                </div>
-            </div>
-        </div>
+               <Card padding="var(--space-md)">
+                  <h2 className="text-[var(--text-section-title)] font-[var(--weight-semibold)] text-[var(--color-text-main)] mb-[var(--space-md)] flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4 text-[var(--color-success)]" />
+                      Spending Overview
+                  </h2>
+                  <div className="h-[200px] sm:h-[250px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={barData}>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-chart-grid)" />
+                              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--color-chart-label)' }} />
+                              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--color-chart-label)' }} />
+                              <Tooltip
+                                  cursor={{ fill: 'transparent' }}
+                                  contentStyle={{ borderRadius: 'var(--radius-btn)', border: 'none', boxShadow: 'var(--shadow-sm)' }}
+                              />
+                              <Bar dataKey="amount" isAnimationActive={false} radius={[4, 4, 0, 0]}>
+                                  {barData.map((entry, index) => (
+                                      <Cell key={`cell-${index}`} fill={index === 0 ? 'var(--color-primary)' : 'var(--color-chart-muted)'} />
+                                  ))}
+                              </Bar>
+                          </BarChart>
+                      </ResponsiveContainer>
+                  </div>
+                  <p className="text-[12px] text-[var(--color-text-muted)] mt-[var(--space-sm)] italic text-center">
+                    Comparison between total planned budget and current month's actual spending.
+                  </p>
+              </Card>
+          </div>
+        )}
       </div>
 
       {/* Add/Edit Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
-                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-[var(--space-md)] bg-black/50 backdrop-blur-sm animate-fade-in">
+            <Card padding="0" className="w-full max-w-md shadow-2xl overflow-hidden border-none">
+                <div className="p-[var(--space-md)] border-b border-[var(--color-border)] flex justify-between items-center">
+                    <h3 className="text-[var(--text-section-title)] font-[var(--weight-bold)] text-[var(--color-text-main)]">
                         {editingBudget ? 'Edit Budget' : 'Add New Budget'}
                     </h3>
-                    <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full transition-colors">
+                    <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-[var(--color-bg)] rounded-full transition-colors">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
-                <form onSubmit={handleSaveBudget} className="p-6 space-y-6">
+                <form onSubmit={handleSaveBudget} className="p-[var(--space-md)] space-y-[var(--space-md)]">
+                    <Select
+                      label="Category"
+                      options={categoryOptions}
+                      value={budgetForm.category}
+                      onChange={(e) => setBudgetForm({...budgetForm, category: e.target.value})}
+                      required
+                    />
+                    <Input
+                      label="Monthly Amount"
+                      type="number"
+                      value={budgetForm.amount}
+                      onChange={(e) => setBudgetForm({...budgetForm, amount: e.target.value})}
+                      placeholder="0.00"
+                      prefix="$"
+                      required
+                    />
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Category</label>
-                        <select 
-                            value={budgetForm.category}
-                            onChange={(e) => setBudgetForm({...budgetForm, category: e.target.value})}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all appearance-none"
-                            required
-                        >
-                            <option value="">Select Category</option>
-                            {categories.map(cat => (
-                                <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Monthly Amount</label>
-                        <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
-                            <input 
-                                type="number" 
-                                value={budgetForm.amount}
-                                onChange={(e) => setBudgetForm({...budgetForm, amount: e.target.value})}
-                                placeholder="0.00"
-                                className="w-full pl-9 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
-                                required
-                            />
-                        </div>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Alert Threshold (%)</label>
-                        <div className="flex items-center gap-4">
+                        <label className="block text-sm font-[var(--weight-bold)] text-[var(--color-text-main)] mb-[var(--space-xs)]">Alert Threshold (%)</label>
+                        <div className="flex items-center gap-[var(--space-md)]">
                             <input 
                                 type="range" 
                                 min="50" 
@@ -460,29 +399,29 @@ const BudgetPage = ({ expenses, user }) => {
                                 step="5"
                                 value={budgetForm.alertThreshold}
                                 onChange={(e) => setBudgetForm({...budgetForm, alertThreshold: parseInt(e.target.value)})}
-                                className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary-500"
+                                className="flex-1 h-2 bg-[var(--color-border)] rounded-full appearance-none cursor-pointer accent-[var(--color-primary)]"
                             />
-                            <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{budgetForm.alertThreshold}%</span>
+                            <span className="text-sm font-[var(--weight-bold)] text-[var(--color-text-main)]">{budgetForm.alertThreshold}%</span>
                         </div>
-                        <p className="text-[10px] text-slate-500 mt-2 italic">Notify me when I spent more than {budgetForm.alertThreshold}%</p>
+                        <p className="text-[10px] text-[var(--color-text-muted)] mt-[var(--space-xs)] italic">Notify me when I spent more than {budgetForm.alertThreshold}%</p>
                     </div>
-                    <div className="flex gap-3 pt-2">
-                        <button 
+                    <div className="flex gap-[var(--space-sm)] pt-[var(--space-xs)]">
+                        <SecondaryButton 
                             type="button"
                             onClick={() => setShowAddModal(false)}
-                            className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                            className="flex-1"
                         >
                             Cancel
-                        </button>
-                        <button 
+                        </SecondaryButton>
+                        <PrimaryButton 
                             type="submit"
-                            className="flex-1 px-4 py-3 bg-primary-600 text-white font-bold rounded-2xl shadow-lg shadow-primary-500/30 hover:shadow-primary-600/40 hover:-translate-y-0.5 transition-all"
+                            className="flex-1"
                         >
                             Save Budget
-                        </button>
+                        </PrimaryButton>
                     </div>
                 </form>
-            </div>
+            </Card>
         </div>
       )}
     </div>

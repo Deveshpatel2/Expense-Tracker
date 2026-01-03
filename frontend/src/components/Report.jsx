@@ -1,15 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, AreaChart, Area
+  PieChart, Pie, Cell
 } from 'recharts';
-import { useDarkMode } from '../context/DarkModeContext';
 import { useCurrency } from '../context/CurrencyContext';
+import { Card, SectionHeader, Select, Input, PrimaryButton, EmptyState } from './CoreUI';
+import { CATEGORIES, getCategoryConfig } from '../theme/ThemeConfig';
 import './Report.css';
 
 const currencies = [
   { code: 'USD', symbol: '$', name: 'US Dollar' },
   { code: 'EUR', symbol: '€', name: 'Euro' },
+  // ... (keep currency list or move to config if reused, but fine here for now)
   { code: 'GBP', symbol: '£', name: 'British Pound' },
   { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
   { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
@@ -43,7 +45,7 @@ const formatAmount = (amount, currencyCode = 'USD') => {
 };
 
 const Report = ({ expenses = [] }) => {
-  const { isDarkMode } = useDarkMode();
+  // const { isDarkMode } = useDarkMode(); // Unused
   
   // Safely get currency with fallback
   let selectedCurrency = 'USD';
@@ -77,44 +79,8 @@ const Report = ({ expenses = [] }) => {
     }
   }, [timeRange, customStartDate, customEndDate]);
 
-
-  // Get categories dynamically from expenses, with fallback to default categories
-  const categories = useMemo(() => {
-    const defaultCategories = [
-      'Food & Dining',
-      'Transportation',
-      'Shopping',
-      'Entertainment',
-      'Healthcare',
-      'Utilities',
-      'Housing',
-      'Education',
-      'Travel',
-      'Other'
-    ];
-    
-    if (!expenses || expenses.length === 0) {
-      return defaultCategories;
-    }
-    
-    // Extract unique categories from expenses
-    const expenseCategories = new Set();
-    expenses.forEach(expense => {
-      if (expense.category) {
-        expenseCategories.add(expense.category);
-      }
-    });
-    
-    // Combine default categories with expense categories
-    const allCategories = [...defaultCategories];
-    expenseCategories.forEach(cat => {
-      if (!allCategories.includes(cat)) {
-        allCategories.push(cat);
-      }
-    });
-    
-    return allCategories;
-  }, [expenses]);
+  // Use centralized categories
+  const categories = useMemo(() => Object.keys(CATEGORIES), []);
 
   const filteredExpenses = useMemo(() => {
     let filtered = [...expenses];
@@ -201,6 +167,12 @@ const Report = ({ expenses = [] }) => {
     filteredExpenses.forEach(expense => {
       if (breakdown[expense.category]) {
         breakdown[expense.category] += parseFloat(expense.amount);
+      } else if (CATEGORIES[expense.category]) {
+          breakdown[expense.category] += parseFloat(expense.amount);
+      } else {
+          // Handle unknown categories grouping logic if necessary or just add them
+           if(!breakdown['Other']) breakdown['Other'] = 0;
+           breakdown['Other'] += parseFloat(expense.amount);
       }
     });
     
@@ -303,386 +275,356 @@ const Report = ({ expenses = [] }) => {
     return averages;
   }, [filteredExpenses]);
 
-  const getCategoryColor = (category) => {
-    const colors = {
-      'Food & Dining': '#10b981',
-      'Transportation': '#3b82f6',
-      'Shopping': '#8b5cf6',
-      'Entertainment': '#ec4899',
-      'Healthcare': '#ef4444',
-      'Utilities': '#f59e0b',
-      'Housing': '#6366f1',
-      'Education': '#14b8a6',
-      'Travel': '#f97316',
-      'Other': '#6b7280'
-    };
-    return colors[category] || colors['Other'];
-  };
-
   if (expenses.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-gray-400 dark:text-gray-600 text-6xl mb-4">📊</div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No data to report</h3>
-        <p className="text-gray-500 dark:text-gray-400">Add some expenses to see detailed reports and insights!</p>
-      </div>
+      <EmptyState
+        message="Add some expenses to see detailed reports and insights!"
+        ctaLabel="Add First Expense"
+        onCtaClick={() => {}} // Handle navigation if needed
+      />
     );
   }
 
+  // Common props for charts
+  const axisProps = {
+    axisLine: false,
+    tickLine: false,
+    tick: { fontSize: 12, fill: 'var(--color-chart-label)' },
+    stroke: 'var(--color-chart-label)'
+  };
+
+  const tooltipProps = {
+    isAnimationActive: false,
+    cursor: { fill: 'transparent' },
+    contentStyle: {
+      backgroundColor: 'var(--color-surface)',
+      borderRadius: 'var(--radius-btn)',
+      border: '1px solid var(--color-border)',
+      boxShadow: 'var(--shadow-sm)',
+      color: 'var(--color-text-main)'
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[var(--space-lg)]">
       {/* Filters and Chart Type Selection */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+      <Card>
+        <div className="grid grid-cols-1 gap-[var(--space-md)] sm:grid-cols-4 items-end">
           <div className={timeRange === 'custom' ? 'sm:col-span-2' : ''}>
-            <label htmlFor="timeRange" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Time Range
-            </label>
-            <select
-              id="timeRange"
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
-              className="block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            >
-              <option value="week">Last Week</option>
-              <option value="month">Last Month</option>
-              <option value="quarter">Last Quarter</option>
-              <option value="year">Last Year</option>
-              <option value="custom">Custom Range</option>
-            </select>
-            
-            {/* Custom Date Range Inputs - Inside the time range section */}
-            {timeRange === 'custom' && (
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="customStartDate" className="block text-xs font-medium text-gray-600 mb-1">
-                    Start Date
-                  </label>
-                  <input
+            <Select
+                label="Time Range"
+                value={timeRange}
+                onChange={(e) => setTimeRange(e.target.value)}
+                options={[
+                    { value: 'week', label: 'Last Week' },
+                    { value: 'month', label: 'Last Month' },
+                    { value: 'quarter', label: 'Last Quarter' },
+                    { value: 'year', label: 'Last Year' },
+                    { value: 'custom', label: 'Custom Range' },
+                ]}
+            />
+            {/* Custom Date Range Inputs */}
+             {timeRange === 'custom' && (
+              <div className="mt-[var(--space-sm)] grid grid-cols-2 gap-[var(--space-sm)]">
+                <Input
+                    label="Start Date"
                     type="date"
-                    id="customStartDate"
                     value={customStartDate}
                     onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-xs"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="customEndDate" className="block text-xs font-medium text-gray-600 mb-1">
-                    End Date
-                  </label>
-                  <input
+                />
+                <Input
+                    label="End Date"
                     type="date"
-                    id="customEndDate"
                     value={customEndDate}
                     onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-xs"
-                  />
-                </div>
+                />
               </div>
             )}
           </div>
           
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Category Filter
-            </label>
-            <select
-              id="category"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            >
-              <option value="all">All Categories</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
+            <Select
+                label="Category Filter"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                options={[
+                    { value: 'all', label: 'All Categories' },
+                    ...categories.map(c => ({ value: c, label: c }))
+                ]}
+            />
           </div>
 
           <div>
-            <label htmlFor="chartType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Chart Type
-            </label>
-            <select
-              id="chartType"
-              value={chartType}
-              onChange={(e) => setChartType(e.target.value)}
-              className="block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            >
-              <option value="bar">Bar Chart</option>
-              <option value="line">Line Chart</option>
-              <option value="area">Area Chart</option>
-            </select>
+            <Select
+                label="Chart Type"
+                value={chartType}
+                onChange={(e) => setChartType(e.target.value)}
+                options={[
+                    { value: 'bar', label: 'Bar Chart' },
+                    { value: 'line', label: 'Line Chart' },
+                    { value: 'area', label: 'Area Chart' },
+                ]}
+            />
           </div>
 
-          <div className="flex items-end">
-            <button
-              onClick={() => window.print()}
-              className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          <div>
+             <PrimaryButton 
+                onClick={() => window.print()} 
+                className="w-full"
             >
               📄 Print Report
-            </button>
+            </PrimaryButton>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-indigo-500 rounded-md flex items-center justify-center">
-                <span className="text-white text-sm font-medium">💰</span>
-              </div>
+      <div className="grid grid-cols-1 gap-[var(--space-md)] sm:grid-cols-2 lg:grid-cols-4">
+        <Card padding="var(--space-lg)">
+            <div className="flex items-center gap-[var(--space-md)]">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--color-primary)] text-white text-xl">
+                    💰
+                </div>
+                <div>
+                   <p className="text-[var(--text-muted)] text-[var(--color-text-muted)] font-[var(--weight-medium)]">Total Expenses</p>
+                   {Object.keys(totalsByCurrency).length > 0 ? (
+                      Object.entries(totalsByCurrency).map(([currency, total]) => (
+                        <div key={currency} className="text-[var(--text-monetary-md)] font-[var(--weight-bold)] text-[var(--color-text-main)]">
+                           {formatAmount(total, currency)}
+                        </div>
+                      ))
+                   ) : (
+                      <p className="text-[var(--text-body)] font-[var(--weight-semibold)]">No expenses</p>
+                   )}
+                </div>
             </div>
-            <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Expenses</p>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {Object.keys(totalsByCurrency).length > 0 ? (
-                  Object.entries(totalsByCurrency).map(([currency, total]) => (
-                    <div key={currency} className="flex items-center space-x-1">
-                      <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {formatAmount(total, currency)}
-                      </p>
-                      <span className="inline-flex px-1.5 py-0.5 text-xs font-semibold rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200">
-                        {currency}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white">No expenses</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        </Card>
 
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                <span className="text-white text-sm font-medium">📊</span>
-              </div>
+        <Card padding="var(--space-lg)">
+             <div className="flex items-center gap-[var(--space-md)]">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--color-success)] text-white text-xl">
+                    📊
+                </div>
+                <div>
+                   <p className="text-[var(--text-muted)] text-[var(--color-text-muted)] font-[var(--weight-medium)]">Average Expense</p>
+                    {Object.keys(averagesByCurrency).length > 0 ? (
+                      Object.entries(averagesByCurrency).map(([currency, average]) => (
+                         <div key={currency} className="text-[var(--text-monetary-md)] font-[var(--weight-bold)] text-[var(--color-text-main)]">
+                           {formatAmount(average, currency)}
+                        </div>
+                      ))
+                    ) : (
+                       <p className="text-[var(--text-body)] font-[var(--weight-semibold)]">No expenses</p>
+                    )}
+                </div>
             </div>
-            <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Average Expense</p>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {Object.keys(averagesByCurrency).length > 0 ? (
-                  Object.entries(averagesByCurrency).map(([currency, average]) => (
-                    <div key={currency} className="flex items-center space-x-1">
-                      <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {formatAmount(average, currency)}
-                      </p>
-                      <span className="inline-flex px-1.5 py-0.5 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
-                        {currency}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white">No expenses</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        </Card>
 
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                <span className="text-white text-sm font-medium">📝</span>
-              </div>
+        <Card padding="var(--space-lg)">
+             <div className="flex items-center gap-[var(--space-md)]">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[#3b82f6] text-white text-xl">
+                    📝
+                </div>
+                <div>
+                   <p className="text-[var(--text-muted)] text-[var(--color-text-muted)] font-[var(--weight-medium)]">Transactions</p>
+                   <p className="text-[var(--text-monetary-md)] font-[var(--weight-bold)] text-[var(--color-text-main)]">{filteredExpenses.length}</p>
+                </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Transactions</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{filteredExpenses.length}</p>
-            </div>
-          </div>
-        </div>
+        </Card>
 
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                <span className="text-white text-sm font-medium">🏆</span>
-              </div>
+        <Card padding="var(--space-lg)">
+            <div className="flex items-center gap-[var(--space-md)]">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[#8b5cf6] text-white text-xl">
+                    🏆
+                </div>
+                <div>
+                   <p className="text-[var(--text-muted)] text-[var(--color-text-muted)] font-[var(--weight-medium)]">Top Category</p>
+                   <p className="text-[var(--text-body)] font-[var(--weight-bold)] text-[var(--color-text-main)]">
+                      {categoryBreakdown.length > 0 ? categoryBreakdown[0][0] : 'N/A'}
+                   </p>
+                </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Top Category</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                {categoryBreakdown.length > 0 ? categoryBreakdown[0][0] : 'N/A'}
-              </p>
-            </div>
-          </div>
-        </div>
+        </Card>
       </div>
 
       {/* Weekly Report Charts */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-[var(--space-lg)] lg:grid-cols-2">
         {/* Weekly Bar Chart */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Weekly Spending Overview</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={weeklyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? "#374151" : "#e5e7eb"} />
-              <XAxis dataKey="week" stroke={isDarkMode ? "#d1d5db" : "#6b7280"} />
-              <YAxis stroke={isDarkMode ? "#d1d5db" : "#6b7280"} />
-              <Tooltip 
-                formatter={(value) => [formatAmount(value, selectedCurrency), 'Amount']}
-                labelFormatter={(label) => `Week: ${label}`}
-                contentStyle={{
-                  backgroundColor: isDarkMode ? "#374151" : "#ffffff",
-                  border: isDarkMode ? "1px solid #4b5563" : "1px solid #e5e7eb",
-                  color: isDarkMode ? "#f9fafb" : "#111827"
-                }}
-              />
-              <Bar dataKey="amount" fill={isDarkMode ? "#8b5cf6" : "#6366f1"} radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <Card>
+          <SectionHeader title="Weekly Spending Overview" className="mb-[var(--space-md)]" />
+          <div className="h-[250px] sm:h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weeklyData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-chart-grid)" />
+                <XAxis dataKey="week" {...axisProps} />
+                <YAxis {...axisProps} />
+                <Tooltip 
+                  {...tooltipProps}
+                  formatter={(value) => [formatAmount(value, selectedCurrency), 'Amount']}
+                  labelFormatter={(label) => `Week: ${label}`}
+                />
+                <Bar dataKey="amount" isAnimationActive={false} fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="text-[12px] text-[var(--color-text-muted)] mt-[var(--space-sm)] italic text-center">
+            Variation in spending patterns across the last eight weeks.
+          </p>
+        </Card>
 
         {/* Daily Line Chart */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Daily Spending Trend</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={dailyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? "#374151" : "#e5e7eb"} />
-              <XAxis dataKey="day" stroke={isDarkMode ? "#d1d5db" : "#6b7280"} />
-              <YAxis stroke={isDarkMode ? "#d1d5db" : "#6b7280"} />
-              <Tooltip 
-                formatter={(value) => [formatAmount(value, selectedCurrency), 'Amount']}
-                labelFormatter={(label) => `Date: ${label}`}
-                contentStyle={{
-                  backgroundColor: isDarkMode ? "#374151" : "#ffffff",
-                  border: isDarkMode ? "1px solid #4b5563" : "1px solid #e5e7eb",
-                  color: isDarkMode ? "#f9fafb" : "#111827"
-                }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="amount" 
-                stroke={isDarkMode ? "#34d399" : "#10b981"} 
-                strokeWidth={3}
-                dot={{ fill: isDarkMode ? "#34d399" : "#10b981", strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, stroke: isDarkMode ? "#34d399" : "#10b981", strokeWidth: 2, fill: isDarkMode ? "#34d399" : "#10b981" }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        <Card>
+          <SectionHeader title="Daily Spending Trend" className="mb-[var(--space-md)]" />
+          <div className="h-[250px] sm:h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={dailyData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-chart-grid)" />
+                <XAxis dataKey="day" {...axisProps} />
+                <YAxis {...axisProps} />
+                <Tooltip 
+                  {...tooltipProps}
+                  formatter={(value) => [formatAmount(value, selectedCurrency), 'Amount']}
+                  labelFormatter={(label) => `Date: ${label}`}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="amount" 
+                  isAnimationActive={false}
+                  stroke="var(--color-primary)" 
+                  strokeWidth={2}
+                  dot={{ fill: "var(--color-primary)", strokeWidth: 0, r: 4 }}
+                  activeDot={{ r: 6, stroke: "var(--color-primary)", strokeWidth: 0, fill: "var(--color-primary)" }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="text-[12px] text-[var(--color-text-muted)] mt-[var(--space-sm)] italic text-center">
+            Detailed day-by-day spending fluctuations.
+          </p>
+        </Card>
       </div>
 
       {/* Monthly Trend Chart */}
       {monthlyTrend.length > 1 && (
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Monthly Spending Trend</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={monthlyTrend.map(([month, amount]) => ({ month, amount }))}>
-              <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? "#374151" : "#e5e7eb"} />
-              <XAxis dataKey="month" stroke={isDarkMode ? "#d1d5db" : "#6b7280"} />
-              <YAxis stroke={isDarkMode ? "#d1d5db" : "#6b7280"} />
-              <Tooltip 
-                formatter={(value) => [formatAmount(value, selectedCurrency), 'Amount']}
-                labelFormatter={(label) => `Month: ${label}`}
-                contentStyle={{
-                  backgroundColor: isDarkMode ? "#374151" : "#ffffff",
-                  border: isDarkMode ? "1px solid #4b5563" : "1px solid #e5e7eb",
-                  color: isDarkMode ? "#f9fafb" : "#111827"
-                }}
-              />
-              <Area 
-                type="monotone" 
-                dataKey="amount" 
-                stroke={isDarkMode ? "#a78bfa" : "#8b5cf6"} 
-                fill={isDarkMode ? "#a78bfa" : "#8b5cf6"} 
-                fillOpacity={0.3}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
+        <Card>
+          <SectionHeader title="Monthly Spending Trend" className="mb-[var(--space-md)]" />
+          <div className="h-[250px] sm:h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyTrend.map(([month, amount]) => ({ month, amount }))}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-chart-grid)" />
+                <XAxis dataKey="month" {...axisProps} />
+                <YAxis {...axisProps} />
+                <Tooltip 
+                  {...tooltipProps}
+                  formatter={(value) => [formatAmount(value, selectedCurrency), 'Amount']}
+                  labelFormatter={(label) => `Month: ${label}`}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="amount" 
+                  isAnimationActive={false}
+                  stroke="var(--color-primary)" 
+                  strokeWidth={2}
+                  dot={{ fill: "var(--color-primary)", strokeWidth: 0, r: 4 }}
+                  activeDot={{ r: 6, stroke: "var(--color-primary)", strokeWidth: 0, fill: "var(--color-primary)" }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="text-[12px] text-[var(--color-text-muted)] mt-[var(--space-sm)] italic text-center">
+            Long-term trend analysis of monthly expenditures.
+          </p>
+        </Card>
       )}
 
-      {/* Category Pie Chart - Standalone */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4 text-center">Category Distribution</h3>
-        <ResponsiveContainer width="100%" height={400}>
-          <PieChart>
-            <Pie
-              data={categoryBreakdown.map(([category, amount]) => ({
-                name: category,
-                value: amount
-              }))}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              outerRadius={120}
-              fill="#8884d8"
-              dataKey="value"
-            >
-              {categoryBreakdown.map(([category], index) => (
-                <Cell key={`cell-${index}`} fill={getCategoryColor(category)} />
-              ))}
-            </Pie>
-            <Tooltip 
-              formatter={(value) => [formatAmount(value, selectedCurrency), 'Amount']} 
-              contentStyle={{
-                backgroundColor: isDarkMode ? "#374151" : "#ffffff",
-                border: isDarkMode ? "1px solid #4b5563" : "1px solid #e5e7eb",
-                color: isDarkMode ? "#f9fafb" : "#111827"
-              }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
+      {/* Category Donut Chart */}
+      <Card>
+        <SectionHeader title="Category Distribution" className="mb-[var(--space-md)] text-center justify-center" />
+        <div className="h-[300px] sm:h-[400px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={categoryBreakdown.map(([category, amount]) => ({
+                  name: category,
+                  value: amount
+                }))}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => window.innerWidth < 640 ? `${(percent * 100).toFixed(0)}%` : `${name} ${(percent * 100).toFixed(0)}%`}
+                innerRadius={window.innerWidth < 640 ? 60 : 100}
+                outerRadius={window.innerWidth < 640 ? 90 : 140}
+                dataKey="value"
+                isAnimationActive={false}
+              >
+                {categoryBreakdown.map(([category], index) => {
+                   const config = getCategoryConfig(category);
+                   return (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={config?.color || 'var(--color-chart-muted)'} 
+                      />
+                   );
+                })}
+              </Pie>
+              <Tooltip 
+                {...tooltipProps}
+                formatter={(value) => [formatAmount(value, selectedCurrency), 'Amount']} 
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <p className="text-[12px] text-[var(--color-text-muted)] mt-[var(--space-sm)] italic text-center">
+          Percentage breakdown of all expenditures by category.
+        </p>
+      </Card>
 
       {/* Top Expenses */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Top 5 Highest Expenses</h3>
-        <div className="space-y-3">
+      <Card>
+        <SectionHeader title="Top 5 Highest Expenses" className="mb-[var(--space-md)]" />
+        <div className="space-y-[var(--space-sm)]">
           {topExpenses.map((expense, index) => (
-            <div key={expense.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div key={expense.id} className="flex items-center justify-between p-[var(--space-sm)] bg-[var(--color-bg)] rounded-[var(--radius-btn)]">
               <div className="flex items-center">
-                <span className="text-lg font-bold text-indigo-600 mr-3">#{index + 1}</span>
+                <span className="text-[var(--text-body)] font-[var(--weight-bold)] text-[var(--color-primary)] mr-[var(--space-md)]">#{index + 1}</span>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{expense.description}</p>
-                  <p className="text-xs text-gray-500">{expense.category} • {new Date(expense.expenseDate || expense.date).toLocaleDateString()}</p>
+                  <p className="text-[var(--text-body)] font-[var(--weight-semibold)] text-[var(--color-text-main)]">{expense.description}</p>
+                  <p className="text-[var(--text-muted)] text-[var(--color-text-muted)]">{expense.category} • {new Date(expense.expenseDate || expense.date).toLocaleDateString()}</p>
                 </div>
               </div>
-              <span className="text-lg font-semibold text-gray-900">{formatAmount(expense.amount, expense.currency || selectedCurrency)}</span>
+              <span className="text-[var(--text-body)] font-[var(--weight-bold)] text-[var(--color-text-main)]">{formatAmount(expense.amount, expense.currency || selectedCurrency)}</span>
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* Detailed Category Breakdown */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Detailed Category Breakdown</h3>
-        <div className="space-y-4">
+      <Card>
+        <SectionHeader title="Detailed Category Breakdown" className="mb-[var(--space-md)]" />
+        <div className="space-y-[var(--space-md)]">
           {categoryBreakdown.map(([category, amount]) => {
             const percentage = totalAmount > 0 ? (amount / totalAmount) * 100 : 0;
+            const config = getCategoryConfig(category);
             return (
               <div key={category} className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <div className={`w-4 h-4 rounded-full mr-3`} style={{ backgroundColor: getCategoryColor(category) }}></div>
-                  <span className="text-sm font-medium text-gray-700">{category}</span>
+                  <div className={`w-4 h-4 rounded-full mr-[var(--space-sm)]`} style={{ backgroundColor: config.color }}></div>
+                  <span className="text-[var(--text-body)] font-[var(--weight-medium)] text-[var(--color-text-main)]">{category}</span>
                 </div>
-                <div className="flex items-center space-x-4">
-                  <div className="w-32 bg-gray-200 rounded-full h-2">
+                <div className="flex items-center space-x-[var(--space-md)]">
+                  <div className="w-24 sm:w-32 bg-[var(--color-border)] rounded-full h-2">
                     <div
                       className="h-2 rounded-full"
                       style={{ 
                         width: `${percentage}%`,
-                        backgroundColor: getCategoryColor(category)
+                        backgroundColor: config.color
                       }}
                     ></div>
                   </div>
-                  <span className="text-sm font-medium text-gray-900 w-20 text-right">
+                  <span className="text-[var(--text-body)] font-[var(--weight-medium)] text-[var(--color-text-main)] w-20 text-right">
                     {formatAmount(amount, selectedCurrency)}
                   </span>
-                  <span className="text-sm text-gray-500 w-16 text-right">
+                  <span className="text-[var(--text-muted)] text-[var(--color-text-muted)] w-12 text-right">
                     {percentage.toFixed(1)}%
                   </span>
                 </div>
@@ -690,7 +632,7 @@ const Report = ({ expenses = [] }) => {
             );
           })}
         </div>
-      </div>
+      </Card>
     </div>
   );
 };
