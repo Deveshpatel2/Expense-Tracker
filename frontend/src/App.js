@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
-import Dashboard from './pages/Dashboard';
+import AnalyticsDashboard from './components/AnalyticsDashboard';
 import Login from './components/Login';
 import UserRegister from './components/UserRegister';
 import EmailVerification from './components/EmailVerification';
@@ -35,7 +35,7 @@ function App() {
                         path="/dashboard"
                         element={
                           <ProtectedRoute>
-                            <Dashboard />
+                            <AnalyticsDashboard />
                           </ProtectedRoute>
                         }
                       />
