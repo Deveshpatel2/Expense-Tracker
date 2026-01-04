@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   LayoutDashboard, Receipt, PieChart, Settings, 
-  ChevronLeft, ChevronRight, Plus, CreditCard, Wallet,
+  ChevronLeft, ChevronRight, Plus, CreditCard,
   X, Users, Trash2, Menu
 } from 'lucide-react';
 import ExpenseList from './ExpenseList';
@@ -297,11 +297,15 @@ const AnalyticsDashboard = () => {
             fixed lg:static top-0 left-0 h-full
             bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-all duration-300 flex flex-col z-40 lg:z-20 shadow-xl lg:shadow-sm
        `}>
-            <div className="p-6 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 h-20">
+            {/* Sidebar Logo Header */}
+            <div className="p-6 flex items-center justify-between h-20">
                 <div className={`flex items-center gap-3 ${!sidebarOpen && 'lg:justify-center w-full'}`}>
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-lg shadow-primary-500/20 shrink-0">
-                        <Wallet className="text-white w-6 h-6" />
+                    <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center shadow-lg shadow-primary-600/20 shrink-0">
+                        <div className="text-white font-bold text-lg">$</div>
                     </div>
+                    {sidebarOpen && (
+                        <span className="font-bold text-xl text-slate-900 dark:text-white tracking-tight animate-fade-in">Spendora</span>
+                    )}
                 </div>
                 {/* Mobile Close Button */}
                 <button 
@@ -312,7 +316,7 @@ const AnalyticsDashboard = () => {
                 </button>
             </div>
 
-            <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+            <nav className="flex-1 px-4 pb-4 space-y-2 overflow-y-auto custom-scrollbar">
                 <SidebarItem id="dashboard" icon={LayoutDashboard} label="Dashboard" />
                 <SidebarItem id="expenses" icon={Receipt} label="Expenses" />
                 <SidebarItem id="budget" icon={CreditCard} label="Budget" />
@@ -336,8 +340,8 @@ const AnalyticsDashboard = () => {
 
        {/* Main Content */}
        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-900 relative">
-            {/* Mobile Header */}
-            <header className="lg:hidden h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between sticky top-0 z-20">
+            {/* Mobile Header (Only visible on small screens) */}
+            <header className="lg:hidden h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between sticky top-0 z-30">
                 <div className="flex items-center gap-3">
                     <button 
                         onClick={() => setMobileSidebarOpen(true)}
@@ -357,6 +361,27 @@ const AnalyticsDashboard = () => {
 
             <div className="relative z-10 w-full px-6 lg:px-8 py-6 lg:py-8">
                 
+                {/* Desktop User Profile / Top Bar */}
+                <div className="hidden lg:flex justify-end items-center mb-8 gap-4">
+                     <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                        <div className="w-5 h-5 relative">
+                            <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></div>
+                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+                        </div>
+                     </button>
+                     <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
+                     <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 flex items-center justify-center font-bold text-sm">
+                            {user?.firstName?.charAt(0) || 'U'}
+                            {user?.lastName?.charAt(0) || ''}
+                        </div>
+                        <div className="text-sm">
+                            <p className="font-semibold text-slate-700 dark:text-slate-200 leading-none">{user?.firstName} {user?.lastName}</p>
+                            <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">{user?.email}</p>
+                        </div>
+                     </div>
+                </div>
+
                 {activeNav === 'dashboard' && (
                     <div className="space-y-8 animate-slide-up">
                         {/* 1. Greeting with current month context */}

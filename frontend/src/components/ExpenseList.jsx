@@ -1,27 +1,35 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Filter, Search } from 'lucide-react';
+import { Filter, Search, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import AdvancedSearch from './AdvancedSearch';
-import { Card, SectionHeader, EmptyState, Input, Select } from './CoreUI';
+import { Card, EmptyState, Input, Select, PrimaryButton } from './CoreUI';
 import { CATEGORIES, getCategoryConfig } from '../theme/ThemeConfig';
 
 const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrency = 'USD', user, onAddExpense }) => {
   const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
-  const [dateFilter, setDateFilter] = useState('All Time');
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
 
   const categories = useMemo(() => ['All Categories', ...Object.keys(CATEGORIES)], []);
 
-  const dateRanges = [
-    'All Time',
-    'This Week',
-    'This Month',
-    'Last 3 Months',
-    'This Year'
-  ];
+  const handlePrevMonth = () => {
+    setCurrentDate(prev => {
+        const newDate = new Date(prev);
+        newDate.setMonth(prev.getMonth() - 1);
+        return newDate;
+    });
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(prev => {
+        const newDate = new Date(prev);
+        newDate.setMonth(prev.getMonth() + 1);
+        return newDate;
+    });
+  };
 
   const filterAndSortExpenses = useCallback(() => {
     let filtered = [...expenses];
@@ -39,29 +47,12 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
       filtered = filtered.filter(expense => expense.category === categoryFilter);
     }
 
-    // Date Filter
-    const now = new Date();
-    if (dateFilter !== 'All Time') {
-        filtered = filtered.filter(expense => {
-            const expenseDate = new Date(expense.date);
-            switch(dateFilter) {
-                case 'This Week':
-                    const oneWeekAgo = new Date();
-                    oneWeekAgo.setDate(now.getDate() - 7);
-                    return expenseDate >= oneWeekAgo;
-                case 'This Month':
-                    return expenseDate.getMonth() === now.getMonth() && expenseDate.getFullYear() === now.getFullYear();
-                case 'Last 3 Months':
-                    const threeMonthsAgo = new Date();
-                    threeMonthsAgo.setMonth(now.getMonth() - 3);
-                    return expenseDate >= threeMonthsAgo;
-                case 'This Year':
-                    return expenseDate.getFullYear() === now.getFullYear();
-                default:
-                    return true;
-            }
-        });
-    }
+    // Date Filter (Strict Monthly)
+    filtered = filtered.filter(expense => {
+        const expenseDate = new Date(expense.date);
+        return expenseDate.getMonth() === currentDate.getMonth() && 
+               expenseDate.getFullYear() === currentDate.getFullYear();
+    });
 
     // Sort
     filtered.sort((a, b) => {
@@ -83,7 +74,7 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
     });
 
     setFilteredExpenses(filtered);
-  }, [expenses, searchTerm, categoryFilter, dateFilter, sortBy, sortOrder]);
+  }, [expenses, searchTerm, categoryFilter, currentDate, sortBy, sortOrder]);
 
   useEffect(() => {
     filterAndSortExpenses();
@@ -109,7 +100,6 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
     let parts = [];
     if (searchTerm) parts.push(`matching "${searchTerm}"`);
     if (categoryFilter !== 'All Categories') parts.push(`in ${categoryFilter}`);
-    if (dateFilter !== 'All Time') parts.push(`from ${dateFilter.toLowerCase()}`);
     
     if (parts.length === 0) return null;
     return (
@@ -123,12 +113,41 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
 
   return (
     <div className="space-y-[var(--space-lg)]">
-      {/* Header Section */}
-      <SectionHeader 
-        title="Expenses" 
-        actionLabel="Add Expense"
-        onActionClick={onAddExpense}
-      />
+      {/* Custom Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 className="text-[var(--text-page-title)] font-[var(--weight-bold)] text-[var(--color-text-main)] mb-1">Expenses</h1>
+            <p className="text-[var(--text-muted)] text-[var(--color-text-muted)]">
+                Viewing {filteredExpenses.length} transaction{filteredExpenses.length !== 1 ? 's' : ''} for {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+            </p>
+        </div>
+        
+        <div className="flex items-center gap-4">
+            {/* Month Navigator */}
+            <div className="flex items-center bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-btn)] p-1 shadow-sm">
+                <button 
+                    onClick={handlePrevMonth}
+                    className="p-2 hover:bg-[var(--color-bg)] rounded-[var(--radius-btn)] transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"
+                >
+                    <ChevronLeft className="w-4 h-4" />
+                </button>
+                <div className="px-4 font-[var(--weight-semibold)] text-[var(--text-body)] text-[var(--color-text-main)] min-w-[140px] text-center">
+                    {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                </div>
+                <button 
+                    onClick={handleNextMonth}
+                    className="p-2 hover:bg-[var(--color-bg)] rounded-[var(--radius-btn)] transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"
+                >
+                    <ChevronRight className="w-4 h-4" />
+                </button>
+            </div>
+
+            {/* Primary Action */}
+            <PrimaryButton onClick={onAddExpense} className="shadow-lg">
+                <Plus className="w-5 h-5" /> Add Expense
+            </PrimaryButton>
+        </div>
+      </div>
 
       {/* Filter Row */}
       <div className="flex flex-col gap-[var(--space-md)] sticky top-0 z-10 bg-[var(--color-bg)] py-[var(--space-sm)] border-b border-[var(--color-border)]">
@@ -143,17 +162,8 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
                 />
             </div>
             
-            {/* Date Filter */}
-            <div className="w-full lg:w-[200px]">
-                <Select
-                    value={dateFilter}
-                    onChange={(e) => setDateFilter(e.target.value)}
-                    options={dateRanges.map(r => ({ value: r, label: r }))}
-                />
-            </div>
-
             {/* Category Filter */}
-             <div className="w-full lg:w-[200px]">
+             <div className="w-full lg:w-[240px]">
                 <Select
                     value={categoryFilter}
                     onChange={(e) => setCategoryFilter(e.target.value)}
@@ -205,7 +215,7 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
       <div className="space-y-[var(--space-sm)]">
         {filteredExpenses.length === 0 ? (
             <EmptyState 
-                message="We couldn't find any expenses matching your filters. Try adjusting them or add a new expense."
+                message={`No expenses found for ${currentDate.toLocaleString('default', { month: 'long' })}.`}
                 ctaLabel="Add New Expense"
                 onCtaClick={onAddExpense}
             />
@@ -220,9 +230,8 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
                     >
                         <Card 
                             padding="sm" 
-                            className="flex items-center gap-[var(--space-md)] hover:bg-[var(--color-bg)] transition-colors group"
+                            className="flex items-center gap-[var(--space-md)] hover:bg-[var(--color-bg)] transition-colors group border-transparent hover:border-[var(--color-border)] shadow-sm hover:shadow-md"
                         >
-                            {/* Icon - Line Style */}
                             {/* Icon - Soft Style */}
                             <div 
                                 className="w-10 h-10 rounded-[var(--radius-btn)] flex items-center justify-center shrink-0 transition-colors"
