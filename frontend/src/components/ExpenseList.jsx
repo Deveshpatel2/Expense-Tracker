@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Filter, Search, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Filter, Search, ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import AdvancedSearch from './AdvancedSearch';
 import { Card, EmptyState, Input, Select, PrimaryButton } from './CoreUI';
 import { CATEGORIES, getCategoryConfig } from '../theme/ThemeConfig';
@@ -223,14 +223,14 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
             filteredExpenses.map((expense) => {
                 const { icon: Icon, color } = getCategoryConfig(expense.category);
                 return (
-                    <button 
+                    <div 
                         key={expense.id} 
+                        className="w-full text-left cursor-pointer group"
                         onClick={() => onEditExpense(expense)}
-                        className="w-full text-left"
                     >
                         <Card 
                             padding="sm" 
-                            className="flex items-center gap-[var(--space-md)] hover:bg-[var(--color-bg)] transition-colors group border-transparent hover:border-[var(--color-border)] shadow-sm hover:shadow-md"
+                            className="flex items-center gap-[var(--space-md)] hover:bg-[var(--color-bg)] transition-colors border-transparent hover:border-[var(--color-border)] shadow-sm hover:shadow-md relative pr-12 sm:pr-[var(--space-md)]"
                         >
                             {/* Icon - Soft Style */}
                             <div 
@@ -259,8 +259,20 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
                                     {formatDate(expense.date)}
                                 </div>
                             </div>
+                            
+                            {/* Delete Action (Visible on hover on Desktop, swipe/action on mobile - simplifies to button here) */}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDeleteExpense(expense.id);
+                                }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
+                                aria-label="Delete expense"
+                            >
+                                <Trash2 size={18} />
+                            </button>
                         </Card>
-                    </button>
+                    </div>
                 );
             })
         )}

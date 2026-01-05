@@ -253,23 +253,7 @@ const SplitPage = ({ user }) => {
       </div>
 
       {/* Floating Action Button */}
-      {!selectedGroup && (
-        <button 
-          onClick={() => {
-            // If we have groups, default to adding to the first one
-            if (groups.length > 0) {
-              setSelectedGroup(groups[0]);
-              setShowAddExpenseModal(true);
-            } else {
-              setShowCreateModal(true);
-            }
-          }}
-          className="fixed bottom-8 right-8 flex items-center gap-2 bg-primary-600 text-white px-6 py-4 rounded-3xl shadow-2xl shadow-primary-500/40 hover:scale-105 active:scale-95 transition-all z-20 font-bold"
-        >
-          <Plus className="w-6 h-6" />
-          Add Expense
-        </button>
-      )}
+
 
       {/* Group Detail Overlay */}
       {selectedGroup && !showAddExpenseModal && (

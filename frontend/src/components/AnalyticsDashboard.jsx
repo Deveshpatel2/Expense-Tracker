@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   LayoutDashboard, Receipt, PieChart, Settings, 
-  ChevronLeft, ChevronRight, Plus, CreditCard,
-  X, Users, Trash2, Menu
+  ChevronLeft, ChevronRight, Plus, CreditCard, ChevronDown, 
+  X, Users, Trash2, Menu, LogOut, Bell
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import ExpenseList from './ExpenseList';
 import Report from './Report';
 import BudgetPage from './BudgetPage';
@@ -13,17 +14,18 @@ import AddExpenseFlow from './AddExpenseFlow';
 import { getCategoryConfig } from '../theme/ThemeConfig';
 
 const AnalyticsDashboard = () => {
+  const { user, logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [activeNav, setActiveNav] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [expenses, setExpenses] = useState([]);
-  const [user, setUser] = useState(null);
   const [editingExpense, setEditingExpense] = useState(null);
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState(null); // ID of expense to delete
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [budgets, setBudgets] = useState([]);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [statistics, setStatistics] = useState({
     today: { amount: 0, count: 0 },
     thisWeek: { amount: 0, count: 0 },
@@ -31,51 +33,12 @@ const AnalyticsDashboard = () => {
     categories: []
   });
 
-  // Helper function to decode JWT token
-  const decodeToken = (token) => {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
-      return JSON.parse(jsonPayload);
-    } catch (error) {
-      console.error('Error decoding token:', error);
-      return null;
-    }
-  };
-
-  // Helper function to get user from token
-  const getUserFromToken = useCallback(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return null;
-
-    const decoded = decodeToken(token);
-    if (!decoded) return null;
-
-    return {
-      firstName: decoded.firstName || decoded.sub?.split('@')[0] || 'User',
-      lastName: decoded.lastName || '',
-      email: decoded.email || decoded.sub || 'user@example.com'
-    };
-  }, []);
-
   const loadAnalyticsData = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
       
       if (!token) {
-        // Set default user even without token
-        setUser({
-          firstName: 'User',
-          lastName: '',
-          email: 'guest@example.com'
-        });
         setExpenses([]);
         setStatistics({
           today: { amount: 0, count: 0 },
@@ -86,14 +49,6 @@ const AnalyticsDashboard = () => {
         setLoading(false);
         return;
       }
-
-      // Get user from token
-      const userData = getUserFromToken();
-      setUser(userData || {
-        firstName: 'User',
-        lastName: '',
-        email: 'user@example.com'
-      });
 
       const response = await fetch('http://localhost:8080/api/expenses', {
         method: 'GET',
@@ -181,7 +136,7 @@ const AnalyticsDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [getUserFromToken]);
+  }, []);
 
   useEffect(() => {
     loadAnalyticsData();
@@ -280,7 +235,78 @@ const AnalyticsDashboard = () => {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden relative">
+    <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden relative">
+
+        {/* Top Header */}
+        <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 lg:px-6 shrink-0 z-30">
+            <div className="flex items-center gap-3">
+                 {/* Mobile Menu Toggle */}
+                 <button 
+                    onClick={() => setMobileSidebarOpen(true)}
+                    className="p-2 -ml-2 text-slate-500 hover:bg-slate-50 rounded-lg lg:hidden"
+                >
+                    <Menu className="w-6 h-6" />
+                </button>
+
+                {/* Brand */}
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-primary-600 flex items-center justify-center shadow-lg shadow-primary-600/20 shrink-0">
+                        <div className="text-white font-bold text-lg">$</div>
+                    </div>
+                    <span className="font-bold text-xl text-slate-900 dark:text-white tracking-tight">Spendora</span>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+                 {/* Notifications */}
+                 <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors relative">
+                    <Bell className="w-5 h-5" />
+                    <div className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></div>
+                 </button>
+                 
+                 <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
+
+                 {/* User Profile */}
+                 <div className="relative">
+                    <button 
+                        onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                        className="flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800 p-1.5 rounded-xl transition-colors text-left"
+                    >
+                        <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 flex items-center justify-center font-bold text-sm">
+                            {user?.firstName?.charAt(0) || 'U'}
+                            {user?.lastName?.charAt(0) || ''}
+                        </div>
+                        <div className="text-sm hidden md:block">
+                            <p className="font-semibold text-slate-700 dark:text-slate-200 leading-none">{user?.firstName}</p>
+                        </div>
+                        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform hidden md:block ${profileDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {profileDropdownOpen && (
+                        <>
+                            <div 
+                                className="fixed inset-0 z-40"
+                                onClick={() => setProfileDropdownOpen(false)}
+                            />
+                            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 z-50 overflow-hidden animate-fade-in-down">
+                                <div className="p-1">
+                                    <button 
+                                        onClick={logout}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        <span>Logout</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                 </div>
+            </div>
+        </header>
+        
+        <div className="flex-1 flex overflow-hidden relative">
         
         {/* Mobile Sidebar Overlay */}
         {mobileSidebarOpen && (
@@ -292,25 +318,18 @@ const AnalyticsDashboard = () => {
 
        {/* Sidebar */}
        <aside className={`
-            ${sidebarOpen ? 'lg:w-72' : 'lg:w-20'} 
+            ${sidebarOpen ? 'lg:w-64' : 'lg:w-20'} 
             ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
             fixed lg:static top-0 left-0 h-full
-            bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-all duration-300 flex flex-col z-40 lg:z-20 shadow-xl lg:shadow-sm
+            bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-all duration-300 flex flex-col z-40 lg:z-20 shadow-xl lg:shadow-none
        `}>
-            {/* Sidebar Logo Header */}
-            <div className="p-6 flex items-center justify-between h-20">
-                <div className={`flex items-center gap-3 ${!sidebarOpen && 'lg:justify-center w-full'}`}>
-                    <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center shadow-lg shadow-primary-600/20 shrink-0">
-                        <div className="text-white font-bold text-lg">$</div>
-                    </div>
-                    {sidebarOpen && (
-                        <span className="font-bold text-xl text-slate-900 dark:text-white tracking-tight animate-fade-in">Spendora</span>
-                    )}
-                </div>
-                {/* Mobile Close Button */}
-                <button 
+            {/* Sidebar Logo Header - Removed as its in top bar, keeping a spacer or just pure nav */}
+             <div className="p-4 flex items-center justify-between lg:hidden">
+                 {/* Mobile Close Button since content moved to top bar */}
+                 <span className="font-bold text-slate-500">Menu</span>
+                 <button 
                     onClick={() => setMobileSidebarOpen(false)}
-                    className="p-2 lg:hidden text-slate-400 hover:text-slate-600 transition-colors"
+                    className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
                 >
                     <X className="w-6 h-6" />
                 </button>
@@ -323,7 +342,7 @@ const AnalyticsDashboard = () => {
                 <SidebarItem id="split" icon={Users} label="Split" />
                 <SidebarItem id="reports" icon={PieChart} label="Report" />
                 
-                <div className="pt-8 mt-8 border-t border-slate-100 dark:border-slate-800">
+                <div className="pt-8 mt-8 border-t border-slate-100 dark:border-slate-800 space-y-2">
                     <SidebarItem id="settings" icon={Settings} label="Settings" />
                 </div>
             </nav>
@@ -340,47 +359,11 @@ const AnalyticsDashboard = () => {
 
        {/* Main Content */}
        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-900 relative">
-            {/* Mobile Header (Only visible on small screens) */}
-            <header className="lg:hidden h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between sticky top-0 z-30">
-                <div className="flex items-center gap-3">
-                    <button 
-                        onClick={() => setMobileSidebarOpen(true)}
-                        className="p-2 -ml-2 text-slate-500 hover:bg-slate-50 rounded-lg"
-                    >
-                        <Menu className="w-6 h-6" />
-                    </button>
-                    <span className="font-bold text-slate-900 dark:text-white">Spendora</span>
-                </div>
-                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
-                    {user?.firstName?.charAt(0) || 'U'}
-                </div>
-            </header>
 
             {/* Ambient Background */}
             <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary-50/50 to-transparent dark:from-primary-900/10 pointer-events-none z-0" />
 
             <div className="relative z-10 w-full px-6 lg:px-8 py-6 lg:py-8">
-                
-                {/* Desktop User Profile / Top Bar */}
-                <div className="hidden lg:flex justify-end items-center mb-8 gap-4">
-                     <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
-                        <div className="w-5 h-5 relative">
-                            <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></div>
-                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
-                        </div>
-                     </button>
-                     <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
-                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 flex items-center justify-center font-bold text-sm">
-                            {user?.firstName?.charAt(0) || 'U'}
-                            {user?.lastName?.charAt(0) || ''}
-                        </div>
-                        <div className="text-sm">
-                            <p className="font-semibold text-slate-700 dark:text-slate-200 leading-none">{user?.firstName} {user?.lastName}</p>
-                            <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">{user?.email}</p>
-                        </div>
-                     </div>
-                </div>
 
                 {activeNav === 'dashboard' && (
                     <div className="space-y-8 animate-slide-up">
@@ -538,22 +521,10 @@ const AnalyticsDashboard = () => {
                                     )}
                                 </div>
                             </Card>
+
                         </div>
                         
-                        {/* Only one primary action button on the page (FAB or centered button) */}
-                        <div className="flex justify-start pt-[var(--space-lg)] lg:pb-0 pb-16">
-                            <PrimaryButton onClick={() => setShowAddExpense(true)} className="px-[var(--space-xl)] py-[var(--space-md)] shadow-xl hidden lg:flex">
-                                <Plus className="w-5 h-5" /> Add New Expense
-                            </PrimaryButton>
-                        </div>
 
-                        {/* Mobile/Tablet Floating Action Button (FAB) */}
-                        <button 
-                            onClick={() => setShowAddExpense(true)}
-                            className="lg:hidden fixed bottom-6 right-6 w-14 h-14 bg-[var(--color-primary)] text-white rounded-full shadow-2xl flex items-center justify-center z-30 hover:scale-105 active:scale-95 transition-all"
-                        >
-                            <Plus className="w-6 h-6" />
-                        </button>
                     </div>
                 )}
 
@@ -609,7 +580,8 @@ const AnalyticsDashboard = () => {
                      </div>
                 )}
             </div>
-       </main>
+        </main>
+        </div>
 
         {/* Delete Confirmation Modal */}
         {showDeleteModal && (
