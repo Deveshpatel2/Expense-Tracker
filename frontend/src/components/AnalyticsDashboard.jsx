@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  LayoutDashboard, Receipt, PieChart, Settings, 
-  ChevronLeft, ChevronRight, Plus, CreditCard, ChevronDown, 
-  X, Users, Trash2, Menu, LogOut, Bell
+  Trash2, LogOut, Settings
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import ExpenseList from './ExpenseList';
 import Report from './Report';
 import BudgetPage from './BudgetPage';
 import SplitPage from './SplitPage';
-import { Card, PrimaryButton, SectionHeader, EmptyState, ProgressBar } from './CoreUI';
+import { } from './CoreUI'; // Keeping as placeholder or removing if truly unused. 
 import AddExpenseFlow from './AddExpenseFlow';
-import { getCategoryConfig } from '../theme/ThemeConfig';
+import TopHeader from './TopHeader';
+import Sidebar from './Sidebar';
+import { GreetingHeader, KpiCardRow, BudgetPaceCard, CategoryBreakdownCard, RecentTransactionsCard, WeeklyTrendCard } from './DashboardWidgets';
 
 const AnalyticsDashboard = () => {
   const { user, logout } = useAuth();
@@ -210,19 +210,7 @@ const AnalyticsDashboard = () => {
   };
 
 
-  // UI Components
-  const SidebarItem = ({ id, icon: Icon, label }) => (
-    <button
-      onClick={() => {
-        setActiveNav(id);
-        setMobileSidebarOpen(false);
-      }}
-      className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group ${activeNav === id ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-    >
-      <Icon className={`w-5 h-5 transition-colors ${activeNav === id ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400 group-hover:text-slate-600'}`} />
-      <span className={`${!sidebarOpen && 'lg:hidden'}`}>{label}</span>
-    </button>
-  );
+
 
 
 
@@ -238,73 +226,41 @@ const AnalyticsDashboard = () => {
     <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden relative">
 
         {/* Top Header */}
-        <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 lg:px-6 shrink-0 z-30">
-            <div className="flex items-center gap-3">
-                 {/* Mobile Menu Toggle */}
-                 <button 
-                    onClick={() => setMobileSidebarOpen(true)}
-                    className="p-2 -ml-2 text-slate-500 hover:bg-slate-50 rounded-lg lg:hidden"
-                >
-                    <Menu className="w-6 h-6" />
-                </button>
+        <TopHeader 
+            user={user} 
+            sidebarOpen={sidebarOpen} 
+            setSidebarOpen={setSidebarOpen} 
+            onLogout={() => setProfileDropdownOpen(!profileDropdownOpen)} // Using existing dropdown state logic or logout directly? The user spec implied a dropdown chevron. I'll hook it to toggle the dropdown for now, but the visual spec was exact. User said "Chevron down icon".
+        />
+        
+        {/* User Profile Dropdown (Keep logically available if needed, or integrate into TopHeader if it handles it. 
+           User spec for TopHeader didn't explicitly ask for the *dropdown menu implementation*, just the *header visuals*. 
+           However, I need to make sure the dropdown still works or is positioned correctly relative to the new header.
+           For now I will keep the profileDropdown logic in Dashboard but positioned absolutely, 
+           or ideally TopHeader should handle it. 
+           Given the strict "Pixel Closely" instruction for the HEADER BAR, I'll assume the interaction logic (dropdown open) 
+           should ideally be triggered by that right cluster.
+        */}
 
-                {/* Brand */}
-                <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-primary-600 flex items-center justify-center shadow-lg shadow-primary-600/20 shrink-0">
-                        <div className="text-white font-bold text-lg">$</div>
-                    </div>
-                    <span className="font-bold text-xl text-slate-900 dark:text-white tracking-tight">Spendora</span>
-                </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-                 {/* Notifications */}
-                 <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors relative">
-                    <Bell className="w-5 h-5" />
-                    <div className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></div>
-                 </button>
-                 
-                 <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
-
-                 {/* User Profile */}
-                 <div className="relative">
-                    <button 
-                        onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                        className="flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800 p-1.5 rounded-xl transition-colors text-left"
-                    >
-                        <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 flex items-center justify-center font-bold text-sm">
-                            {user?.firstName?.charAt(0) || 'U'}
-                            {user?.lastName?.charAt(0) || ''}
-                        </div>
-                        <div className="text-sm hidden md:block">
-                            <p className="font-semibold text-slate-700 dark:text-slate-200 leading-none">{user?.firstName}</p>
-                        </div>
-                        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform hidden md:block ${profileDropdownOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {/* Dropdown Menu */}
-                    {profileDropdownOpen && (
-                        <>
-                            <div 
-                                className="fixed inset-0 z-40"
-                                onClick={() => setProfileDropdownOpen(false)}
-                            />
-                            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 z-50 overflow-hidden animate-fade-in-down">
-                                <div className="p-1">
-                                    <button 
-                                        onClick={logout}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                    >
-                                        <LogOut className="w-4 h-4" />
-                                        <span>Logout</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </>
-                    )}
+        {profileDropdownOpen && (
+             <>
+                 <div 
+                     className="fixed inset-0 z-40"
+                     onClick={() => setProfileDropdownOpen(false)}
+                 />
+                 <div className="absolute right-6 top-[70px] w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 z-50 overflow-hidden animate-fade-in-down">
+                     <div className="p-1">
+                         <button 
+                             onClick={logout}
+                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                         >
+                             <LogOut className="w-4 h-4" />
+                             <span>Logout</span>
+                         </button>
+                     </div>
                  </div>
-            </div>
-        </header>
+             </>
+         )}
         
         <div className="flex-1 flex overflow-hidden relative">
         
@@ -317,45 +273,13 @@ const AnalyticsDashboard = () => {
         )}
 
        {/* Sidebar */}
-       <aside className={`
-            ${sidebarOpen ? 'lg:w-64' : 'lg:w-20'} 
-            ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-            fixed lg:static top-0 left-0 h-full
-            bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-all duration-300 flex flex-col z-40 lg:z-20 shadow-xl lg:shadow-none
-       `}>
-            {/* Sidebar Logo Header - Removed as its in top bar, keeping a spacer or just pure nav */}
-             <div className="p-4 flex items-center justify-between lg:hidden">
-                 {/* Mobile Close Button since content moved to top bar */}
-                 <span className="font-bold text-slate-500">Menu</span>
-                 <button 
-                    onClick={() => setMobileSidebarOpen(false)}
-                    className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
-                >
-                    <X className="w-6 h-6" />
-                </button>
-            </div>
-
-            <nav className="flex-1 px-4 pb-4 space-y-2 overflow-y-auto custom-scrollbar">
-                <SidebarItem id="dashboard" icon={LayoutDashboard} label="Dashboard" />
-                <SidebarItem id="expenses" icon={Receipt} label="Expenses" />
-                <SidebarItem id="budget" icon={CreditCard} label="Budget" />
-                <SidebarItem id="split" icon={Users} label="Split" />
-                <SidebarItem id="reports" icon={PieChart} label="Report" />
-                
-                <div className="pt-8 mt-8 border-t border-slate-100 dark:border-slate-800 space-y-2">
-                    <SidebarItem id="settings" icon={Settings} label="Settings" />
-                </div>
-            </nav>
-
-            <div className="p-4 border-t border-slate-200 dark:border-slate-800 hidden lg:block">
-                <button 
-                    onClick={() => setSidebarOpen(!sidebarOpen)}
-                    className="w-full flex items-center justify-center p-2 rounded-lg text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-600 transition-colors"
-                >
-                    {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-                </button>
-            </div>
-       </aside>
+       <Sidebar 
+            activeNav={activeNav}
+            setActiveNav={setActiveNav}
+            sidebarOpen={sidebarOpen}
+            mobileSidebarOpen={mobileSidebarOpen}
+            setMobileSidebarOpen={setMobileSidebarOpen}
+       />
 
        {/* Main Content */}
        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-900 relative">
@@ -367,161 +291,23 @@ const AnalyticsDashboard = () => {
 
                 {activeNav === 'dashboard' && (
                     <div className="space-y-8 animate-slide-up">
-                        {/* 1. Greeting with current month context */}
-                        <div className="mb-8">
-                            <h1 className="text-[var(--text-page-title)] font-[var(--weight-semibold)] text-[var(--color-text-main)]">
-                                Hello, {user?.firstName}
-                            </h1>
-                            <p className="text-[var(--text-muted)] text-[var(--color-text-muted)]">
-                                Here's your spending overview for {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
-                            </p>
-                        </div>
+                        <GreetingHeader userName={user?.firstName || 'User'} />
+                        
+                        <KpiCardRow statistics={statistics} budgets={budgets} />
+                        
+                        <BudgetPaceCard statistics={statistics} budgets={budgets} />
 
-                        {/* 2. Monthly total spent (dominant) */}
-                        <Card className="text-center py-[var(--space-xl)] shadow-none">
-                            <p className="text-[var(--text-muted)] text-[var(--color-text-muted)] mb-[var(--space-xs)]">Total Spent This Month</p>
-                            <h2 className="text-[var(--text-monetary-lg)] font-[var(--weight-bold)] text-[var(--color-text-main)]">
-                                ${statistics.thisMonth.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </h2>
-                            <div className="flex justify-center gap-[var(--space-lg)] mt-[var(--space-md)]">
-                                <div className="text-center">
-                                    <p className="text-[var(--text-muted)] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">Today</p>
-                                    <p className="text-[var(--text-body)] font-[var(--weight-semibold)] text-[var(--color-text-muted)]">${statistics.today.amount.toLocaleString()}</p>
-                                </div>
-                                <div className="text-center border-l border-[var(--color-border)] pl-[var(--space-lg)]">
-                                    <p className="text-[var(--text-muted)] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">Weekly</p>
-                                    <p className="text-[var(--text-body)] font-[var(--weight-semibold)] text-[var(--color-text-muted)]">${statistics.thisWeek.amount.toLocaleString()}</p>
-                                </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            {/* Left Column (2/3 width) */}
+                            <div className="lg:col-span-2 flex flex-col">
+                                <CategoryBreakdownCard categories={statistics.categories} />
+                                <WeeklyTrendCard expenses={expenses} />
                             </div>
-                        </Card>
 
-                        {/* 3. Spending pace indicator */}
-                        <Card className="shadow-none">
-                            <SectionHeader title="Monthly Budget Pace" />
-                            {(() => {
-                                const totalBudget = budgets.reduce((sum, b) => sum + (parseFloat(b.amount) || 0), 0);
-                                const percentage = totalBudget > 0 ? (statistics.thisMonth.amount / totalBudget) * 100 : 0;
-                                const isOver = percentage > 100;
-                                
-                                // Insight Logic
-                                const todayDate = new Date();
-                                const currentDay = todayDate.getDate();
-                                const daysInMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0).getDate();
-                                const expectedProgress = (currentDay / daysInMonth) * 100;
-                                
-                                let insightText = "Set a budget to see insights.";
-                                if (totalBudget > 0) {
-                                    if (isOver) {
-                                        insightText = "You've exceeded your budget.";
-                                    } else if (percentage < expectedProgress - 5) {
-                                        insightText = "You're spending at a healthy pace.";
-                                    } else if (percentage > expectedProgress + 5) {
-                                        insightText = "You're spending faster than usual.";
-                                    } else {
-                                        insightText = "You're on track with your budget.";
-                                    }
-                                }
-
-                                return (
-                                    <div className="space-y-[var(--space-sm)]">
-                                        <div className="flex justify-between items-end mb-[var(--space-xs)]">
-                                            <div>
-                                                <p className="text-[var(--text-body)] font-[var(--weight-semibold)] text-[var(--color-text-main)]">
-                                                    {insightText}
-                                                </p>
-                                                <p className="text-[var(--text-muted)] text-[var(--color-text-muted)] mt-1">
-                                                    {totalBudget > 0 
-                                                        ? `${percentage.toFixed(0)}% of monthly budget used`
-                                                        : 'No budget set'}
-                                                </p>
-                                            </div>
-                                            <p className="text-[var(--text-muted)] text-[var(--color-text-muted)]">
-                                                Target: ${totalBudget.toLocaleString()}
-                                            </p>
-                                        </div>
-                                        <ProgressBar 
-                                            value={percentage} 
-                                            color={isOver ? 'var(--color-danger)' : 'var(--color-primary)'} 
-                                        />
-                                    </div>
-                                );
-                            })()}
-                        </Card>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-[var(--space-lg)]">
-                            {/* 4. Top spending categories */}
-                            <Card className="shadow-none flex flex-col">
-                                <SectionHeader title="Category Breakdown" actionLabel="Manage Budgets" onActionClick={() => setActiveNav('budget')} />
-                                <div className="space-y-[var(--space-md)] flex-1">
-                                    {statistics.categories.length > 0 ? (
-                                        statistics.categories.slice(0, 5).map((cat, i) => {
-                                            const { icon: CatIcon, color: catColor } = getCategoryConfig(cat.name);
-                                            return (
-                                                <div key={i} className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-[var(--space-sm)]">
-                                                        <div 
-                                                            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                                                            style={{ backgroundColor: `${catColor}20` }} /* 20 = 12% opacity roughly, keeping it soft */
-                                                        >
-                                                            <CatIcon size={16} style={{ color: catColor }} />
-                                                        </div>
-                                                        <span className={`text-[var(--text-body)] ${i === 0 ? 'font-[var(--weight-bold)] text-[var(--color-primary)]' : 'text-[var(--color-text-main)]'}`}>
-                                                            {cat.name}
-                                                        </span>
-                                                    </div>
-                                                    <span className={`text-[var(--text-body)] ${i === 0 ? 'font-[var(--weight-bold)] text-[var(--color-primary)]' : 'font-[var(--weight-semibold)] text-[var(--color-text-main)]'}`}>
-                                                        ${cat.amount.toLocaleString()}
-                                                    </span>
-                                                </div>
-                                            );
-                                        })
-                                    ) : (
-                                        <EmptyState message="No spending data available for this month yet." />
-                                    )}
-                                </div>
-                            </Card>
-
-                            {/* 5. Recent expenses list */}
-                            <Card className="shadow-none flex flex-col">
-                                <SectionHeader title="Recent Transactions" actionLabel="View All" onActionClick={() => setActiveNav('expenses')} />
-                                <div className="space-y-[var(--space-md)] flex-1">
-                                {expenses.length > 0 ? (
-                                    expenses.slice(0, 5).map((expense, i) => {
-                                        const { icon: CatIcon, color: catColor } = getCategoryConfig(expense.category);
-                                        return (
-                                            <div key={i} className="flex items-center justify-between">
-                                                <div className="flex items-center gap-[var(--space-sm)] flex-1 min-w-0 pr-4">
-                                                    <div 
-                                                        className="w-10 h-10 rounded-[var(--radius-btn)] flex items-center justify-center shrink-0 bg-[var(--color-bg)]"
-                                                        style={{ backgroundColor: `${catColor}15` }}
-                                                    >
-                                                        <CatIcon size={20} style={{ color: catColor }} />
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <p className="text-[var(--text-body)] font-[var(--weight-semibold)] text-[var(--color-text-main)] truncate">
-                                                            {expense.description}
-                                                        </p>
-                                                        <p className="text-[var(--text-muted)] text-[var(--color-text-muted)]">
-                                                            {new Date(expense.expenseDate).toLocaleDateString()}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <span className="text-[var(--text-body)] font-[var(--weight-bold)] text-[var(--color-text-main)] whitespace-nowrap">
-                                                    -${parseFloat(expense.amount).toLocaleString()}
-                                                </span>
-                                            </div>
-                                        );
-                                    })
-                                ) : (
-                                        <EmptyState 
-                                            message="Your recent transactions will appear here." 
-                                            ctaLabel="Add First Expense" 
-                                            onCtaClick={() => setShowAddExpense(true)} 
-                                        />
-                                    )}
-                                </div>
-                            </Card>
-
+                            {/* Right Column (1/3 width) */}
+                            <div className="lg:col-span-1">
+                                <RecentTransactionsCard expenses={expenses} />
+                            </div>
                         </div>
                         
 
