@@ -8,6 +8,7 @@ import Report from './Report';
 import BudgetPage from './BudgetPage';
 import SplitPage from './SplitPage';
 import HistoryPage from './HistoryPage';
+import SettingsPage from './SettingsPage';
 import { } from './CoreUI'; // Keeping as placeholder or removing if truly unused. 
 import AddExpenseFlow from './AddExpenseFlow';
 import TopHeader from './TopHeader';
@@ -387,13 +388,9 @@ const AnalyticsDashboard = () => {
                 )}
 
                 {/* Placeholders for other sections */}
-                {['settings'].includes(activeNav) && (
-                     <div className="glass-card p-12 text-center animate-fade-in">
-                        <div className="mx-auto w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
-                            <Settings className="w-8 h-8 text-slate-400" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Work in Progress</h2>
-                        <p className="text-slate-500">The {activeNav} section is currently being redesigned.</p>
+                {activeNav === 'settings' && (
+                     <div className="animate-fade-in">
+                        <SettingsPage user={user} />
                      </div>
                 )}
             </div>

@@ -1,306 +1,220 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
-import { useTimezone } from '../context/TimezoneContext';
-import { useDarkMode } from '../context/DarkModeContext';
-import './SettingsPage.css';
+import { Card, SectionHeader, Input, Select, Toggle, PrimaryButton } from './CoreUI'; // Assuming these exist or using raw elements if distinct styling needed
+import { User, Bell, Shield, Wallet, Sliders, ChevronDown } from 'lucide-react';
+import { CATEGORIES } from '../theme/ThemeConfig';
 
-const SettingsPage = () => {
-  const { user } = useAuth();
-  const { selectedCurrency, currencies, setSelectedCurrency } = useCurrency();
+const SettingsPage = ({ user }) => {
+  const { selectedCurrency, setSelectedCurrency } = useCurrency();
+  const [firstName, setFirstName] = useState(user?.firstName || 'User');
+  const [lastName, setLastName] = useState(user?.lastName || '');
   
-  // Handle case where setSelectedCurrency might not exist
-  const { selectedTimezone, timezones, setSelectedTimezone } = useTimezone();
-  const { isDarkMode, toggleDarkMode } = useDarkMode();
+  // Mock State for Settings
+  const [timeZone, setTimeZone] = useState('GMT-5 (Eastern Time)');
   
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [settings, setSettings] = useState({
-    currency: selectedCurrency,
-    timezone: selectedTimezone,
-    darkMode: isDarkMode
+  const [startOfWeek, setStartOfWeek] = useState('Sunday');
+  const [defaultCategory, setDefaultCategory] = useState('Food');
+  
+  const [budgetRules, setBudgetRules] = useState({
+      includeGroupExpenses: true,
+      includeSplitExpenses: true,
+      resetDay: '1st of month'
   });
 
-  useEffect(() => {
-    setSettings({
-      currency: selectedCurrency,
-      timezone: selectedTimezone,
-      darkMode: isDarkMode
-    });
-  }, [selectedCurrency, selectedTimezone, isDarkMode]);
+  const [notifications, setNotifications] = useState({
+      expenseAdded: true,
+      budgetLimit: true,
+      splitReminders: false,
+      monthlySummary: true
+  });
 
-  const handleSave = async () => {
-    setLoading(true);
-    setError('');
-    setSuccess('');
+  const [isLoading, setIsLoading] = useState(false);
 
-    try {
-      // Update contexts immediately
-      setSelectedCurrency(settings.currency);
-      setSelectedTimezone(settings.timezone);
-      if (settings.darkMode !== isDarkMode) {
-        toggleDarkMode();
-      }
-
-      // Save to backend
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('Please log in to save settings');
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch('http://localhost:8080/api/user/settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          timezone: settings.timezone,
-          currency: settings.currency
-        }),
-      });
-
-      if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          localStorage.removeItem('token');
-          window.location.href = '/login?expired=true';
-          return;
-        }
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to save settings');
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        setSuccess('Settings saved successfully!');
-        setTimeout(() => setSuccess(''), 3000);
-      } else {
-        setError(data.message || 'Failed to save settings');
-      }
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      setError(error.message || 'Failed to save settings. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleExportData = async () => {
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('Please log in to export data');
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch('http://localhost:8080/api/user/export', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          localStorage.removeItem('token');
-          window.location.href = '/login?expired=true';
-          return;
-        }
-        throw new Error('Failed to export data');
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        // Create and download JSON file
-        const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `expense-tracker-data-${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-
-        setSuccess('Data exported successfully!');
-        setTimeout(() => setSuccess(''), 3000);
-      } else {
-        setError(data.message || 'Failed to export data');
-      }
-    } catch (error) {
-      console.error('Error exporting data:', error);
-      setError(error.message || 'Failed to export data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+  const handleSaveProfile = () => {
+      setIsLoading(true);
+      setTimeout(() => setIsLoading(false), 1000);
   };
 
   return (
-    <div className="settings-page">
-      <div className="settings-header">
-        <h2 className="settings-title">Settings</h2>
-        <p className="settings-subtitle">Manage your account preferences and data</p>
+    <div className="w-full pt-2 pb-12">
+      {/* 1. Page Title */}
+      <div className="mb-8">
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Settings</h1>
       </div>
 
-      {error && (
-        <div className="settings-alert settings-alert-error">
-          <span>{error}</span>
-          <button onClick={() => setError('')} className="settings-alert-close">×</button>
-        </div>
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          
+          {/* Left Column */}
+          <div className="space-y-6">
+              {/* 3. Profile & Account Section */}
+              <Card>
+                  <SectionHeader title="Profile & Account" className="mb-6" />
+                  <div className="flex flex-col items-center sm:items-start gap-6">
+                      <div className="flex flex-col items-center gap-2">
+                          <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-3xl font-bold border-4 border-white shadow-lg relative overflow-hidden">
+                             {/* Placeholder generic avatar if no image */}
+                             <User className="w-10 h-10 text-blue-500" />
+                          </div>
+                          <button className="text-sm text-blue-600 font-medium hover:underline">Change Photo</button>
+                      </div>
+                      
+                      <div className="w-full space-y-4">
+                            <Input 
+                                label="Full Name" 
+                                value={`${firstName} ${lastName}`} 
+                                onChange={(e) => {
+                                    const parts = e.target.value.split(' ');
+                                    setFirstName(parts[0]);
+                                    setLastName(parts.slice(1).join(' '));
+                                }} 
+                            />
+                             <div className="flex flex-col gap-1.5">
+                                <label className="text-sm font-medium text-slate-700">Email Address</label>
+                                <input 
+                                    disabled 
+                                    value={user?.email || 'user@example.com'} 
+                                    className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-500 text-sm cursor-not-allowed w-full"
+                                />
+                             </div>
+                             <div className="flex flex-col gap-1.5">
+                                <label className="text-sm font-medium text-slate-700">Time Zone</label>
+                                <div className="relative">
+                                    <select 
+                                        value={timeZone}
+                                        onChange={(e) => setTimeZone(e.target.value)}
+                                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm appearance-none focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                    >
+                                        <option>GMT-8 (Pacific Time)</option>
+                                        <option>GMT-6 (Central Time)</option>
+                                        <option>GMT-5 (Eastern Time)</option>
+                                        <option>GMT+0 (UTC)</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                                </div>
+                             </div>
+                      </div>
+                  </div>
+              </Card>
 
-      {success && (
-        <div className="settings-alert settings-alert-success">
-          <span>{success}</span>
-          <button onClick={() => setSuccess('')} className="settings-alert-close">×</button>
-        </div>
-      )}
+              {/* 6. Notifications Section */}
+              <Card>
+                  <div className="flex items-center gap-2 mb-6">
+                      <div className="p-2 bg-amber-100 rounded-lg text-amber-600">
+                        <Bell size={20} />
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900">Notifications</h3>
+                  </div>
 
-      <div className="settings-content">
-        {/* Appearance Settings */}
-        <div className="settings-section">
-          <h3 className="settings-section-title">Appearance</h3>
-          <div className="settings-section-content">
-            <div className="settings-field">
-              <label className="settings-label">Dark Mode</label>
-              <div className="settings-toggle">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSettings({ ...settings, darkMode: !settings.darkMode });
-                    toggleDarkMode();
-                  }}
-                  className={`settings-toggle-button ${isDarkMode ? 'active' : ''}`}
-                >
-                  <span className="settings-toggle-slider"></span>
-                </button>
-                <span className="settings-toggle-label">
-                  {isDarkMode ? 'Enabled' : 'Disabled'}
-                </span>
-              </div>
-            </div>
+                  <div className="space-y-6">
+                      {[
+                          { key: 'expenseAdded', label: 'Expense Added' },
+                          { key: 'budgetLimit', label: 'Budget Limit Warning' },
+                          { key: 'splitReminders', label: 'Split Reminders' },
+                      ].map(item => (
+                          <div key={item.key} className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-slate-900">{item.label}</span>
+                              <Toggle 
+                                  checked={notifications[item.key]} 
+                                  onChange={(e) => setNotifications({...notifications, [item.key]: e.target.checked})} 
+                              />
+                          </div>
+                      ))}
+                  </div>
+              </Card>
           </div>
-        </div>
 
-        {/* Currency Settings */}
-        <div className="settings-section">
-          <h3 className="settings-section-title">Currency</h3>
-          <div className="settings-section-content">
-            <div className="settings-field">
-              <label className="settings-label" htmlFor="currency">
-                Default Currency
-              </label>
-              <select
-                id="currency"
-                value={settings.currency}
-                onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
-                className="settings-select"
-              >
-                {currencies.map((currency) => (
-                  <option key={currency.code} value={currency.code}>
-                    {currency.symbol} {currency.name} ({currency.code})
-                  </option>
-                ))}
-              </select>
-              <p className="settings-help-text">
-                This currency will be used as default for new expenses
-              </p>
-            </div>
+          {/* Right Column */}
+          <div className="space-y-6">
+              {/* 4. Preferences Section */}
+              <Card>
+                  <SectionHeader title="Preferences" className="mb-6" />
+                  
+                  <div className="space-y-4">
+                      <Select 
+                          label="Default Currency"
+                          value={selectedCurrency}
+                          onChange={(e) => setSelectedCurrency(e.target.value)}
+                          options={[ 'USD', 'EUR', 'GBP', 'INR', 'JPY', 'CAD' ].map(c => ({ value: c, label: `${c} - ${c === 'USD' ? 'US Dollar' : c}` }))}
+                      />
+
+                      <div className="grid grid-cols-2 gap-4">
+                           <Select 
+                              label="Start of Week"
+                              value={startOfWeek}
+                              onChange={(e) => setStartOfWeek(e.target.value)}
+                              options={[
+                                  { value: 'Sunday', label: 'Sunday' },
+                                  { value: 'Monday', label: 'Monday' }
+                              ]}
+                          />
+                          <Select 
+                              label="Default Category"
+                              value={defaultCategory}
+                              onChange={(e) => setDefaultCategory(e.target.value)}
+                              options={Object.keys(CATEGORIES).map(c => ({ value: c, label: c }))}
+                          />
+                      </div>
+                  </div>
+              </Card>
+
+             {/* 5. Budget & Expense Rules Section */}
+             <Card>
+                  <SectionHeader title="Budget & Expense Rules" className="mb-6" />
+
+                  <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-slate-900">Include group expenses in budget</span>
+                          <Toggle 
+                              checked={budgetRules.includeGroupExpenses} 
+                              onChange={(e) => setBudgetRules({...budgetRules, includeGroupExpenses: e.target.checked})} 
+                          />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-slate-900">Include split expenses in budget</span>
+                          <Toggle 
+                              checked={budgetRules.includeSplitExpenses} 
+                              onChange={(e) => setBudgetRules({...budgetRules, includeSplitExpenses: e.target.checked})} 
+                          />
+                      </div>
+
+                      <Select 
+                          label="Monthly Budget Reset Day"
+                          value={budgetRules.resetDay}
+                          onChange={(e) => setBudgetRules({...budgetRules, resetDay: e.target.value})}
+                          options={[
+                              { value: '1st of month', label: '1st of month' },
+                              { value: '15th of month', label: '15th of month' }
+                          ]}
+                      />
+                  </div>
+              </Card>
+
+              {/* 7. Privacy & Security Section */}
+              <Card>
+                  <SectionHeader title="Privacy & Security" className="mb-6" />
+
+                  <div className="space-y-4">
+                      <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                          <span className="text-sm text-slate-700">App Version</span>
+                          <span className="text-sm font-medium text-slate-900">1.0.0</span>
+                      </div>
+                      
+                      <div className="flex flex-col gap-2 pt-2">
+                          <button className="text-left text-sm text-blue-600 hover:text-blue-700 hover:underline">Terms of Service</button>
+                          <button className="text-left text-sm text-blue-600 hover:text-blue-700 hover:underline">Privacy Policy</button>
+                      </div>
+                      
+                      <div className="pt-2">
+                         <button className="text-left text-sm text-red-600 hover:text-red-700 hover:underline">Contact Support</button>
+                      </div>
+                  </div>
+              </Card>
           </div>
-        </div>
-
-        {/* Timezone Settings */}
-        <div className="settings-section">
-          <h3 className="settings-section-title">Timezone</h3>
-          <div className="settings-section-content">
-            <div className="settings-field">
-              <label className="settings-label" htmlFor="timezone">
-                Timezone
-              </label>
-              <select
-                id="timezone"
-                value={settings.timezone}
-                onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
-                className="settings-select"
-              >
-                {timezones.map((tz) => (
-                  <option key={tz.value} value={tz.value}>
-                    {tz.label}
-                  </option>
-                ))}
-              </select>
-              <p className="settings-help-text">
-                Current time: {new Date().toLocaleString('en-US', { timeZone: settings.timezone })}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Data Management */}
-        <div className="settings-section">
-          <h3 className="settings-section-title">Data Management</h3>
-          <div className="settings-section-content">
-            <div className="settings-field">
-              <div className="settings-action-card">
-                <div className="settings-action-info">
-                  <h4 className="settings-action-title">Export Your Data</h4>
-                  <p className="settings-action-description">
-                    Download all your expense data as a JSON file for backup or migration
-                  </p>
-                </div>
-                <button
-                  onClick={handleExportData}
-                  disabled={loading}
-                  className="settings-action-button"
-                >
-                  {loading ? 'Exporting...' : 'Export Data'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Account Information */}
-        <div className="settings-section">
-          <h3 className="settings-section-title">Account Information</h3>
-          <div className="settings-section-content">
-            <div className="settings-info-grid">
-              <div className="settings-info-item">
-                <span className="settings-info-label">Email:</span>
-                <span className="settings-info-value">{user?.email || 'N/A'}</span>
-              </div>
-              <div className="settings-info-item">
-                <span className="settings-info-label">Account Type:</span>
-                <span className="settings-info-value">
-                  {user?.isGuest ? 'Guest' : user?.isGoogleUser ? 'Google' : 'Regular'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Save Button */}
-        <div className="settings-actions">
-          <button
-            onClick={handleSave}
-            disabled={loading}
-            className="settings-save-button"
-          >
-            {loading ? 'Saving...' : 'Save Settings'}
-          </button>
-        </div>
       </div>
     </div>
   );
 };
 
 export default SettingsPage;
-
