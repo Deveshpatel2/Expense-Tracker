@@ -312,6 +312,16 @@ db.serialize(() => {
             });
         }
     });
+
+    // MIGRATION: Add new columns if they don't exist
+    // Add groupId to expenses
+    db.run("ALTER TABLE expenses ADD COLUMN groupId TEXT", (err) => {
+        // Silently fail if column exists
+    });
+    // Add columns to groups
+    db.run("ALTER TABLE groups ADD COLUMN includeInBudget BOOLEAN DEFAULT 1", (err) => { });
+    db.run("ALTER TABLE groups ADD COLUMN startDate DATE", (err) => { });
+    db.run("ALTER TABLE groups ADD COLUMN endDate DATE", (err) => { });
 });
 
 // File upload configuration
@@ -1013,12 +1023,12 @@ app.get('/api/expenses', authenticateToken, (req, res) => {
 });
 
 app.post('/api/expenses', authenticateToken, (req, res) => {
-    const { description, amount, category, expenseDate, notes, currency } = req.body;
+    const { description, amount, category, expenseDate, notes, currency, groupId } = req.body;
     const expenseId = uuidv4();
 
     db.run(
-        'INSERT INTO expenses (id, description, amount, category, expenseDate, notes, currency, userId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [expenseId, description, amount, category, expenseDate, notes, currency, req.user.id],
+        'INSERT INTO expenses (id, description, amount, category, expenseDate, notes, currency, userId, groupId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [expenseId, description, amount, category, expenseDate, notes, currency, req.user.id, groupId || null],
         function (err) {
             if (err) {
                 return res.status(500).json({ success: false, message: 'Failed to create expense' });
@@ -1035,7 +1045,9 @@ app.post('/api/expenses', authenticateToken, (req, res) => {
                     expenseDate,
                     notes,
                     currency,
-                    userId: req.user.id
+                    currency,
+                    userId: req.user.id,
+                    groupId: groupId || null
                 }
             });
         }
@@ -2197,8 +2209,8 @@ app.post('/api/groups', authenticateToken, (req, res) => {
         db.run('BEGIN TRANSACTION');
 
         db.run(
-            'INSERT INTO groups (id, name, description, createdBy) VALUES (?, ?, ?, ?)',
-            [groupId, name, description, createdBy]
+            'INSERT INTO groups (id, name, description, createdBy, includeInBudget, startDate, endDate) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [groupId, name, description, createdBy, req.body.includeInBudget !== false ? 1 : 0, req.body.startDate || null, req.body.endDate || null]
         );
 
         // Add creator as admin

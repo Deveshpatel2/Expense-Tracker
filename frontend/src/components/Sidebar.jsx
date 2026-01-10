@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  LayoutDashboard, Receipt, CreditCard, Users, PieChart, Settings
+  LayoutDashboard, Receipt, CreditCard, Users, PieChart, Settings, History
 } from 'lucide-react';
 
 const Sidebar = ({ activeNav, setActiveNav, sidebarOpen, mobileSidebarOpen, setMobileSidebarOpen }) => {
@@ -11,6 +11,7 @@ const Sidebar = ({ activeNav, setActiveNav, sidebarOpen, mobileSidebarOpen, setM
     { id: 'budget', label: 'Budget', icon: CreditCard },
     { id: 'split', label: 'Split', icon: Users },
     { id: 'reports', label: 'Report', icon: PieChart },
+    { id: 'history', label: 'History', icon: History },
   ];
 
   const NavItem = ({ item, isActive, isBottom = false }) => {

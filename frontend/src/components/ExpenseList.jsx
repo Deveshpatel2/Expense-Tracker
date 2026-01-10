@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Filter, Search, ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import AdvancedSearch from './AdvancedSearch';
-import { Card, EmptyState, Input, Select, PrimaryButton } from './CoreUI';
+import { Card, EmptyState, Input, Select, PrimaryButton, SecondaryButton } from './CoreUI';
+import CreateGroupModal from './CreateGroupModal';
 import { CATEGORIES, getCategoryConfig } from '../theme/ThemeConfig';
 
-const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrency = 'USD', user, onAddExpense }) => {
+const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrency = 'USD', user, onAddExpense, groups = [], onRefresh }) => {
   const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
@@ -12,6 +13,30 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+
+  const handleCreateGroup = async (groupData) => {
+      try {
+          const token = localStorage.getItem('token');
+          const response = await fetch('http://localhost:8080/api/groups', {
+              method: 'POST',
+              headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(groupData)
+          });
+          
+          if (response.ok) {
+              setShowCreateGroupModal(false);
+              // Trigger refresh of groups in parent
+              if (onRefresh) onRefresh();
+              // Show success toast? (For now just close)
+          }
+      } catch (error) {
+          console.error('Failed to create group:', error);
+      }
+  };
 
   const categories = useMemo(() => ['All Categories', ...Object.keys(CATEGORIES)], []);
 
@@ -143,9 +168,14 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
             </div>
 
             {/* Primary Action */}
-            <PrimaryButton onClick={onAddExpense} className="shadow-lg">
-                <Plus className="w-5 h-5" /> Add Expense
-            </PrimaryButton>
+            <div className="flex items-center gap-2">
+                <SecondaryButton onClick={() => setShowCreateGroupModal(true)}>
+                    + Create Group
+                </SecondaryButton>
+                <PrimaryButton onClick={onAddExpense} className="shadow-lg">
+                    <Plus className="w-5 h-5" /> Add Expense
+                </PrimaryButton>
+            </div>
         </div>
       </div>
 
@@ -248,6 +278,21 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
                                 <p className="text-[var(--text-muted)] text-[var(--color-text-muted)] truncate">
                                     {expense.notes || expense.category}
                                 </p>
+                                {/* Group Chip */}
+                                {(() => {
+                                    const group = groups.find(g => g.id === expense.groupId);
+                                    if (group) {
+                                        return (
+                                            <div className="mt-1 inline-flex items-center bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                                                {group.name}
+                                                {(group.includeInBudget === 0 || group.includeInBudget === false) && (
+                                                    <span className="ml-1 text-[10px] uppercase tracking-wider text-rose-500 font-bold bg-rose-50 px-1 rounded">Excluded</span>
+                                                )}
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()}
                             </div>
 
                             {/* Amount & Date */}
@@ -277,6 +322,13 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
             })
         )}
       </div>
+
+      {showCreateGroupModal && (
+        <CreateGroupModal 
+            onSave={handleCreateGroup}
+            onCancel={() => setShowCreateGroupModal(false)}
+        />
+      )}
     </div>
   );
 };

@@ -8,7 +8,7 @@ import { getCategoryConfig } from '../theme/ThemeConfig';
 const CARD_BASE = "bg-white border border-[#E5E7EB] rounded-[12px] shadow-[0_6px_18px_rgba(15,23,42,0.06)] p-6";
 const TEXT_MAIN = "text-[#111827]";
 const TEXT_MUTED = "text-[#6B7280]";
-const BLUE_MAIN = "text-[#2563EB]";
+// const BLUE_MAIN = "text-[#2563EB]"; // Unused after strict polish
 const BG_BLUE_SOFT = "bg-[#EFF6FF]";
 
 // --- 1. Greeting Block ---
@@ -40,8 +40,8 @@ export const KpiCardRow = ({ statistics, budgets }) => {
                     </div>
                 </div>
                 <div className="space-y-2">
-                     <div className="w-full h-[4px] bg-[#2563EB] rounded-full opacity-90" />
-                     <p className={`${TEXT_MAIN} text-[14px] font-semibold text-center`}>
+                     <div className="w-full h-[2px] bg-[#2563EB] rounded-full opacity-90" />
+                     <p className={`${TEXT_MUTED} text-[14px] font-medium text-center`}>
                         ${statistics.thisMonth.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                      </p>
                 </div>
@@ -55,16 +55,16 @@ export const KpiCardRow = ({ statistics, budgets }) => {
                         <span className="text-[28px] font-bold text-[#111827]">
                             ${statistics.thisWeek.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
-                        <span className={`${BG_BLUE_SOFT} ${TEXT_MUTED} text-[12px] px-2 py-1 rounded-md font-medium whitespace-nowrap`}>
+                        <span className={`${BG_BLUE_SOFT} text-[#2563EB] text-[12px] px-2 py-1 rounded-md font-medium whitespace-nowrap`}>
                             / ${weeklyBudget} Budget
                         </span>
                     </div>
                 </div>
                 <div className="space-y-2">
-                    <div className="w-full bg-[#E5E7EB] h-[4px] rounded-full overflow-hidden">
+                    <div className="w-full bg-[#E5E7EB] h-[3px] rounded-full overflow-hidden">
                         <div 
                             className="bg-[#2563EB] h-full rounded-full" 
-                            style={{ width: `${Math.min((statistics.thisWeek.amount / weeklyBudget) * 100, 100)}%` }} // Simple calc
+                            style={{ width: `${Math.min((statistics.thisWeek.amount / weeklyBudget) * 100, 100)}%` }}
                         />
                     </div>
                      <p className={`${TEXT_MUTED} text-[13px] text-center font-medium`}>
@@ -83,8 +83,8 @@ export const KpiCardRow = ({ statistics, budgets }) => {
                 </div>
                 <div>
                      <div className="w-full h-[1px] bg-[#E5E7EB] mb-2" />
-                     <p className={`${TEXT_MAIN} text-[14px] font-bold text-center`}>
-                        ${statistics.today.amount.toFixed(2)}
+                     <p className={`${TEXT_MUTED} text-[13px] text-center font-medium`}>
+                        {statistics.today.amount > 0 ? `$${statistics.today.amount.toFixed(2)}` : 'No spend yet today'}
                      </p>
                 </div>
             </div>
@@ -105,8 +105,8 @@ export const BudgetPaceCard = ({ statistics, budgets }) => {
              </div>
 
              <div className="flex flex-col gap-1 mb-4">
-                <span className={`${TEXT_MAIN} text-[14px] font-medium`}>You're spending faster than usual.</span>
-                <span className={`${BLUE_MAIN} text-[13px] font-semibold`}>{percentage.toFixed(0)}% of monthly budget used</span>
+                <span className={`${TEXT_MUTED} text-[14px] font-medium`}>You're spending faster than usual.</span>
+                <span className={`${TEXT_MUTED} text-[13px] font-normal`}>{percentage.toFixed(0)}% of monthly budget used</span>
              </div>
 
              <div className="relative pt-1">
@@ -138,8 +138,8 @@ export const CategoryBreakdownCard = ({ categories }) => {
 
              <div className="space-y-6 flex-1">
                  {displayCats.map((cat, i) => {
-                     const { icon: Icon, color } = getCategoryConfig(cat.name);
-                     const safeColor = color || '#2563EB';
+                     const { icon: Icon } = getCategoryConfig(cat.name);
+                     const safeColor = '#2563EB'; // Enforce blue only per Image 1 Polish Rules
                      // Mock budget data for layout if not present
                      const budgetVal = cat.budget || (cat.amount * 1.5).toFixed(0); 
 
@@ -158,19 +158,14 @@ export const CategoryBreakdownCard = ({ categories }) => {
                                 </div>
                              </div>
                              
-                             {/* Progress Line & Sparkline Placeholder */}
+                             {/* Progress Line */}
                              <div className="flex items-center gap-2">
-                                 <div className="flex-1 h-[3px] bg-[#E5E7EB] rounded-full overflow-hidden">
+                                 <div className="flex-1 h-[2px] bg-[#E5E7EB] rounded-full overflow-hidden">
                                      <div 
-                                        className="h-full rounded-full opacity-80" 
+                                        className="h-full rounded-full opacity-100" 
                                         style={{ backgroundColor: safeColor, width: '65%' }} 
                                      />
                                  </div>
-                                 {/* Tiny Sparkline SVG placeholder */}
-                                 <svg width="40" height="12" viewBox="0 0 40 12" fill="none" className="opacity-30">
-                                     <path d="M0 10 L8 8 L16 11 L24 4 L32 7 L40 2" stroke={safeColor} strokeWidth="1.5" />
-                                     <path d="M0 10 L8 8 L16 11 L24 4 L32 7 L40 2 V12 H0 Z" fill={safeColor} fillOpacity="0.1"/>
-                                 </svg>
                              </div>
                          </div>
                      );

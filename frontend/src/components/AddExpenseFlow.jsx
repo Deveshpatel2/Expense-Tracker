@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Calendar, Tag, FileText, ChevronDown } from 'lucide-react';
+import { X, Calendar, Tag, FileText, ChevronDown, Folder } from 'lucide-react';
 import { Card, PrimaryButton } from './CoreUI';
 
 const categories = [
@@ -15,14 +15,15 @@ const categories = [
   'Other'
 ];
 
-const AddExpenseFlow = ({ onSave, onCancel, initialData = null }) => {
+const AddExpenseFlow = ({ onSave, onCancel, initialData = null, groups = [] }) => {
   const [formData, setFormData] = useState({
     amount: '',
     description: '',
     category: 'Other',
     expenseDate: new Date().toISOString().split('T')[0],
     notes: '',
-    currency: 'USD'
+    currency: 'USD',
+    groupId: ''
   });
 
   const amountRef = useRef(null);
@@ -35,7 +36,8 @@ const AddExpenseFlow = ({ onSave, onCancel, initialData = null }) => {
         category: initialData.category || 'Other',
         expenseDate: (initialData.expenseDate || initialData.date || new Date().toISOString()).split('T')[0],
         notes: initialData.notes || '',
-        currency: initialData.currency || 'USD'
+        currency: initialData.currency || 'USD',
+        groupId: initialData.groupId || ''
       });
     }
     
@@ -106,6 +108,25 @@ const AddExpenseFlow = ({ onSave, onCancel, initialData = null }) => {
                 required
                 className="w-full bg-transparent border-b border-[var(--color-border)] py-[var(--space-sm)] text-[var(--text-body)] text-[var(--color-text-main)] focus:outline-none focus:border-[var(--color-primary)] transition-colors placeholder:text-[var(--color-text-muted)]"
               />
+            </div>
+
+            {/* Expense Group (Optional) */}
+            <div className="flex items-center gap-[var(--space-sm)]">
+              <Folder className="w-4 h-4 text-[var(--color-text-muted)]" />
+              <div className="relative flex-1">
+                <select
+                  name="groupId"
+                  value={formData.groupId}
+                  onChange={handleChange}
+                  className="w-full bg-transparent border-b border-[var(--color-border)] py-[var(--space-sm)] text-[var(--text-body)] text-[var(--color-text-main)] appearance-none focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+                >
+                  <option value="">No Group</option>
+                  {groups.map(g => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none" />
+              </div>
             </div>
 
             {/* Category Selector */}

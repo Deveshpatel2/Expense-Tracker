@@ -7,6 +7,7 @@ import ExpenseList from './ExpenseList';
 import Report from './Report';
 import BudgetPage from './BudgetPage';
 import SplitPage from './SplitPage';
+import HistoryPage from './HistoryPage';
 import { } from './CoreUI'; // Keeping as placeholder or removing if truly unused. 
 import AddExpenseFlow from './AddExpenseFlow';
 import TopHeader from './TopHeader';
@@ -25,6 +26,7 @@ const AnalyticsDashboard = () => {
   const [expenseToDelete, setExpenseToDelete] = useState(null); // ID of expense to delete
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [budgets, setBudgets] = useState([]);
+  const [groups, setGroups] = useState([]); // Folders for expenses
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [statistics, setStatistics] = useState({
     today: { amount: 0, count: 0 },
@@ -74,11 +76,29 @@ const AnalyticsDashboard = () => {
       const fetchedExpenses = data.data || [];
       setExpenses(fetchedExpenses);
       
+      // Load groups first to handle budget exclusion
+      let userGroups = [];
+      try {
+          const groupsResp = await fetch('http://localhost:8080/api/groups', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const groupsData = await groupsResp.json();
+          if (groupsData.success) {
+            userGroups = groupsData.data || [];
+            setGroups(userGroups);
+          }
+      } catch (err) {
+          console.error("Failed to load groups", err);
+      }
+
+      const excludedGroupIds = new Set(userGroups.filter(g => g.includeInBudget === 0).map(g => g.id));
+      const statsExpenses = fetchedExpenses.filter(e => !e.groupId || !excludedGroupIds.has(e.groupId));
+      
       // Calculate statistics
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      const todayExpenses = fetchedExpenses.filter(expense => {
+      const todayExpenses = statsExpenses.filter(expense => {
         const expenseDate = new Date(expense.expenseDate);
         expenseDate.setHours(0, 0, 0, 0);
         return expenseDate.getTime() === today.getTime();
@@ -87,13 +107,13 @@ const AnalyticsDashboard = () => {
       const weekAgo = new Date(today);
       weekAgo.setDate(weekAgo.getDate() - 7);
       
-      const weekExpenses = fetchedExpenses.filter(expense => {
+      const weekExpenses = statsExpenses.filter(expense => {
         const expenseDate = new Date(expense.expenseDate);
         expenseDate.setHours(0, 0, 0, 0);
         return expenseDate >= weekAgo;
       });
       
-      const monthExpenses = fetchedExpenses.filter(expense => {
+      const monthExpenses = statsExpenses.filter(expense => {
         const expenseDate = new Date(expense.expenseDate);
         return expenseDate.getMonth() === today.getMonth() && 
                expenseDate.getFullYear() === today.getFullYear();
@@ -104,7 +124,7 @@ const AnalyticsDashboard = () => {
       const monthTotal = monthExpenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0);
 
       const categoryMap = {};
-      fetchedExpenses.forEach(expense => {
+      statsExpenses.forEach(expense => {
         const category = expense.category || 'Other';
         const amount = parseFloat(expense.amount) || 0;
         categoryMap[category] = (categoryMap[category] || 0) + amount;
@@ -324,8 +344,11 @@ const AnalyticsDashboard = () => {
                             user={user || { firstName: 'User' }}
                             onAddExpense={() => {
                                 setEditingExpense(null);
+                                setEditingExpense(null);
                                 setShowAddExpense(true);
                             }}
+                            groups={groups}
+                            onRefresh={loadAnalyticsData}
                         />
                      </div>
                 )}
@@ -350,6 +373,14 @@ const AnalyticsDashboard = () => {
                 {activeNav === 'reports' && (
                     <div className="animate-fade-in">
                         <Report 
+                            expenses={expenses}
+                        />
+                    </div>
+                )}
+
+                {activeNav === 'history' && (
+                    <div className="animate-fade-in">
+                        <HistoryPage 
                             expenses={expenses}
                         />
                     </div>
@@ -400,6 +431,7 @@ const AnalyticsDashboard = () => {
         {showAddExpense && (
             <AddExpenseFlow 
                 initialData={editingExpense}
+                groups={groups}
                 onSave={handleAddExpense}
                 onCancel={() => {
                     setShowAddExpense(false);
