@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { X, Calendar } from 'lucide-react';
-import { Card, PrimaryButton, Input } from './CoreUI';
+import { createPortal } from 'react-dom';
+import { X, Home, Users, Check } from 'lucide-react';
+import { PrimaryButton } from './CoreUI';
 
 const CreateGroupModal = ({ onSave, onCancel }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     includeInBudget: true,
-    startDate: '',
-    endDate: ''
+    type: 'personal' // 'personal' or 'shared'
   });
-  const [showDates, setShowDates] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -20,120 +19,185 @@ const CreateGroupModal = ({ onSave, onCancel }) => {
     }));
   };
 
+  const handleTypeSelect = (type) => {
+    setFormData(prev => ({ ...prev, type }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name) return;
     onSave(formData);
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[var(--color-text-main)]/20 backdrop-blur-sm animate-fade-in">
-      <Card className="w-full max-w-md shadow-2xl relative overflow-hidden animate-slide-up" padding="0">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-fade-in">
+      <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl transform transition-all overflow-hidden">
+        
         {/* Header */}
-        <div className="px-[var(--space-lg)] py-[var(--space-md)] border-b border-[var(--color-border)] flex justify-between items-center">
-          <h3 className="text-[var(--text-section-title)] font-[var(--weight-semibold)] text-[var(--color-text-main)]">
-            Create Expense Group
-          </h3>
+        <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-start">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">Create Group Expense</h2>
+            <p className="text-sm text-slate-500 mt-1">Group related expenses together</p>
+          </div>
           <button 
             onClick={onCancel}
-            className="text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors p-1"
+            className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-full hover:bg-slate-50"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-[var(--space-lg)] space-y-[var(--space-lg)]">
-          {/* Group Name (Required) */}
-          <Input
-            label="Group Name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="Birthday Party, Goa Trip..."
-            required
-            autoFocus
-          />
-
-          {/* Description (Optional) */}
-          <Input
-            label="Description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            placeholder="Expenses related to my..."
-          />
-
-          {/* Budget Inclusion Toggle */}
-          <div className="flex items-start justify-between gap-4 p-3 bg-[var(--color-bg)] rounded-[var(--radius-btn)] border border-[var(--color-border)]">
-             <div>
-                <label className="block text-[14px] font-[var(--weight-semibold)] text-[var(--color-text-main)] mb-1">
-                   Include in monthly budget
-                </label>
-                <p className="text-[12px] text-[var(--color-text-muted)] leading-tight">
-                   {formData.includeInBudget 
-                      ? "Expenses will count toward monthly budget" 
-                      : "Expenses will be excluded from budget analytics"}
-                </p>
-             </div>
-             <div className="relative inline-block w-11 h-6 shrink-0 mt-1">
-                <input 
-                  type="checkbox" 
-                  name="includeInBudget"
-                  checked={formData.includeInBudget}
-                  onChange={handleChange}
-                  className="peer sr-only"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-primary)]"></div>
-             </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          
+          {/* Group Name */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-slate-900">
+              Group Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="e.g. Chicago Trip, Birthday Party"
+              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all font-medium"
+              autoFocus
+            />
           </div>
 
-          {/* Optional Date Range */}
-          <div>
-              {!showDates ? (
-                  <button 
-                    type="button"
-                    onClick={() => setShowDates(true)}
-                    className="text-[13px] text-[var(--color-primary)] font-medium hover:underline flex items-center gap-1"
-                  >
-                      + Add date range (optional)
-                  </button>
-              ) : (
-                  <div className="grid grid-cols-2 gap-3 animate-fade-in">
-                      <div>
-                          <label className="block text-[12px] font-medium text-[var(--color-text-muted)] mb-1">Start Date</label>
-                          <input 
-                              type="date"
-                              name="startDate"
-                              value={formData.startDate}
-                              onChange={handleChange}
-                              className="w-full px-3 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-btn)] text-[13px] focus:outline-none focus:border-[var(--color-primary)]"
-                          />
-                      </div>
-                      <div>
-                          <label className="block text-[12px] font-medium text-[var(--color-text-muted)] mb-1">End Date</label>
-                          <input 
-                              type="date"
-                              name="endDate"
-                              value={formData.endDate}
-                              onChange={handleChange}
-                              className="w-full px-3 py-2 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-btn)] text-[13px] focus:outline-none focus:border-[var(--color-primary)]"
-                          />
-                      </div>
+          {/* Group Type Selection */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-slate-900">
+              Group Type
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Personal Group Card */}
+              <button
+                type="button"
+                onClick={() => handleTypeSelect('personal')}
+                className={`relative flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${
+                  formData.type === 'personal'
+                    ? 'border-blue-600 bg-blue-50/50'
+                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                  formData.type === 'personal' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500'
+                }`}>
+                  <Home className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className={`font-semibold text-sm ${
+                    formData.type === 'personal' ? 'text-blue-900' : 'text-slate-900'
+                  }`}>
+                    Personal Group
                   </div>
-              )}
+                  <div className="text-xs text-slate-500 mt-0.5">Only you</div>
+                </div>
+                {formData.type === 'personal' && (
+                  <div className="absolute top-[-1px] right-[-1px] w-6 h-6 bg-blue-600 rounded-bl-xl rounded-tr-lg flex items-center justify-center">
+                    <Check className="w-3.5 h-3.5 text-white" />
+                  </div>
+                )}
+              </button>
+
+              {/* Shared Group Card */}
+              <button
+                type="button"
+                onClick={() => handleTypeSelect('shared')}
+                className={`relative flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${
+                  formData.type === 'shared'
+                    ? 'border-blue-600 bg-blue-50/50'
+                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                  formData.type === 'shared' ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500'
+                }`}>
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className={`font-semibold text-sm ${
+                    formData.type === 'shared' ? 'text-blue-900' : 'text-slate-900'
+                  }`}>
+                    Shared Group
+                  </div>
+                  <div className="text-xs text-slate-500 mt-0.5">Split later</div>
+                </div>
+                {formData.type === 'shared' && (
+                  <div className="absolute top-[-1px] right-[-1px] w-6 h-6 bg-blue-600 rounded-bl-xl rounded-tr-lg flex items-center justify-center">
+                    <Check className="w-3.5 h-3.5 text-white" />
+                  </div>
+                )}
+              </button>
+            </div>
           </div>
 
-          {/* Action Button */}
-          <PrimaryButton 
-            type="submit" 
-            className="w-full py-[var(--space-md)]"
-            disabled={!formData.name.trim()}
-          >
-            Create Group
-          </PrimaryButton>
+          {/* Include in Budget Toggle */}
+          <div className="flex items-center justify-between py-1">
+            <div className="space-y-1">
+              <label className="text-sm font-semibold text-slate-900">
+                Include group expenses in budget
+              </label>
+              <p className="text-xs text-slate-500">
+                Expenses added to this group will count toward monthly budget
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={formData.includeInBudget}
+              onClick={() => setFormData(prev => ({ ...prev, includeInBudget: !prev.includeInBudget }))}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                formData.includeInBudget ? 'bg-blue-600' : 'bg-slate-200'
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  formData.includeInBudget ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-slate-900">
+              Group Description <span className="font-normal text-slate-400">(Optional)</span>
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Optional note about this group"
+              rows={3}
+              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all resize-none text-sm"
+            />
+          </div>
+
+          {/* Footer Actions */}
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 px-4 py-2.5 bg-white text-slate-700 font-semibold rounded-xl border border-transparent hover:bg-slate-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <PrimaryButton 
+              type="submit" 
+              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30 border-none"
+              disabled={!formData.name.trim()}
+            >
+              Create Group
+            </PrimaryButton>
+          </div>
+
         </form>
-      </Card>
-    </div>
+      </div>
+    </div>,
+    document.body
   );
 };
 
