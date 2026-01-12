@@ -403,6 +403,8 @@ const AnalyticsDashboard = () => {
                     <div className="animate-fade-in">
                         <Report 
                             expenses={expenses}
+                            budgets={budgets} // Pass budgets
+                            groups={groups}   // Pass groups
                         />
                     </div>
                 )}
