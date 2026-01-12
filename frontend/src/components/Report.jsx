@@ -5,7 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line
 } from 'recharts';
-import { Download, ChevronDown } from 'lucide-react';
+import { Download, ChevronDown, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { CATEGORIES, getCategoryConfig } from '../theme/ThemeConfig';
 import { useCurrency } from '../context/CurrencyContext';
 const formatCurrency = (amount, currencyCode = 'USD') => {
@@ -96,6 +96,10 @@ const Report = ({ expenses = [], budgets = [], groups = [] }) => {
 
 
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false); // New Error State
+  const [exportData, setExportData] = useState({ url: null, range: '' }); // Store URL and Date Text
+
   const [exportConfig, setExportConfig] = useState({
     dateRange: 'this_month', // today, this_week, this_month, custom
     customStart: '',
@@ -108,78 +112,184 @@ const Report = ({ expenses = [], budgets = [], groups = [] }) => {
 
   // Export Logic
   const handleExport = () => {
-    // 1. Filter by Date Range
-    let startD = new Date();
-    let endD = new Date();
-    const now = new Date();
+    try {
+        // 1. Filter by Date Range
+        let startD = new Date();
+        let endD = new Date();
+        const now = new Date();
 
-    if (exportConfig.dateRange === 'today') {
-        startD = now;
-        endD = now;
-    } else if (exportConfig.dateRange === 'this_week') {
-        const day = now.getDay();
-        const diff = now.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-        startD = new Date(now.setDate(diff));
-        endD = new Date();
-    } else if (exportConfig.dateRange === 'this_month') {
-        startD = new Date(now.getFullYear(), now.getMonth(), 1);
-        endD = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    } else if (exportConfig.dateRange === 'custom') {
-        if (!exportConfig.customStart || !exportConfig.customEnd) return;
-        startD = new Date(exportConfig.customStart);
-        endD = new Date(exportConfig.customEnd);
+        if (exportConfig.dateRange === 'today') {
+            startD = now;
+            endD = now;
+        } else if (exportConfig.dateRange === 'this_week') {
+            const day = now.getDay();
+            const diff = now.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+            startD = new Date(now.setDate(diff));
+            endD = new Date();
+        } else if (exportConfig.dateRange === 'this_month') {
+            startD = new Date(now.getFullYear(), now.getMonth(), 1);
+            endD = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        } else if (exportConfig.dateRange === 'custom') {
+            if (!exportConfig.customStart || !exportConfig.customEnd) return;
+            startD = new Date(exportConfig.customStart);
+            endD = new Date(exportConfig.customEnd);
+        }
+
+        // Set times to start/end of day
+        startD.setHours(0, 0, 0, 0);
+        endD.setHours(23, 59, 59, 999);
+
+        let filtered = expenses.filter(exp => {
+            const d = new Date(exp.expenseDate || exp.date);
+            return d >= startD && d <= endD;
+        });
+
+        // 2. Filter by Scope
+        if (exportConfig.scope === 'personal') {
+            filtered = filtered.filter(exp => !exp.groupId);
+        } else if (exportConfig.scope === 'group') {
+            filtered = filtered.filter(exp => !!exp.groupId);
+        }
+
+        // 3. Format Data
+        const csvData = filtered.map(exp => {
+            const groupName = exp.groupId ? groups.find(g => g.id === exp.groupId)?.name || 'Unknown Group' : 'Personal';
+            return {
+                Date: new Date(exp.expenseDate || exp.date).toLocaleDateString(),
+                Description: exp.description,
+                Category: exp.category,
+                Amount: exp.amount,
+                Currency: exp.currency || 'USD',
+                Group: groupName,
+                Payer: exp.paidBy || 'Me' // Assuming 'Me' if not specified or available logic
+            };
+        });
+
+        if (csvData.length === 0) {
+            alert("No expenses found for the selected criteria.");
+            return;
+        }
+
+        // SIMULATION: Uncomment to test error state
+        // throw new Error("Simulated Export Failure");
+
+        // 4. Generate CSV String
+        const csv = Papa.unparse(csvData);
+        
+        // 5. Create Data URI
+        const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+        
+        // 6. Format Date Range Text for Success Modal
+        const options = { month: 'long', day: 'numeric', year: 'numeric' };
+        const dateRangeText = `${startD.toLocaleDateString('en-US', options)} to ${endD.toLocaleDateString('en-US', options)}`;
+        
+        // 7. Update State to Show Success Modal
+        setExportData({ url: csvContent, range: dateRangeText });
+        setShowExportModal(false);
+        setShowSuccessModal(true);
+    } catch (error) {
+        console.error("Export Failed:", error);
+        setShowExportModal(false);
+        setShowErrorModal(true);
     }
+  };
 
-    // Set times to start/end of day
-    startD.setHours(0, 0, 0, 0);
-    endD.setHours(23, 59, 59, 999);
 
-    let filtered = expenses.filter(exp => {
-        const d = new Date(exp.expenseDate || exp.date);
-        return d >= startD && d <= endD;
-    });
 
-    // 2. Filter by Scope
-    if (exportConfig.scope === 'personal') {
-        filtered = filtered.filter(exp => !exp.groupId);
-    } else if (exportConfig.scope === 'group') {
-        filtered = filtered.filter(exp => !!exp.groupId);
-    }
-    // "includeSettlements" logic omitted for now as data structure not fully clear, 
-    // but structure supports generic expense filtering perfectly.
+  // Success Modal Component
+  const SuccessModal = () => {
+    if (!showSuccessModal) return null;
 
-    // 3. Format Data
-    const csvData = filtered.map(exp => {
-        const groupName = exp.groupId ? groups.find(g => g.id === exp.groupId)?.name || 'Unknown Group' : 'Personal';
-        return {
-            Date: new Date(exp.expenseDate || exp.date).toLocaleDateString(),
-            Description: exp.description,
-            Category: exp.category,
-            Amount: exp.amount,
-            Currency: exp.currency || 'USD',
-            Group: groupName,
-            Payer: exp.paidBy || 'Me' // Assuming 'Me' if not specified or available logic
-        };
-    });
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setShowSuccessModal(false)}>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-up flex flex-col items-center text-center p-8" onClick={e => e.stopPropagation()}>
+                
+                {/* Success Icon */}
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-6">
+                    <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" strokeWidth={3} />
+                </div>
 
-    if (csvData.length === 0) {
-        alert("No expenses found for the selected criteria.");
-        return;
-    }
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Expenses Exported</h3>
+                
+                <p className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
+                    Your expenses from <span className="font-semibold text-slate-700 dark:text-slate-300">{exportData.range}</span> have been successfully exported.
+                </p>
 
-    // 4. Generate CSV
-    const csv = Papa.unparse(csvData);
-    
-    // Use Data URI for better compatibility suitable for smaller files
-    const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-    const link = document.createElement('a');
-    link.href = csvContent;
-    link.setAttribute('download', `spendora_export_${now.toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    setShowExportModal(false);
+                {/* Primary Action: Download */}
+                <a 
+                    href={exportData.url} 
+                    download={`spendora_export_${new Date().toISOString().split('T')[0]}.csv`}
+                    className="flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300 font-bold rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors mb-3 group"
+                    onClick={() => {
+                        // Optional: Close modal after download click if desired, keeping open for now per common patterns
+                    }}
+                >
+                    <span>Download Expenses.csv</span>
+                    <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
+                </a>
+
+                {/* Secondary Action: Close */}
+                <button 
+                    onClick={() => setShowSuccessModal(false)}
+                    className="w-full px-6 py-3.5 bg-transparent text-slate-500 dark:text-slate-400 font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                    Close
+                </button>
+            </div>
+        </div>
+    );
+  };
+
+  // Error Modal Component
+  const ErrorModal = () => {
+    if (!showErrorModal) return null;
+
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setShowErrorModal(false)}>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-up flex flex-col items-center text-center p-8 relative" onClick={e => e.stopPropagation()}>
+                
+                {/* Close X Button */}
+                <button 
+                    onClick={() => setShowErrorModal(false)}
+                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                >
+                    <X className="w-5 h-5" />
+                </button>
+
+                {/* Error Icon */}
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-6">
+                    <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" strokeWidth={3} />
+                </div>
+
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Export Failed</h3>
+                
+                <p className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
+                    Something went wrong while exporting your expenses.<br/>
+                    Please try again or contact support if the issue persists.
+                </p>
+
+                {/* Primary Action: Retry (Same Download Styling) */}
+                <button 
+                    onClick={() => {
+                        setShowErrorModal(false);
+                        handleExport(); // Retry logic
+                    }}
+                    className="flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 hover:shadow-indigo-600/40 transition-all mb-3 group"
+                >
+                    <span>Download Expenses.csv</span>
+                    <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
+                </button>
+
+                {/* Secondary Action: Close */}
+                <button 
+                    onClick={() => setShowErrorModal(false)}
+                    className="w-full px-6 py-3.5 bg-transparent text-slate-500 dark:text-slate-400 font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                    Close
+                </button>
+            </div>
+        </div>
+    );
   };
 
   // Export Modal Component
@@ -450,6 +560,12 @@ const Report = ({ expenses = [], budgets = [], groups = [] }) => {
 
        {/* Render Export Modal */}
        <ExportModal />
+       
+       {/* Render Success Modal */}
+       <SuccessModal />
+
+       {/* Render Error Modal */}
+       <ErrorModal />
 
       {/* 2) Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
