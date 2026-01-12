@@ -2287,6 +2287,59 @@ app.get('/api/groups/:id', authenticateToken, (req, res) => {
     });
 });
 
+// Delete group
+app.delete('/api/groups/:id', authenticateToken, (req, res) => {
+    const groupId = req.params.id;
+    const userId = req.user.id;
+
+    // Check if user is admin/creator of the group
+    db.get('SELECT * FROM groups WHERE id = ?', [groupId], (err, group) => {
+        if (err) return handleError(res, err, 'Database error');
+        if (!group) return res.status(404).json({ success: false, message: 'Group not found' });
+
+        if (group.createdBy !== userId) {
+            return res.status(403).json({ success: false, message: 'Only the group creator can delete this group' });
+        }
+
+        db.serialize(() => {
+            db.run('BEGIN TRANSACTION');
+
+            // Delete group members
+            db.run('DELETE FROM group_members WHERE groupId = ?', [groupId]);
+
+            // Delete group expenses and their splits
+            db.all('SELECT id FROM group_expenses WHERE groupId = ?', [groupId], (err, expenses) => {
+                if (!err && expenses && expenses.length > 0) {
+                    const expenseIds = expenses.map(e => e.id);
+                    const placeholders = expenseIds.map(() => '?').join(',');
+                    db.run(`DELETE FROM expense_splits WHERE expenseId IN (${placeholders})`, expenseIds);
+                }
+
+                // Now delete group expenses
+                db.run('DELETE FROM group_expenses WHERE groupId = ?', [groupId]);
+
+                // Unlink regular expenses if any
+                db.run('UPDATE expenses SET groupId = NULL WHERE groupId = ?', [groupId]);
+
+                // Delete the group
+                db.run('DELETE FROM groups WHERE id = ?', [groupId], function (err) {
+                    if (err) {
+                        db.run('ROLLBACK');
+                        return handleError(res, err, 'Failed to delete group');
+                    }
+                    db.run('COMMIT', (err) => {
+                        if (err) {
+                            db.run('ROLLBACK');
+                            return handleError(res, err, 'Failed to commit delete');
+                        }
+                        res.json({ success: true, message: 'Group deleted successfully' });
+                    });
+                });
+            });
+        });
+    });
+});
+
 // Add shared expense
 app.post('/api/groups/:id/expenses', authenticateToken, (req, res) => {
     const groupId = req.params.id;

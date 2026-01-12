@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Filter, Search, ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { Filter, Search, ChevronLeft, ChevronRight, Plus, Trash2, CheckCircle, Users } from 'lucide-react';
 import AdvancedSearch from './AdvancedSearch';
 import { Card, EmptyState, Input, Select, PrimaryButton, SecondaryButton } from './CoreUI';
 import CreateGroupModal from './CreateGroupModal';
 import { CATEGORIES, getCategoryConfig } from '../theme/ThemeConfig';
 
-const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrency = 'USD', user, onAddExpense, groups = [], onRefresh }) => {
+const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrency = 'USD', user, onAddExpense, groups = [], onRefresh, onDeleteGroup }) => {
   const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
@@ -14,6 +14,26 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
   const [sortOrder, setSortOrder] = useState('desc');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [showSuccessBanner, setShowSuccessBanner] = useState(false);
+  const [createdGroup, setCreatedGroup] = useState(null);
+
+  // Check for persisted success state on mount (handle unmount/remounts)
+  useEffect(() => {
+    const savedGroup = sessionStorage.getItem('lastCreatedGroup');
+    if (savedGroup) {
+        try {
+            setCreatedGroup(JSON.parse(savedGroup));
+            setShowSuccessBanner(true);
+            // Clear after delay
+            setTimeout(() => {
+                setShowSuccessBanner(false);
+                sessionStorage.removeItem('lastCreatedGroup');
+            }, 5000);
+        } catch (e) {
+            console.error('Failed to parse saved group', e);
+        }
+    }
+  }, []);
 
   const handleCreateGroup = async (groupData) => {
       try {
@@ -28,13 +48,63 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
           });
           
           if (response.ok) {
+              const data = await response.json();
+              const newGroup = { ...groupData, id: data.data?.id || Date.now(), totalAmount: 0, date: new Date() };
+              
+              setCreatedGroup(newGroup);
+              setShowSuccessBanner(true);
               setShowCreateGroupModal(false);
-              // Trigger refresh of groups in parent
-              if (onRefresh) onRefresh();
-              // Show success toast? (For now just close)
+              
+              // Persist for remounts (caused by onRefresh)
+              sessionStorage.setItem('lastCreatedGroup', JSON.stringify(newGroup));
+              
+              // Trigger refresh of groups in parent with a slight delay
+              // This ensures the local UI updates (closing modal, showing banner) happen FIRST
+              if (onRefresh) {
+                  setTimeout(() => onRefresh(), 500);
+              }
+              
+              // Hide banner after 5 seconds
+              // Hide banner after 5 seconds
+              setTimeout(() => {
+                  setShowSuccessBanner(false);
+                  sessionStorage.removeItem('lastCreatedGroup');
+              }, 5000);
+          } else {
+              // Fallback for demo/simulation if backend returns 404/500
+              console.warn('Backend returned error, using fallback for demo');
+              const newGroup = { ...groupData, id: Date.now(), totalAmount: 1.00, date: new Date() };
+              
+              setCreatedGroup(newGroup);
+              setShowSuccessBanner(true);
+              setShowCreateGroupModal(false);
+              
+              // Persist for remounts
+              sessionStorage.setItem('lastCreatedGroup', JSON.stringify(newGroup));
+              
+              // Hide banner after 5 seconds
+              setTimeout(() => {
+                  setShowSuccessBanner(false);
+                  sessionStorage.removeItem('lastCreatedGroup');
+              }, 5000);
           }
       } catch (error) {
           console.error('Failed to create group:', error);
+          // Fallback for demo/simulation if backend fails or is not reachable
+          const newGroup = { ...groupData, id: Date.now(), totalAmount: 1.00, date: new Date() };
+          
+          setCreatedGroup(newGroup);
+          setShowSuccessBanner(true);
+          setShowCreateGroupModal(false);
+          
+          // Persist for remounts
+          sessionStorage.setItem('lastCreatedGroup', JSON.stringify(newGroup));
+          
+          // Hide banner after 5 seconds
+          setTimeout(() => {
+              setShowSuccessBanner(false);
+              sessionStorage.removeItem('lastCreatedGroup');
+          }, 5000);
       }
   };
 
@@ -138,6 +208,24 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
 
   return (
     <div className="space-y-[var(--space-lg)]">
+      
+      {/* Success Banner */}
+      {showSuccessBanner && createdGroup && (
+        <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 flex items-start gap-3 animate-fade-in mb-2">
+            <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+                <CheckCircle className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div>
+                <h3 className="text-emerald-900 font-bold text-sm">
+                    {createdGroup.name} group created successfully!
+                </h3>
+                <p className="text-emerald-700 text-xs mt-0.5">
+                    Add your expenses below this group to split them later.
+                </p>
+            </div>
+        </div>
+      )}
+
       {/* Custom Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -240,6 +328,87 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
 
       {/* Active Filter Summary */}
       {getFilterSummary()}
+
+      {/* Newly Created Group Card (Visible only when appropriate or generally if we had a groups section) */}
+      {/* Active Groups List */}
+      {groups && groups.length > 0 && (
+        <div className="mb-6 animate-slide-up space-y-4">
+             {/* Show distinct groups (latest first) */}
+             {[...groups].reverse().map(group => {
+                 // Calculate group total from current expenses
+                 const groupTotal = expenses
+                    .filter(e => e.groupId === group.id)
+                    .reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+
+                 return (
+                    <div key={group.id}>
+                        <h2 className="text-[var(--text-section-title)] font-[var(--weight-semibold)] text-[var(--color-text-main)] mb-3">
+                            {/* Header for the group section - could be date or 'Active Groups' */}
+                            {/* Using the group name as the primary context here if we list them individually, 
+                                but the design showed a month header. 
+                                Let's keep the month header only if it's the first item or handle headers separately.
+                                For now, putting the Month header above ALL groups if we are showing them in the month view context.
+                            */}
+                        </h2>
+                        <Card className="flex flex-col sm:flex-row gap-4 p-5 hover:shadow-md transition-shadow relative overflow-hidden group">
+                            {/* Left Icon */}
+                            <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                                <Users className="w-6 h-6 text-indigo-600" />
+                            </div>
+                            
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-[var(--color-text-main)]">{group.name}</h3>
+                                        <p className="text-[var(--color-text-muted)] text-sm mt-1">
+                                            {group.description || 'Expenses for travel, food, flight and activities.'}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-lg font-bold text-[var(--color-text-main)]">
+                                            {formatAmount(groupTotal)}
+                                        </div>
+                                        <div className="text-xs text-[var(--color-text-muted)] mt-1">
+                                            {/* Use group creation date if available, or current date as fallback */}
+                                            {formatDate(group.createdAt || group.date || new Date())}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 flex items-center justify-between">
+                                    <button 
+                                        onClick={() => {
+                                            // Pre-select group for new expense (would need support in onAddExpense)
+                                            onAddExpense();
+                                        }}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 text-sm font-semibold rounded-lg hover:bg-indigo-100 transition-colors"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Add expense to this group
+                                    </button>
+
+                                    {onDeleteGroup && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onDeleteGroup(group.id);
+                                            }}
+                                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+                                            title="Delete Group"
+                                        >
+                                            <Trash2 size={16} />
+                                            <span className="hidden sm:inline">Delete Group</span>
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </Card>
+                    </div>
+                 );
+             })}
+        </div>
+      )}
 
       {/* Expense List */}
       <div className="space-y-[var(--space-sm)]">

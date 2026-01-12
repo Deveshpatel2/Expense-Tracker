@@ -28,6 +28,8 @@ const AnalyticsDashboard = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [budgets, setBudgets] = useState([]);
   const [groups, setGroups] = useState([]); // Folders for expenses
+  const [groupToDelete, setGroupToDelete] = useState(null);
+  const [showGroupDeleteModal, setShowGroupDeleteModal] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [statistics, setStatistics] = useState({
     today: { amount: 0, count: 0 },
@@ -225,6 +227,31 @@ const AnalyticsDashboard = () => {
      }
   };
 
+  const confirmDeleteGroup = (groupId) => {
+      setGroupToDelete(groupId);
+      setShowGroupDeleteModal(true);
+  };
+
+  const executeDeleteGroup = async () => {
+      if (!groupToDelete) return;
+
+      try {
+          const token = getAuthToken();
+          const response = await fetch(`http://localhost:8080/api/groups/${groupToDelete}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+          });
+
+          if (response.ok) {
+              await loadAnalyticsData(); // Refresh list
+              setShowGroupDeleteModal(false);
+              setGroupToDelete(null);
+          }
+      } catch (error) {
+          console.error("Error deleting group:", error);
+      }
+  };
+
   const openEditModal = (expense) => {
       setEditingExpense(expense);
       setShowAddExpense(true);
@@ -350,6 +377,7 @@ const AnalyticsDashboard = () => {
                             }}
                             groups={groups}
                             onRefresh={loadAnalyticsData}
+                            onDeleteGroup={confirmDeleteGroup}
                         />
                      </div>
                 )}
@@ -435,6 +463,35 @@ const AnalyticsDashboard = () => {
                     setEditingExpense(null);
                 }}
             />
+        )}
+
+        {/* Delete Group Confirmation Modal */}
+        {showGroupDeleteModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-sm shadow-2xl p-6 text-center">
+                    <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600 dark:text-red-400">
+                        <Trash2 className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Delete Group?</h3>
+                    <p className="text-slate-500 mb-6">
+                        Are you sure you want to delete this group? Expenses inside it will remain but won't be grouped.
+                    </p>
+                    <div className="flex gap-3">
+                            <button 
+                            onClick={() => setShowGroupDeleteModal(false)}
+                            className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            onClick={executeDeleteGroup}
+                            className="flex-1 px-4 py-2 bg-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-500/30 hover:shadow-red-600/40 hover:-translate-y-0.5 transition-all"
+                        >
+                            Delete Group
+                        </button>
+                    </div>
+                </div>
+            </div>
         )}
     </div>
   );
