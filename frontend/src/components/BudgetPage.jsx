@@ -117,7 +117,8 @@ const BudgetPage = ({ expenses, user }) => {
   // Chart Data
   const pieData = categorySpending.map(b => ({
     name: b.category,
-    value: b.amount
+    value: b.amount,
+    color: getCategoryConfig(b.category).color
   }));
 
   const barData = [
@@ -314,7 +315,7 @@ const BudgetPage = ({ expenses, user }) => {
                                   {pieData.map((entry, index) => (
                                       <Cell 
                                         key={`cell-${index}`} 
-                                        fill={index === 0 ? 'var(--color-primary)' : 'var(--color-chart-muted)'} 
+                                        fill={entry.color} 
                                       />
                                   ))}
                               </Pie>
