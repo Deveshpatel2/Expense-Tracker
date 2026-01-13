@@ -174,7 +174,7 @@ const AnalyticsDashboard = () => {
   const handleAddExpense = async (expenseData) => {
     try {
       const token = getAuthToken();
-      const isEditing = !!editingExpense;
+      const isEditing = !!editingExpense && !!editingExpense.id;
       const url = isEditing 
         ? `http://localhost:8080/api/expenses/${editingExpense.id}`
         : 'http://localhost:8080/api/expenses';
@@ -370,9 +370,8 @@ const AnalyticsDashboard = () => {
                             onEditExpense={openEditModal}
                             selectedCurrency="USD"
                             user={user || { firstName: 'User' }}
-                            onAddExpense={() => {
-                                setEditingExpense(null);
-                                setEditingExpense(null);
+                            onAddExpense={(groupId) => {
+                                setEditingExpense(groupId ? { groupId } : null);
                                 setShowAddExpense(true);
                             }}
                             groups={groups}

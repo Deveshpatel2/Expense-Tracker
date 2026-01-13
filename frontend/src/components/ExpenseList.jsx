@@ -263,7 +263,7 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
                     + Create Group
                 </SecondaryButton>
                 <PrimaryButton 
-                    onClick={onAddExpense} 
+                    onClick={() => onAddExpense()} 
                     className="shadow-md !bg-[#2563EB] hover:!bg-[#2563EB] !text-white !font-bold"
                 >
                     <Plus className="w-5 h-5" /> Add Expense
@@ -384,8 +384,8 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
                                 <div className="mt-4 flex items-center justify-between">
                                     <button 
                                         onClick={() => {
-                                            // Pre-select group for new expense (would need support in onAddExpense)
-                                            onAddExpense();
+                                            // Pre-select group for new expense
+                                            onAddExpense(group.id);
                                         }}
                                         className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-blue-600 text-sm font-semibold rounded-lg hover:bg-indigo-100 transition-colors"
                                     >

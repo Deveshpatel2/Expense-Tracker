@@ -64,7 +64,7 @@ const AddExpenseFlow = ({ onSave, onCancel, initialData = null, groups = [] }) =
         {/* Header */}
         <div className="px-[var(--space-lg)] py-[var(--space-md)] border-b border-[var(--color-border)] flex justify-between items-center">
           <h3 className="text-[var(--text-section-title)] font-[var(--weight-semibold)] text-[var(--color-text-main)]">
-            {initialData ? 'Edit Expense' : 'Add Expense'}
+            {initialData?.id ? 'Edit Expense' : (initialData?.groupId ? 'Add Expense in Group' : 'Add Expense')}
           </h3>
           <button 
             onClick={onCancel}
@@ -120,7 +120,7 @@ const AddExpenseFlow = ({ onSave, onCancel, initialData = null, groups = [] }) =
                   onChange={handleChange}
                   className="w-full bg-transparent border-b border-[var(--color-border)] py-[var(--space-sm)] text-[var(--text-body)] text-[var(--color-text-main)] appearance-none focus:outline-none focus:border-[var(--color-primary)] transition-colors"
                 >
-                  <option value="">No Group</option>
+                  {!(initialData && initialData.groupId) && <option value="">No Group</option>}
                   {groups.map(g => (
                     <option key={g.id} value={g.id}>{g.name}</option>
                   ))}
@@ -175,7 +175,7 @@ const AddExpenseFlow = ({ onSave, onCancel, initialData = null, groups = [] }) =
 
           {/* Action Button */}
           <PrimaryButton type="submit" className="w-full py-[var(--space-md)] !bg-[#2563EB] text-white">
-            {initialData ? 'Update Expense' : 'Save Expense'}
+            {initialData?.id ? 'Update Expense' : 'Save Expense'}
           </PrimaryButton>
         </form>
       </Card>
