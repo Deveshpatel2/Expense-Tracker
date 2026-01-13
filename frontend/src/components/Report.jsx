@@ -331,7 +331,7 @@ const Report = ({ expenses = [], budgets = [], groups = [] }) => {
                     onClick={() => setExportConfig({ ...exportConfig, dateRange: option.id })}
                     className={`px-4 py-2 text-sm font-medium rounded-xl border transition-all ${
                       exportConfig.dateRange === option.id
-                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none'
+                        ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200 dark:shadow-none'
                         : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750'
                     }`}
                   >
@@ -377,7 +377,7 @@ const Report = ({ expenses = [], budgets = [], groups = [] }) => {
                     <label key={scope.id} className="flex items-center gap-3 cursor-pointer group">
                         <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
                             exportConfig.scope === scope.id 
-                            ? 'border-indigo-600 bg-indigo-600' 
+                            ? 'border-blue-600 bg-blue-600' 
                             : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 group-hover:border-indigo-400'
                         }`}>
                             {exportConfig.scope === scope.id && <div className="w-2 h-2 bg-white rounded-full" />}
@@ -404,7 +404,7 @@ const Report = ({ expenses = [], budgets = [], groups = [] }) => {
                                 checked={exportConfig.includeSettlements}
                                 onChange={(e) => setExportConfig({ ...exportConfig, includeSettlements: e.target.checked })}
                             />
-                            <div className={`w-11 h-6 rounded-full transition-colors ${exportConfig.includeSettlements ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'}`}></div>
+                            <div className={`w-11 h-6 rounded-full transition-colors ${exportConfig.includeSettlements ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'}`}></div>
                             <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${exportConfig.includeSettlements ? 'translate-x-5' : 'translate-x-0'}`}></div>
                         </div>
                     </label>
@@ -420,7 +420,7 @@ const Report = ({ expenses = [], budgets = [], groups = [] }) => {
                         <select 
                             value={exportConfig.format}
                             onChange={(e) => setExportConfig({ ...exportConfig, format: e.target.value })}
-                            className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none appearance-none cursor-pointer"
+                            className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
                         >
                             <option value="csv">CSV</option>
                             <option value="json" disabled>JSON (Coming Soon)</option>
@@ -435,7 +435,7 @@ const Report = ({ expenses = [], budgets = [], groups = [] }) => {
                         <select 
                             value={exportConfig.grouping}
                             onChange={(e) => setExportConfig({ ...exportConfig, grouping: e.target.value })}
-                            className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none appearance-none cursor-pointer"
+                            className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
                         >
                             <option value="none">No grouping</option>
                             <option value="category">Group by category</option>
@@ -459,7 +459,7 @@ const Report = ({ expenses = [], budgets = [], groups = [] }) => {
              <button 
                 onClick={handleExport}
                 disabled={exportConfig.dateRange === 'custom' && (!exportConfig.customStart || !exportConfig.customEnd)}
-                className="px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 hover:shadow-indigo-600/40 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+                className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 hover:bg-blue-700 hover:shadow-blue-600/40 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
              >
                 Download
              </button>
@@ -550,7 +550,7 @@ const Report = ({ expenses = [], budgets = [], groups = [] }) => {
 
              <button 
                 onClick={() => setShowExportModal(true)}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200 dark:shadow-indigo-900/20 text-sm font-semibold"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-600 transition-colors shadow-md shadow-blue-200 dark:shadow-blue-900/20 text-sm font-semibold"
              >
                 <Download className="w-4 h-4" />
                 <span>Download</span>
@@ -804,10 +804,10 @@ const Report = ({ expenses = [], budgets = [], groups = [] }) => {
                             <Line 
                                 type="monotone" 
                                 dataKey="amount" 
-                                stroke="#6366f1" 
+                                stroke="#2563eb" 
                                 strokeWidth={2} 
-                                dot={{ fill: '#6366f1', r: 2, strokeWidth: 0 }}
-                                activeDot={{ r: 6, fill: '#6366f1', strokeWidth: 0 }}
+                                dot={{ fill: '#2563eb', r: 2, strokeWidth: 0 }}
+                                activeDot={{ r: 6, fill: '#2563eb', strokeWidth: 0 }}
                             />
                         </LineChart>
                     </ResponsiveContainer>

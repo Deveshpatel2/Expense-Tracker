@@ -122,7 +122,7 @@ const SplitPage = ({ user }) => {
         </div>
         <button 
           onClick={() => setShowCreateModal(true)}
-          className="btn-primary flex items-center gap-2 shadow-lg shadow-primary-500/20 px-6"
+          className="btn-primary flex items-center gap-2 shadow-lg shadow-primary-500/20 px-6 !bg-[#2563EB] hover:!bg-[#2563EB]"
         >
           <Plus className="w-5 h-5" />
           Create Group
@@ -146,7 +146,7 @@ const SplitPage = ({ user }) => {
             <p className="text-slate-500 text-sm mb-6">Create a group to start splitting expenses with friends.</p>
             <button 
               onClick={() => setShowCreateModal(true)}
-              className="text-primary-600 font-bold hover:underline"
+              className="text-blue-600 font-bold hover:underline"
             >
               Set up your first group
             </button>
@@ -157,11 +157,11 @@ const SplitPage = ({ user }) => {
               <div 
                 key={group.id} 
                 onClick={() => setSelectedGroup(group)}
-                className="glass-card p-6 group cursor-pointer hover:scale-[1.02] transition-all border-b-4 border-transparent hover:border-primary-500"
+                className="glass-card p-6 group cursor-pointer hover:scale-[1.02] transition-all border-b-4 border-transparent hover:border-blue-500"
               >
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center text-primary-600">
+                    <div className="w-12 h-12 rounded-2xl bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center text-blue-600">
                       <Users className="w-6 h-6" />
                     </div>
                     <div>
@@ -196,7 +196,7 @@ const SplitPage = ({ user }) => {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center text-xs text-slate-400 group-hover:text-primary-500 transition-colors">
+                  <div className="flex items-center text-xs text-slate-400 group-hover:text-blue-500 transition-colors">
                     View Details <ChevronRight className="w-4 h-4" />
                   </div>
                 </div>
@@ -234,7 +234,7 @@ const SplitPage = ({ user }) => {
           </div>
           
           <div className="glass-card p-4 flex items-center gap-4 hover:bg-white/80 transition-colors">
-             <div className="w-10 h-10 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center">
+             <div className="w-10 h-10 rounded-full bg-primary-50 text-blue-600 flex items-center justify-center">
                 <CreditCard className="w-5 h-5" />
              </div>
              <div className="flex-1">
@@ -351,7 +351,7 @@ const SplitPage = ({ user }) => {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <div className="px-3 py-1.5 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 rounded-lg text-xs font-bold flex items-center gap-1">
+                  <div className="px-3 py-1.5 bg-primary-50 dark:bg-primary-900/20 text-blue-600 dark:text-primary-400 rounded-lg text-xs font-bold flex items-center gap-1">
                     You (Admin)
                   </div>
                   {selectedMembers.map(member => (
@@ -380,7 +380,7 @@ const SplitPage = ({ user }) => {
                 <button 
                   type="submit"
                   disabled={selectedMembers.length === 0}
-                  className="flex-1 px-4 py-3 bg-primary-600 text-white font-bold rounded-2xl shadow-lg shadow-primary-500/30 hover:shadow-primary-600/40 disabled:opacity-50 transition-all"
+                  className="flex-1 px-4 py-3 bg-blue-600 text-white font-bold rounded-2xl shadow-lg shadow-primary-500/30 hover:shadow-primary-600/40 disabled:opacity-50 transition-all"
                 >
                   Create
                 </button>
