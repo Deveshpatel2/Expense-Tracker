@@ -244,8 +244,8 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
                 >
                     <ChevronLeft className="w-4 h-4" />
                 </button>
-                <div className="px-4 font-[var(--weight-semibold)] text-[var(--text-body)] text-[var(--color-text-main)] min-w-[140px] text-center">
-                    {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                <div className="px-[var(--space-md)] text-[var(--text-body)] font-[var(--weight-semibold)] text-[var(--color-text-main)]">
+                    {currentDate.toLocaleString('default', { month: 'short', year: 'numeric' })}
                 </div>
                 <button 
                     onClick={handleNextMonth}
@@ -257,10 +257,15 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
 
             {/* Primary Action */}
             <div className="flex items-center gap-2">
-                <SecondaryButton onClick={() => setShowCreateGroupModal(true)}>
+                <SecondaryButton onClick={() => setShowCreateGroupModal(true)}
+                    className="shadow-md !bg-[#2563EB] hover:!bg-[#2563EB] !text-white !font-bold"
+                >
                     + Create Group
                 </SecondaryButton>
-                <PrimaryButton onClick={onAddExpense} className="shadow-lg">
+                <PrimaryButton 
+                    onClick={onAddExpense} 
+                    className="shadow-md !bg-[#2563EB] hover:!bg-[#2563EB] !text-white !font-bold"
+                >
                     <Plus className="w-5 h-5" /> Add Expense
                 </PrimaryButton>
             </div>
@@ -353,7 +358,7 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
                         <Card className="flex flex-col sm:flex-row gap-4 p-5 hover:shadow-md transition-shadow relative overflow-hidden group">
                             {/* Left Icon */}
                             <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-                                <Users className="w-6 h-6 text-indigo-600" />
+                                <Users className="w-6 h-6 text-blue-600" />
                             </div>
                             
                             {/* Content */}
@@ -382,7 +387,7 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
                                             // Pre-select group for new expense (would need support in onAddExpense)
                                             onAddExpense();
                                         }}
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 text-sm font-semibold rounded-lg hover:bg-indigo-100 transition-colors"
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-blue-600 text-sm font-semibold rounded-lg hover:bg-indigo-100 transition-colors"
                                     >
                                         <Plus className="w-4 h-4" />
                                         Add expense to this group

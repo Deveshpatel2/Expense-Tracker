@@ -174,7 +174,7 @@ const AddExpenseFlow = ({ onSave, onCancel, initialData = null, groups = [] }) =
           </div>
 
           {/* Action Button */}
-          <PrimaryButton type="submit" className="w-full py-[var(--space-md)]">
+          <PrimaryButton type="submit" className="w-full py-[var(--space-md)] !bg-[#2563EB] text-white">
             {initialData ? 'Update Expense' : 'Save Expense'}
           </PrimaryButton>
         </form>
