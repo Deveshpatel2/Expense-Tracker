@@ -167,7 +167,7 @@ const BudgetPage = ({ expenses, user }) => {
                     setBudgetForm({ category: '', amount: '', notes: '', alertThreshold: 80 });
                     setShowAddModal(true);
                 }}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 !bg-[#2563EB] text-white"
             >
                 <Plus className="w-5 h-5" />
                 Add Budget
@@ -177,7 +177,7 @@ const BudgetPage = ({ expenses, user }) => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[var(--space-md)]">
-        <Card padding="var(--space-md)" className="border-l-4 border-l-[var(--color-primary)]">
+        <Card padding="var(--space-md)" className="border-l-4 border-l-[#2563EB]">
             <div className="flex items-center gap-[var(--space-xs)] mb-[var(--space-xs)] text-[var(--color-text-muted)]">
                 <Wallet className="w-4 h-4" />
                 <span className="text-[var(--text-muted)] font-[var(--weight-medium)]">Total Budgeted</span>
@@ -295,7 +295,7 @@ const BudgetPage = ({ expenses, user }) => {
           <div className="space-y-[var(--space-lg)]">
               <Card padding="var(--space-md)">
                   <h2 className="text-[var(--text-section-title)] font-[var(--weight-semibold)] text-[var(--color-text-main)] mb-[var(--space-md)] flex items-center gap-2">
-                      <PieChart className="w-4 h-4 text-[var(--color-primary)]" />
+                      <PieChart className="w-4 h-4 text-[#2563EB]" />
                       Budget Distribution
                   </h2>
                   <div className="h-[200px] sm:h-[250px] w-full">
@@ -346,7 +346,7 @@ const BudgetPage = ({ expenses, user }) => {
                               />
                               <Bar dataKey="amount" isAnimationActive={false} radius={[4, 4, 0, 0]}>
                                   {barData.map((entry, index) => (
-                                      <Cell key={`cell-${index}`} fill={index === 0 ? 'var(--color-primary)' : 'var(--color-chart-muted)'} />
+                                      <Cell key={`cell-${index}`} fill={index === 0 ? '#2563EB' : '#9CA3AF'} />
                                   ))}
                               </Bar>
                           </BarChart>
@@ -399,7 +399,7 @@ const BudgetPage = ({ expenses, user }) => {
                                 step="5"
                                 value={budgetForm.alertThreshold}
                                 onChange={(e) => setBudgetForm({...budgetForm, alertThreshold: parseInt(e.target.value)})}
-                                className="flex-1 h-2 bg-[var(--color-border)] rounded-full appearance-none cursor-pointer accent-[var(--color-primary)]"
+                                className="flex-1 h-2 bg-[var(--color-border)] rounded-full appearance-none cursor-pointer accent-[var(--color-[#2563EB])]"
                             />
                             <span className="text-sm font-[var(--weight-bold)] text-[var(--color-text-main)]">{budgetForm.alertThreshold}%</span>
                         </div>
@@ -415,7 +415,7 @@ const BudgetPage = ({ expenses, user }) => {
                         </SecondaryButton>
                         <PrimaryButton 
                             type="submit"
-                            className="flex-1"
+                            className="flex-1 !bg-[#2563EB] hover:!bg-[#2563EB]/80 text-white"
                         >
                             Save Budget
                         </PrimaryButton>
