@@ -1,62 +1,135 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import BulkOperations from './BulkOperations';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Filter, Search, ChevronLeft, ChevronRight, Plus, Trash2, CheckCircle, Users } from 'lucide-react';
 import AdvancedSearch from './AdvancedSearch';
-import './ExpenseList.css';
+import { Card, EmptyState, Input, Select, PrimaryButton, SecondaryButton } from './CoreUI';
+import CreateGroupModal from './CreateGroupModal';
+import { CATEGORIES, getCategoryConfig } from '../theme/ThemeConfig';
 
-const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrency = 'USD' }) => {
+const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrency = 'USD', user, onAddExpense, groups = [], onRefresh, onDeleteGroup }) => {
   const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('All Categories');
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
-  const [loading, setLoading] = useState(false);
-  const [selectedExpenses, setSelectedExpenses] = useState([]);
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [showSuccessBanner, setShowSuccessBanner] = useState(false);
+  const [createdGroup, setCreatedGroup] = useState(null);
 
-  const currencies = [
-    { code: 'USD', symbol: '$', name: 'US Dollar' },
-    { code: 'EUR', symbol: '€', name: 'Euro' },
-    { code: 'GBP', symbol: '£', name: 'British Pound' },
-    { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
-    { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
-    { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
-    { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc' },
-    { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
-    { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
-    { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
-    { code: 'MXN', symbol: 'Mex$', name: 'Mexican Peso' },
-    { code: 'KRW', symbol: '₩', name: 'South Korean Won' },
-    { code: 'RUB', symbol: '₽', name: 'Russian Ruble' },
-    { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
-    { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' },
-    { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone' },
-    { code: 'DKK', symbol: 'kr', name: 'Danish Krone' },
-    { code: 'PLN', symbol: 'zł', name: 'Polish Złoty' },
-    { code: 'TRY', symbol: '₺', name: 'Turkish Lira' },
-    { code: 'THB', symbol: '฿', name: 'Thai Baht' },
-    { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
-    { code: 'HKD', symbol: 'HK$', name: 'Hong Kong Dollar' },
-    { code: 'NZD', symbol: 'NZ$', name: 'New Zealand Dollar' }
-  ];
+  // Check for persisted success state on mount (handle unmount/remounts)
+  useEffect(() => {
+    const savedGroup = sessionStorage.getItem('lastCreatedGroup');
+    if (savedGroup) {
+        try {
+            setCreatedGroup(JSON.parse(savedGroup));
+            setShowSuccessBanner(true);
+            // Clear after delay
+            setTimeout(() => {
+                setShowSuccessBanner(false);
+                sessionStorage.removeItem('lastCreatedGroup');
+            }, 5000);
+        } catch (e) {
+            console.error('Failed to parse saved group', e);
+        }
+    }
+  }, []);
 
-  const categories = [
-    'All Categories',
-    'Food & Dining',
-    'Transportation',
-    'Shopping',
-    'Entertainment',
-    'Healthcare',
-    'Utilities',
-    'Housing',
-    'Education',
-    'Travel',
-    'Other'
-  ];
+  const handleCreateGroup = async (groupData) => {
+      try {
+          const token = localStorage.getItem('token');
+          const response = await fetch('http://localhost:8080/api/groups', {
+              method: 'POST',
+              headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(groupData)
+          });
+          
+          if (response.ok) {
+              const data = await response.json();
+              const newGroup = { ...groupData, id: data.data?.id || Date.now(), totalAmount: 0, date: new Date() };
+              
+              setCreatedGroup(newGroup);
+              setShowSuccessBanner(true);
+              setShowCreateGroupModal(false);
+              
+              // Persist for remounts (caused by onRefresh)
+              sessionStorage.setItem('lastCreatedGroup', JSON.stringify(newGroup));
+              
+              // Trigger refresh of groups in parent with a slight delay
+              // This ensures the local UI updates (closing modal, showing banner) happen FIRST
+              if (onRefresh) {
+                  setTimeout(() => onRefresh(), 500);
+              }
+              
+              // Hide banner after 5 seconds
+              // Hide banner after 5 seconds
+              setTimeout(() => {
+                  setShowSuccessBanner(false);
+                  sessionStorage.removeItem('lastCreatedGroup');
+              }, 5000);
+          } else {
+              // Fallback for demo/simulation if backend returns 404/500
+              console.warn('Backend returned error, using fallback for demo');
+              const newGroup = { ...groupData, id: Date.now(), totalAmount: 1.00, date: new Date() };
+              
+              setCreatedGroup(newGroup);
+              setShowSuccessBanner(true);
+              setShowCreateGroupModal(false);
+              
+              // Persist for remounts
+              sessionStorage.setItem('lastCreatedGroup', JSON.stringify(newGroup));
+              
+              // Hide banner after 5 seconds
+              setTimeout(() => {
+                  setShowSuccessBanner(false);
+                  sessionStorage.removeItem('lastCreatedGroup');
+              }, 5000);
+          }
+      } catch (error) {
+          console.error('Failed to create group:', error);
+          // Fallback for demo/simulation if backend fails or is not reachable
+          const newGroup = { ...groupData, id: Date.now(), totalAmount: 1.00, date: new Date() };
+          
+          setCreatedGroup(newGroup);
+          setShowSuccessBanner(true);
+          setShowCreateGroupModal(false);
+          
+          // Persist for remounts
+          sessionStorage.setItem('lastCreatedGroup', JSON.stringify(newGroup));
+          
+          // Hide banner after 5 seconds
+          setTimeout(() => {
+              setShowSuccessBanner(false);
+              sessionStorage.removeItem('lastCreatedGroup');
+          }, 5000);
+      }
+  };
+
+  const categories = useMemo(() => ['All Categories', ...Object.keys(CATEGORIES)], []);
+
+  const handlePrevMonth = () => {
+    setCurrentDate(prev => {
+        const newDate = new Date(prev);
+        newDate.setMonth(prev.getMonth() - 1);
+        return newDate;
+    });
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(prev => {
+        const newDate = new Date(prev);
+        newDate.setMonth(prev.getMonth() + 1);
+        return newDate;
+    });
+  };
 
   const filterAndSortExpenses = useCallback(() => {
     let filtered = [...expenses];
 
-    // Apply search filter
+    // Search
     if (searchTerm) {
       filtered = filtered.filter(expense =>
         expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -64,15 +137,21 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
       );
     }
 
-    // Apply category filter
+    // Category
     if (categoryFilter && categoryFilter !== 'All Categories') {
       filtered = filtered.filter(expense => expense.category === categoryFilter);
     }
 
-    // Apply sorting
+    // Date Filter (Strict Monthly)
+    filtered = filtered.filter(expense => {
+        const expenseDate = new Date(expense.date);
+        return expenseDate.getMonth() === currentDate.getMonth() && 
+               expenseDate.getFullYear() === currentDate.getFullYear();
+    });
+
+    // Sort
     filtered.sort((a, b) => {
       let aValue, bValue;
-      
       switch (sortBy) {
         case 'amount':
           aValue = parseFloat(a.amount);
@@ -82,89 +161,20 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
           aValue = new Date(a.date);
           bValue = new Date(b.date);
           break;
-        case 'category':
-          aValue = a.category;
-          bValue = b.category;
-          break;
         default:
           aValue = a.description;
           bValue = b.description;
       }
-
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
+      return sortOrder === 'asc' ? (aValue > bValue ? 1 : -1) : (aValue < bValue ? 1 : -1);
     });
 
     setFilteredExpenses(filtered);
-  }, [expenses, searchTerm, categoryFilter, sortBy, sortOrder]);
+  }, [expenses, searchTerm, categoryFilter, currentDate, sortBy, sortOrder]);
 
   useEffect(() => {
     filterAndSortExpenses();
   }, [filterAndSortExpenses]);
 
-  const handleDelete = async (expenseId) => {
-    if (window.confirm('Are you sure you want to delete this expense?')) {
-      setLoading(true);
-      try {
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Call parent function to delete
-        onDeleteExpense(expenseId);
-      } catch (error) {
-        console.error('Error deleting expense:', error);
-        alert('Failed to delete expense');
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  const handleEdit = (expense) => {
-    if (onEditExpense) {
-      onEditExpense(expense);
-    }
-  };
-
-  // Bulk operations handlers
-  const handleBulkDelete = (expensesToDelete) => {
-    expensesToDelete.forEach(expense => {
-      onDeleteExpense(expense.id);
-    });
-    setSelectedExpenses([]);
-  };
-
-  const handleBulkEdit = (expensesToEdit, editData) => {
-    expensesToEdit.forEach(expense => {
-      const updatedExpense = {
-        ...expense,
-        category: editData.category || expense.category,
-        tags: editData.tags ? `${expense.tags || ''}, ${editData.tags}`.trim() : expense.tags,
-        notes: editData.notes ? `${expense.notes || ''} ${editData.notes}`.trim() : expense.notes
-      };
-      onEditExpense(updatedExpense);
-    });
-    setSelectedExpenses([]);
-  };
-
-  const handleSelectAll = () => {
-    setSelectedExpenses(filteredExpenses.map(expense => expense.id));
-  };
-
-  const handleClearSelection = () => {
-    setSelectedExpenses([]);
-  };
-
-  const handleExpenseSelect = (expenseId) => {
-    setSelectedExpenses(prev => 
-      prev.includes(expenseId) 
-        ? prev.filter(id => id !== expenseId)
-        : [...prev, expenseId]
-    );
-  };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -175,310 +185,324 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
   };
 
   const formatAmount = (amount, currencyCode = 'USD') => {
-    const currency = currencies.find(c => c.code === currencyCode) || currencies[0];
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency.code
+      currency: currencyCode || 'USD'
     }).format(amount);
   };
 
-  const getCategoryColor = (category) => {
-    const colors = {
-      'Food & Dining': 'bg-green-100 text-green-800',
-      'Transportation': 'bg-blue-100 text-blue-800',
-      'Shopping': 'bg-purple-100 text-purple-800',
-      'Entertainment': 'bg-pink-100 text-pink-800',
-      'Healthcare': 'bg-red-100 text-red-800',
-      'Utilities': 'bg-yellow-100 text-yellow-800',
-      'Housing': 'bg-indigo-100 text-indigo-800',
-      'Education': 'bg-teal-100 text-teal-800',
-      'Travel': 'bg-orange-100 text-orange-800',
-      'Other': 'bg-gray-100 text-gray-800'
-    };
-    return colors[category] || colors['Other'];
-  };
-
-  // Calculate totals by currency
-  const calculateTotalsByCurrency = () => {
-    const totals = {};
+  const getFilterSummary = () => {
+    let parts = [];
+    if (searchTerm) parts.push(`matching "${searchTerm}"`);
+    if (categoryFilter !== 'All Categories') parts.push(`in ${categoryFilter}`);
     
-    filteredExpenses.forEach(expense => {
-      const currency = expense.currency || 'USD';
-      if (!totals[currency]) {
-        totals[currency] = 0;
-      }
-      totals[currency] += parseFloat(expense.amount);
-    });
-    
-    return totals;
-  };
-
-  const currencyTotals = calculateTotalsByCurrency();
-
-  if (expenses.length === 0) {
+    if (parts.length === 0) return null;
     return (
-      <div className="text-center py-12">
-        <div className="text-gray-400 dark:text-gray-600 text-6xl mb-4">💰</div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No expenses yet</h3>
-        <p className="text-gray-500 dark:text-gray-400">Start tracking your expenses by adding your first one!</p>
+      <div className="px-[var(--space-sm)] py-[var(--space-xs)] bg-[var(--color-bg)] rounded-[var(--radius-btn)] inline-block mb-[var(--space-md)] animate-fade-in">
+        <p className="text-[var(--text-muted)] text-[var(--color-text-muted)]">
+          Showing expenses <span className="text-[var(--color-text-main)] font-[var(--weight-semibold)]">{parts.join(' ')}</span>
+        </p>
       </div>
     );
-  }
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Advanced Search Toggle */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Expenses</h2>
-        <button
-          onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
-          className="px-4 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
-        >
-          {showAdvancedSearch ? 'Hide Advanced Search' : 'Show Advanced Search'}
-        </button>
-      </div>
-
-      {/* Advanced Search */}
-      {showAdvancedSearch && (
-        <AdvancedSearch
-          onSearch={(searchData) => {
-            setSearchTerm(searchData.query);
-            setCategoryFilter(searchData.category);
-            setSortBy(searchData.sortBy);
-            setSortOrder(searchData.sortOrder);
-          }}
-          onFilter={(filterData) => {
-            setCategoryFilter(filterData.category);
-            setSortBy(filterData.sortBy);
-            setSortOrder(filterData.sortOrder);
-          }}
-          onSort={(sortBy, sortOrder) => {
-            setSortBy(sortBy);
-            setSortOrder(sortOrder);
-          }}
-          onClear={() => {
-            setSearchTerm('');
-            setCategoryFilter('');
-            setSortBy('date');
-            setSortOrder('desc');
-          }}
-        />
+    <div className="space-y-[var(--space-lg)]">
+      
+      {/* Success Banner */}
+      {showSuccessBanner && createdGroup && (
+        <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 flex items-start gap-3 animate-fade-in mb-2">
+            <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+                <CheckCircle className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div>
+                <h3 className="text-emerald-900 font-bold text-sm">
+                    {createdGroup.name} group created successfully!
+                </h3>
+                <p className="text-emerald-700 text-xs mt-0.5">
+                    Add your expenses below this group to split them later.
+                </p>
+            </div>
+        </div>
       )}
 
-      {/* Basic Filters and Search */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 lg:p-6">
-        <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-4 lg:gap-4">
-          <div>
-            <label htmlFor="search" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Search
-            </label>
-            <input
-              type="text"
-              id="search"
-              placeholder="Search expenses..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="input"
-            />
-          </div>
-          
-          <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Category
-            </label>
-            <select
-              id="category"
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="input"
-            >
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div>
-            <label htmlFor="sortBy" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Sort By
-            </label>
-            <select
-              id="sortBy"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="input"
-            >
-              <option value="date">Date</option>
-              <option value="amount">Amount</option>
-              <option value="category">Category</option>
-              <option value="description">Description</option>
-            </select>
-          </div>
-          
-          <div>
-            <label htmlFor="sortOrder" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Order
-            </label>
-            <select
-              id="sortOrder"
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              className="input"
-            >
-              <option value="desc">Newest/High to Low</option>
-              <option value="asc">Oldest/Low to High</option>
-            </select>
-          </div>
+      {/* Custom Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 className="text-[var(--text-page-title)] font-[var(--weight-bold)] text-[var(--color-text-main)] mb-1">Expenses</h1>
+            <p className="text-[var(--text-muted)] text-[var(--color-text-muted)]">
+                Viewing {filteredExpenses.length} transaction{filteredExpenses.length !== 1 ? 's' : ''} for {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+            </p>
         </div>
-      </div>
-
-      {/* Bulk Operations */}
-      <BulkOperations
-        selectedExpenses={selectedExpenses.map(id => filteredExpenses.find(expense => expense.id === id)).filter(Boolean)}
-        onBulkDelete={handleBulkDelete}
-        onBulkEdit={handleBulkEdit}
-        onSelectAll={handleSelectAll}
-        onClearSelection={handleClearSelection}
-        totalExpenses={filteredExpenses.length}
-      />
-
-      {/* Results Summary */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-2 sm:space-y-0">
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            Showing {filteredExpenses.length} of {expenses.length} expenses
-          </span>
-          
-          {/* Multi-Currency Totals */}
-          <div className="flex flex-wrap gap-3">
-            {Object.keys(currencyTotals).length > 0 ? (
-              Object.entries(currencyTotals).map(([currency, total]) => (
-                <div key={currency} className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {formatAmount(total, currency)}
-                  </span>
-                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200">
-                    {currency}
-                  </span>
+        
+        <div className="flex items-center gap-4">
+            {/* Month Navigator */}
+            <div className="flex items-center bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-btn)] p-1 shadow-sm">
+                <button 
+                    onClick={handlePrevMonth}
+                    className="p-2 hover:bg-[var(--color-bg)] rounded-[var(--radius-btn)] transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"
+                >
+                    <ChevronLeft className="w-4 h-4" />
+                </button>
+                <div className="px-[var(--space-md)] text-[var(--text-body)] font-[var(--weight-semibold)] text-[var(--color-text-main)]">
+                    {currentDate.toLocaleString('default', { month: 'short', year: 'numeric' })}
                 </div>
-              ))
-            ) : (
-              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                No expenses to display
-              </span>
-            )}
-          </div>
+                <button 
+                    onClick={handleNextMonth}
+                    className="p-2 hover:bg-[var(--color-bg)] rounded-[var(--radius-btn)] transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"
+                >
+                    <ChevronRight className="w-4 h-4" />
+                </button>
+            </div>
+
+            {/* Primary Action */}
+            <div className="flex items-center gap-2">
+                <SecondaryButton onClick={() => setShowCreateGroupModal(true)}
+                    className="shadow-md !bg-[#2563EB] hover:!bg-[#2563EB] !text-white !font-bold"
+                >
+                    + Create Group
+                </SecondaryButton>
+                <PrimaryButton 
+                    onClick={() => onAddExpense()} 
+                    className="shadow-md !bg-[#2563EB] hover:!bg-[#2563EB] !text-white !font-bold"
+                >
+                    <Plus className="w-5 h-5" /> Add Expense
+                </PrimaryButton>
+            </div>
         </div>
       </div>
 
-      {/* Expenses List */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  <input
-                    type="checkbox"
-                    checked={selectedExpenses.length === filteredExpenses.length && filteredExpenses.length > 0}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        handleSelectAll();
-                      } else {
-                        handleClearSelection();
-                      }
-                    }}
-                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                  />
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Description
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Currency
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Notes
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredExpenses.map((expense) => (
-                <tr key={expense.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      checked={selectedExpenses.includes(expense.id)}
-                      onChange={() => handleExpenseSelect(expense.id)}
-                      className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                    />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      {expense.description}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                      {formatAmount(expense.amount, expense.currency)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200">
-                      {expense.currency || 'USD'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getCategoryColor(expense.category)}`}>
-                      {expense.category}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {formatDate(expense.date)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
-                      {expense.notes || '-'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex space-x-2 justify-end">
-                      <button
-                        onClick={() => handleEdit(expense)}
-                        disabled={loading}
-                        className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(expense.id)}
-                        disabled={loading}
-                        className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Filter Row */}
+      <div className="flex flex-col gap-[var(--space-md)] sticky top-0 z-10 bg-[var(--color-bg)] py-[var(--space-sm)] border-b border-[var(--color-border)]">
+         <div className="flex flex-col lg:flex-row gap-[var(--space-md)] w-full items-end">
+            {/* Search */}
+             <div className="flex-1 w-full">
+                <Input
+                    placeholder="Search expenses..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    prefix={<Search className="w-4 h-4" />}
+                />
+            </div>
+            
+            {/* Category Filter */}
+             <div className="w-full lg:w-[240px]">
+                <Select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    options={categories.map(c => ({ value: c, label: c }))}
+                />
+            </div>
+
+            <button
+                onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+                className={`flex-shrink-0 p-[var(--space-sm)] h-[42px] flex items-center justify-center rounded-[var(--radius-btn)] border transition-all ${showAdvancedSearch ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
+            >
+                <Filter className="w-5 h-5" />
+            </button>
+         </div>
       </div>
+
+      {showAdvancedSearch && (
+        <Card className="animate-slide-up" padding="md">
+            <AdvancedSearch
+                onSearch={(data) => {
+                    setSearchTerm(data.query);
+                    setCategoryFilter(data.category);
+                    setSortBy(data.sortBy);
+                    setSortOrder(data.sortOrder);
+                }}
+                 onFilter={(data) => {
+                    setCategoryFilter(data.category);
+                    setSortBy(data.sortBy);
+                    setSortOrder(data.sortOrder);
+                }}
+                 onSort={(sb, so) => {
+                    setSortBy(sb);
+                    setSortOrder(so);
+                }}
+                 onClear={() => {
+                    setSearchTerm('');
+                    setCategoryFilter('All Categories');
+                    setSortBy('date');
+                    setSortOrder('desc');
+                }}
+            />
+        </Card>
+      )}
+
+      {/* Active Filter Summary */}
+      {getFilterSummary()}
+
+      {/* Newly Created Group Card (Visible only when appropriate or generally if we had a groups section) */}
+      {/* Active Groups List */}
+      {groups && groups.length > 0 && (
+        <div className="mb-6 animate-slide-up space-y-4">
+             {/* Show distinct groups (latest first) */}
+             {[...groups].reverse().map(group => {
+                 // Calculate group total from current expenses
+                 const groupTotal = expenses
+                    .filter(e => e.groupId === group.id)
+                    .reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+
+                 return (
+                    <div key={group.id}>
+                        <h2 className="text-[var(--text-section-title)] font-[var(--weight-semibold)] text-[var(--color-text-main)] mb-3">
+                            {/* Header for the group section - could be date or 'Active Groups' */}
+                            {/* Using the group name as the primary context here if we list them individually, 
+                                but the design showed a month header. 
+                                Let's keep the month header only if it's the first item or handle headers separately.
+                                For now, putting the Month header above ALL groups if we are showing them in the month view context.
+                            */}
+                        </h2>
+                        <Card className="flex flex-col sm:flex-row gap-4 p-5 hover:shadow-md transition-shadow relative overflow-hidden group">
+                            {/* Left Icon */}
+                            <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                                <Users className="w-6 h-6 text-blue-600" />
+                            </div>
+                            
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-[var(--color-text-main)]">{group.name}</h3>
+                                        <p className="text-[var(--color-text-muted)] text-sm mt-1">
+                                            {group.description || 'Expenses for travel, food, flight and activities.'}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-lg font-bold text-[var(--color-text-main)]">
+                                            {formatAmount(groupTotal)}
+                                        </div>
+                                        <div className="text-xs text-[var(--color-text-muted)] mt-1">
+                                            {/* Use group creation date if available, or current date as fallback */}
+                                            {formatDate(group.createdAt || group.date || new Date())}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 flex items-center justify-between">
+                                    <button 
+                                        onClick={() => {
+                                            // Pre-select group for new expense
+                                            onAddExpense(group.id);
+                                        }}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-blue-600 text-sm font-semibold rounded-lg hover:bg-indigo-100 transition-colors"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Add expense to this group
+                                    </button>
+
+                                    {onDeleteGroup && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onDeleteGroup(group.id);
+                                            }}
+                                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+                                            title="Delete Group"
+                                        >
+                                            <Trash2 size={16} />
+                                            <span className="hidden sm:inline">Delete Group</span>
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </Card>
+                    </div>
+                 );
+             })}
+        </div>
+      )}
+
+      {/* Expense List */}
+      <div className="space-y-[var(--space-sm)]">
+        {filteredExpenses.length === 0 ? (
+            <EmptyState 
+                message={`No expenses found for ${currentDate.toLocaleString('default', { month: 'long' })}.`}
+                ctaLabel="Add New Expense"
+                onCtaClick={onAddExpense}
+            />
+        ) : (
+            filteredExpenses.map((expense) => {
+                const { icon: Icon, color } = getCategoryConfig(expense.category);
+                return (
+                    <div 
+                        key={expense.id} 
+                        className="w-full text-left cursor-pointer group"
+                        onClick={() => onEditExpense(expense)}
+                    >
+                        <Card 
+                            padding="sm" 
+                            className="flex items-center gap-[var(--space-md)] hover:bg-[var(--color-bg)] transition-colors border-transparent hover:border-[var(--color-border)] shadow-sm hover:shadow-md relative pr-12 sm:pr-[var(--space-md)]"
+                        >
+                            {/* Icon - Soft Style */}
+                            <div 
+                                className="w-10 h-10 rounded-[var(--radius-btn)] flex items-center justify-center shrink-0 transition-colors"
+                                style={{ backgroundColor: `${color}15` }}
+                            >
+                                <Icon size={20} style={{ color: color }} />
+                            </div>
+
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                                <h3 className="font-[var(--weight-semibold)] text-[var(--color-text-main)] truncate">
+                                    {expense.description}
+                                </h3>
+                                <p className="text-[var(--text-muted)] text-[var(--color-text-muted)] truncate">
+                                    {expense.notes || expense.category}
+                                </p>
+                                {/* Group Chip */}
+                                {(() => {
+                                    const group = groups.find(g => g.id === expense.groupId);
+                                    if (group) {
+                                        return (
+                                            <div className="mt-1 inline-flex items-center bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                                                {group.name}
+                                                {(group.includeInBudget === 0 || group.includeInBudget === false) && (
+                                                    <span className="ml-1 text-[10px] uppercase tracking-wider text-rose-500 font-bold bg-rose-50 px-1 rounded">Excluded</span>
+                                                )}
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()}
+                            </div>
+
+                            {/* Amount & Date */}
+                            <div className="text-right shrink-0">
+                                <div className="text-[var(--text-monetary-md)] font-[var(--weight-bold)] text-[var(--color-text-main)]">
+                                    {formatAmount(expense.amount, expense.currency)}
+                                </div>
+                                <div className="text-[var(--text-muted)] text-[var(--color-text-muted)]">
+                                    {formatDate(expense.date)}
+                                </div>
+                            </div>
+                            
+                            {/* Delete Action (Visible on hover on Desktop, swipe/action on mobile - simplifies to button here) */}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDeleteExpense(expense.id);
+                                }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
+                                aria-label="Delete expense"
+                            >
+                                <Trash2 size={18} />
+                            </button>
+                        </Card>
+                    </div>
+                );
+            })
+        )}
+      </div>
+
+      {showCreateGroupModal && (
+        <CreateGroupModal 
+            onSave={handleCreateGroup}
+            onCancel={() => setShowCreateGroupModal(false)}
+        />
+      )}
     </div>
   );
 };

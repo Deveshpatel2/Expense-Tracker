@@ -3,11 +3,22 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
-const sqlite3 = require('sqlite3').verbose();
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+require('dotenv').config();
+
+// Database setup - SQLite only
+const sqlite3 = require('sqlite3').verbose();
+console.log('📊 Using SQLite database');
+const db = new sqlite3.Database('expense_tracker.db', (err) => {
+    if (err) {
+        console.error('❌ Database connection error:', err);
+    } else {
+        console.log('✅ Connected to SQLite database');
+    }
+});
 
 // Rate limiting
 const rateLimit = require('express-rate-limit');
@@ -69,11 +80,16 @@ const emailTemplates = {
     })
 };
 
-// Middleware
+// Middleware - CORS with better error handling
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost:3004'],
-    credentials: true
+    origin: ['http://localhost:3000', 'http://localhost:3004', 'http://127.0.0.1:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Handle preflight requests
+app.options('*', cors());
 app.use(express.json());
 app.use(express.static('uploads'));
 
@@ -116,10 +132,7 @@ app.use('/api/', generalLimiter);
 app.use('/api/auth/', authLimiter);
 app.use('/api/upload/', uploadLimiter);
 
-// Database setup
-const db = new sqlite3.Database('expense_tracker.db');
-
-// Initialize database tables
+// Initialize database tables - SQLite
 db.serialize(() => {
     // Users table
     db.run(`CREATE TABLE IF NOT EXISTS users (
@@ -220,6 +233,58 @@ db.serialize(() => {
     UNIQUE(userId, settingKey)
   )`);
 
+    // Split feature: Groups table
+    db.run(`CREATE TABLE IF NOT EXISTS groups (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    createdBy TEXT NOT NULL,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (createdBy) REFERENCES users (id)
+  )`);
+
+    // Split feature: Group members table
+    db.run(`CREATE TABLE IF NOT EXISTS group_members (
+    id TEXT PRIMARY KEY,
+    groupId TEXT NOT NULL,
+    userId TEXT NOT NULL,
+    role TEXT DEFAULT 'member',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (groupId) REFERENCES groups (id),
+    FOREIGN KEY (userId) REFERENCES users (id),
+    UNIQUE(groupId, userId)
+  )`);
+
+    // Split feature: Group expenses table
+    db.run(`CREATE TABLE IF NOT EXISTS group_expenses (
+    id TEXT PRIMARY KEY,
+    groupId TEXT NOT NULL,
+    payerId TEXT NOT NULL,
+    amount REAL NOT NULL,
+    description TEXT NOT NULL,
+    expenseDate DATE NOT NULL,
+    category TEXT NOT NULL,
+    splitType TEXT DEFAULT 'even',
+    notes TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (groupId) REFERENCES groups (id),
+    FOREIGN KEY (payerId) REFERENCES users (id)
+  )`);
+
+    // Split feature: Expense splits (who owes what)
+    db.run(`CREATE TABLE IF NOT EXISTS expense_splits (
+    id TEXT PRIMARY KEY,
+    expenseId TEXT NOT NULL,
+    userId TEXT NOT NULL,
+    amount REAL NOT NULL,
+    isSettled BOOLEAN DEFAULT 0,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (expenseId) REFERENCES group_expenses (id),
+    FOREIGN KEY (userId) REFERENCES users (id)
+  )`);
+
     // Insert default categories for all users
     const defaultCategories = [
         { name: 'Food & Dining', description: 'Restaurants, groceries, food delivery', color: '#EF4444', icon: 'utensils' },
@@ -247,6 +312,16 @@ db.serialize(() => {
             });
         }
     });
+
+    // MIGRATION: Add new columns if they don't exist
+    // Add groupId to expenses
+    db.run("ALTER TABLE expenses ADD COLUMN groupId TEXT", (err) => {
+        // Silently fail if column exists
+    });
+    // Add columns to groups
+    db.run("ALTER TABLE groups ADD COLUMN includeInBudget BOOLEAN DEFAULT 1", (err) => { });
+    db.run("ALTER TABLE groups ADD COLUMN startDate DATE", (err) => { });
+    db.run("ALTER TABLE groups ADD COLUMN endDate DATE", (err) => { });
 });
 
 // File upload configuration
@@ -288,10 +363,25 @@ const authenticateToken = (req, res, next) => {
 
     jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) {
-            console.error('JWT verification error:', err);
-            return res.status(403).json({ success: false, message: 'Invalid token' });
+            // Handle expired token specifically - don't log as error, it's expected
+            if (err.name === 'TokenExpiredError') {
+                // Silently handle expired tokens - don't spam logs
+                return res.status(401).json({
+                    success: false,
+                    message: 'Token expired. Please log in again.',
+                    code: 'TOKEN_EXPIRED'
+                });
+            }
+            // Handle other JWT errors - only log unexpected errors
+            if (err.name !== 'JsonWebTokenError') {
+                console.error('JWT verification error:', err.name, err.message);
+            }
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid or expired token. Please log in again.',
+                code: 'INVALID_TOKEN'
+            });
         }
-        console.log('Authenticated user:', user);
         req.user = user;
         next();
     });
@@ -574,7 +664,12 @@ const getUserById = (id) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-    res.json({ success: true, message: 'Server is running' });
+    res.json({
+        success: true,
+        message: 'Server is running',
+        database: 'SQLite',
+        status: 'ok'
+    });
 });
 
 // Auth routes
@@ -714,22 +809,50 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-app.post('/api/auth/guest', (req, res) => {
+app.post('/api/auth/guest', async (req, res) => {
+    console.log('🔵 Guest login request received');
     try {
         const userId = uuidv4();
         const guestEmail = `guest-${Date.now()}@expensetracker.com`;
 
+        console.log('🔵 Creating guest user:', { userId, guestEmail });
+
+        // Hash password for guest user
+        const hashedPassword = await bcrypt.hash('guest-password', 10);
+        console.log('🔵 Password hashed');
+
         db.run(
-            'INSERT INTO users (id, firstName, lastName, email, password, isGoogleUser, isGuest) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [userId, 'Guest', 'User', guestEmail, 'guest-password', false, true],
+            'INSERT INTO users (id, firstName, lastName, email, password, isGoogleUser, isGuest, isEmailVerified, failedLoginAttempts, timezone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [userId, 'Guest', 'User', guestEmail, hashedPassword, false, true, false, 0, 'UTC'],
             function (err) {
                 if (err) {
-                    return res.status(500).json({ success: false, message: 'Guest user creation failed' });
+                    console.error('❌ Guest user creation error:', err);
+                    console.error('Error code:', err.code);
+                    console.error('Error message:', err.message);
+                    // Check for duplicate email error
+                    if (err.code === 'SQLITE_CONSTRAINT' || err.code === '23505') {
+                        // If email already exists, try again with a new timestamp
+                        console.log('⚠️ Duplicate email, retrying...');
+                        return res.status(500).json({
+                            success: false,
+                            message: 'Guest user creation failed. Please try again.'
+                        });
+                    }
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Guest user creation failed',
+                        error: err.message
+                    });
                 }
 
-                const token = jwt.sign({ id: userId, email: guestEmail }, JWT_SECRET, { expiresIn: '24h' });
+                console.log('✅ Guest user inserted successfully');
+                console.log('Last ID:', this.lastID);
+                console.log('Changes:', this.changes);
 
-                res.json({
+                const token = jwt.sign({ id: userId, email: guestEmail }, JWT_SECRET, { expiresIn: '24h' });
+                console.log('✅ Token generated');
+
+                const response = {
                     success: true,
                     message: 'Guest user created successfully',
                     data: {
@@ -740,20 +863,60 @@ app.post('/api/auth/guest', (req, res) => {
                             lastName: 'User',
                             email: guestEmail,
                             isGoogleUser: false,
-                            isGuest: true
+                            isGuest: true,
+                            isEmailVerified: false
                         }
                     }
-                });
+                };
+
+                console.log('✅ Sending response:', JSON.stringify(response, null, 2));
+                res.json(response);
             }
         );
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Guest user creation failed' });
+        console.error('❌ Guest user creation exception:', error);
+        console.error('Stack:', error.stack);
+        res.status(500).json({
+            success: false,
+            message: 'Guest user creation failed',
+            error: error.message
+        });
     }
 });
 
+const { OAuth2Client } = require('google-auth-library');
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '600242847712-liumaiomcajui3jrc6do2ivk7dpq2vfk.apps.googleusercontent.com';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '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';
+const client = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, 'postmessage');
+
 app.post('/api/auth/google', async (req, res) => {
     try {
-        const { email, firstName, lastName, profilePicture } = req.body;
+        const { token } = req.body; // 'token' here is the authorization code
+
+        if (!token) {
+            return res.status(400).json({ success: false, message: 'Google auth code is required' });
+        }
+
+        // Exchange authorization code for tokens
+        const { tokens } = await client.getToken(token);
+        const idToken = tokens.id_token;
+
+        if (!idToken) {
+            return res.status(400).json({ success: false, message: 'Failed to retrieve ID token from Google' });
+        }
+
+        // Verify the ID token
+        const ticket = await client.verifyIdToken({
+            idToken: idToken,
+            audience: GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+
+        const { email, given_name, family_name, picture, sub: googleId } = payload;
+
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Google account does not have an email address' });
+        }
 
         // Check if user exists
         let user = await getUserByEmail(email);
@@ -763,45 +926,63 @@ app.post('/api/auth/google', async (req, res) => {
             const userId = uuidv4();
             user = {
                 id: userId,
-                firstName,
-                lastName,
+                firstName: given_name || 'Google',
+                lastName: family_name || 'User',
                 email,
-                profilePicture,
+                profilePicture: picture,
                 isGoogleUser: true,
                 isGuest: false
             };
 
-            db.run(
-                'INSERT INTO users (id, firstName, lastName, email, password, profilePicture, isGoogleUser, isGuest) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                [userId, firstName, lastName, email, 'google-password', profilePicture, true, false],
-                function (err) {
-                    if (err) {
-                        return res.status(500).json({ success: false, message: 'Google sign-in failed' });
+            // Wait for database insert to complete before sending response
+            await new Promise((resolve, reject) => {
+                db.run(
+                    'INSERT INTO users (id, firstName, lastName, email, password, profilePicture, isGoogleUser, isGuest, isEmailVerified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    [userId, user.firstName, user.lastName, email, 'google-password', picture, true, false, true], // Auto-verify email for Google Users
+                    function (err) {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve();
+                        }
                     }
-                }
-            );
+                );
+            });
+        } else {
+            // Update existing user's profile picture if it changed (optional)
+            // strict check for existing account linking would be better, but for now we assume email matches = same user
+            if (!user.isGoogleUser) {
+                // You might want to ask user to link accounts, but for simplicity here we can allow or block. 
+                // Let's allow and update flag? Or just log them in. 
+                // Let's update `isGoogleUser` to true if they sign in with Google
+                await new Promise((resolve) => {
+                    db.run('UPDATE users SET isGoogleUser = 1 WHERE id = ?', [user.id], () => resolve());
+                });
+            }
         }
 
-        const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '24h' });
+        const jwtToken = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '24h' });
 
         res.json({
             success: true,
             message: 'Google sign-in successful',
             data: {
-                token,
+                token: jwtToken,
                 user: {
                     id: user.id,
                     firstName: user.firstName,
                     lastName: user.lastName,
                     email: user.email,
                     profilePicture: user.profilePicture,
-                    isGoogleUser: user.isGoogleUser,
-                    isGuest: user.isGuest
+                    isGoogleUser: true,
+                    isGuest: user.isGuest,
+                    isEmailVerified: true
                 }
             }
         });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Google sign-in failed' });
+        console.error('Google Auth Error:', error);
+        res.status(500).json({ success: false, message: 'Google sign-in failed', error: error.message });
     }
 });
 
@@ -842,12 +1023,12 @@ app.get('/api/expenses', authenticateToken, (req, res) => {
 });
 
 app.post('/api/expenses', authenticateToken, (req, res) => {
-    const { description, amount, category, expenseDate, notes, currency } = req.body;
+    const { description, amount, category, expenseDate, notes, currency, groupId } = req.body;
     const expenseId = uuidv4();
 
     db.run(
-        'INSERT INTO expenses (id, description, amount, category, expenseDate, notes, currency, userId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [expenseId, description, amount, category, expenseDate, notes, currency, req.user.id],
+        'INSERT INTO expenses (id, description, amount, category, expenseDate, notes, currency, userId, groupId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [expenseId, description, amount, category, expenseDate, notes, currency, req.user.id, groupId || null],
         function (err) {
             if (err) {
                 return res.status(500).json({ success: false, message: 'Failed to create expense' });
@@ -864,7 +1045,9 @@ app.post('/api/expenses', authenticateToken, (req, res) => {
                     expenseDate,
                     notes,
                     currency,
-                    userId: req.user.id
+                    currency,
+                    userId: req.user.id,
+                    groupId: groupId || null
                 }
             });
         }
@@ -1155,6 +1338,132 @@ app.post('/api/auth/reset-password', (req, res) => {
             );
         }
     );
+});
+
+// Change password (for authenticated users)
+app.post('/api/user/change-password', authenticateToken, async (req, res) => {
+    const userId = req.user.id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ success: false, message: 'Current password and new password are required' });
+    }
+
+    // Validate password complexity
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+        return res.status(400).json({
+            success: false,
+            message: 'Password does not meet requirements',
+            errors: passwordValidation.errors
+        });
+    }
+
+    // Get user from database
+    db.get('SELECT * FROM users WHERE id = ?', [userId], async (err, user) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Verify current password
+        const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+        if (!isValidPassword) {
+            return res.status(400).json({ success: false, message: 'Current password is incorrect' });
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update password
+        db.run(
+            'UPDATE users SET password = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
+            [hashedPassword, userId],
+            (err) => {
+                if (err) {
+                    return res.status(500).json({ success: false, message: 'Password update failed' });
+                }
+
+                res.json({ success: true, message: 'Password updated successfully' });
+            }
+        );
+    });
+});
+
+// Delete user account
+app.delete('/api/user/account', authenticateToken, async (req, res) => {
+    const userId = req.user.id;
+    const { password } = req.body;
+
+    if (!password) {
+        return res.status(400).json({ success: false, message: 'Password is required to delete account' });
+    }
+
+    // Get user from database
+    db.get('SELECT * FROM users WHERE id = ?', [userId], async (err, user) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Verify password (skip for guest users)
+        if (!user.isGuest) {
+            const isValidPassword = await bcrypt.compare(password, user.password);
+            if (!isValidPassword) {
+                return res.status(400).json({ success: false, message: 'Incorrect password' });
+            }
+        }
+
+        // Delete user's expenses
+        db.run('DELETE FROM expenses WHERE userId = ?', [userId], (err) => {
+            if (err) {
+                console.error('Error deleting expenses:', err);
+            }
+        });
+
+        // Delete user's budgets
+        db.run('DELETE FROM budgets WHERE userId = ?', [userId], (err) => {
+            if (err) {
+                console.error('Error deleting budgets:', err);
+            }
+        });
+
+        // Delete user's recurring expenses
+        db.run('DELETE FROM recurring_expenses WHERE userId = ?', [userId], (err) => {
+            if (err) {
+                console.error('Error deleting recurring expenses:', err);
+            }
+        });
+
+        // Delete user's categories
+        db.run('DELETE FROM categories WHERE userId = ?', [userId], (err) => {
+            if (err) {
+                console.error('Error deleting categories:', err);
+            }
+        });
+
+        // Delete user's settings
+        db.run('DELETE FROM user_settings WHERE userId = ?', [userId], (err) => {
+            if (err) {
+                console.error('Error deleting user settings:', err);
+            }
+        });
+
+        // Delete user account
+        db.run('DELETE FROM users WHERE id = ?', [userId], (err) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: 'Failed to delete account' });
+            }
+
+            res.json({ success: true, message: 'Account deleted successfully' });
+        });
+    });
 });
 
 // Update user settings (timezone, etc.)
@@ -1820,7 +2129,293 @@ app.get('/api/budgets/summary', authenticateToken, (req, res) => {
     );
 });
 
-// Analytics API endpoints
+// --- Split Feature Routes ---
+
+// Search users for groups
+app.get('/api/users/search', authenticateToken, (req, res) => {
+    const query = req.query.q;
+    if (!query || query.length < 2) {
+        return res.json({ success: true, data: [] });
+    }
+
+    const searchTerm = `%${query}%`;
+    db.all(
+        'SELECT id, firstName, lastName, email, profilePicture FROM users WHERE (firstName LIKE ? OR lastName LIKE ? OR email LIKE ?) AND id != ? LIMIT 10',
+        [searchTerm, searchTerm, searchTerm, req.user.id],
+        (err, rows) => {
+            if (err) return handleError(res, err, 'User search failed');
+            res.json({ success: true, data: rows });
+        }
+    );
+});
+
+// List groups
+app.get('/api/groups', authenticateToken, (req, res) => {
+    const query = `
+        SELECT g.*, 
+        (SELECT COUNT(*) FROM group_members WHERE groupId = g.id) as memberCount,
+        (SELECT MAX(expenseDate) FROM group_expenses WHERE groupId = g.id) as lastExpenseDate,
+        (SELECT description FROM group_expenses WHERE groupId = g.id ORDER BY expenseDate DESC, createdAt DESC LIMIT 1) as lastExpenseSummary
+        FROM groups g
+        JOIN group_members gm ON g.id = gm.groupId
+        WHERE gm.userId = ?
+        ORDER BY g.updatedAt DESC
+    `;
+
+    db.all(query, [req.user.id], (err, groups) => {
+        if (err) return handleError(res, err, 'Failed to list groups');
+
+        // For each group, calculate the user's balance
+        const groupsWithBalance = [];
+        const processGroup = (index) => {
+            if (index >= groups.length) {
+                return res.json({ success: true, data: groupsWithBalance });
+            }
+
+            const group = groups[index];
+            const balanceQuery = `
+                SELECT 
+                    (SELECT IFNULL(SUM(amount), 0) FROM group_expenses WHERE groupId = ? AND payerId = ?) as totalPaid,
+                    (SELECT IFNULL(SUM(amount), 0) FROM expense_splits es JOIN group_expenses ge ON es.expenseId = ge.id WHERE ge.groupId = ? AND es.userId = ?) as totalOwed
+            `;
+            db.get(balanceQuery, [group.id, req.user.id, group.id, req.user.id], (err, balance) => {
+                const myBalance = (balance?.totalPaid || 0) - (balance?.totalOwed || 0);
+
+                // Also get icons/avatars for members
+                db.all('SELECT u.profilePicture, u.firstName FROM users u JOIN group_members gm ON u.id = gm.userId WHERE gm.groupId = ? LIMIT 3', [group.id], (err, members) => {
+                    groupsWithBalance.push({
+                        ...group,
+                        myBalance,
+                        members: members || []
+                    });
+                    processGroup(index + 1);
+                });
+            });
+        };
+
+        processGroup(0);
+    });
+});
+
+// Create group
+app.post('/api/groups', authenticateToken, (req, res) => {
+    const { name, description, memberIds } = req.body;
+    if (!name) return res.status(400).json({ success: false, message: 'Group name is required' });
+
+    const groupId = uuidv4();
+    const createdBy = req.user.id;
+
+    db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
+
+        db.run(
+            'INSERT INTO groups (id, name, description, createdBy, includeInBudget, startDate, endDate) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [groupId, name, description, createdBy, req.body.includeInBudget !== false ? 1 : 0, req.body.startDate || null, req.body.endDate || null]
+        );
+
+        // Add creator as admin
+        db.run(
+            'INSERT INTO group_members (id, groupId, userId, role) VALUES (?, ?, ?, ?)',
+            [uuidv4(), groupId, createdBy, 'admin']
+        );
+
+        // Add other members
+        if (memberIds && Array.isArray(memberIds)) {
+            memberIds.forEach(userId => {
+                if (userId !== createdBy) {
+                    db.run(
+                        'INSERT INTO group_members (id, groupId, userId, role) VALUES (?, ?, ?, ?)',
+                        [uuidv4(), groupId, userId, 'member']
+                    );
+                }
+            });
+        }
+
+        db.run('COMMIT', (err) => {
+            if (err) {
+                db.run('ROLLBACK');
+                return handleError(res, err, 'Failed to create group');
+            }
+            res.json({ success: true, data: { id: groupId, name, description } });
+        });
+    });
+});
+
+// Get group details
+app.get('/api/groups/:id', authenticateToken, (req, res) => {
+    const groupId = req.params.id;
+
+    // Verify membership
+    db.get('SELECT * FROM group_members WHERE groupId = ? AND userId = ?', [groupId, req.user.id], (err, membership) => {
+        if (err || !membership) return res.status(403).json({ success: false, message: 'Access denied' });
+
+        db.get('SELECT * FROM groups WHERE id = ?', [groupId], (err, group) => {
+            if (err || !group) return res.status(404).json({ success: false, message: 'Group not found' });
+
+            // Get members
+            db.all(
+                'SELECT u.id, u.firstName, u.lastName, u.email, u.profilePicture, gm.role FROM users u JOIN group_members gm ON u.id = gm.userId WHERE gm.groupId = ?',
+                [groupId],
+                (err, members) => {
+                    // Get expenses
+                    db.all(
+                        'SELECT ge.*, u.firstName as payerName, u.profilePicture as payerAvatar FROM group_expenses ge JOIN users u ON ge.payerId = u.id WHERE ge.groupId = ? ORDER BY ge.expenseDate DESC, ge.createdAt DESC',
+                        [groupId],
+                        (err, expenses) => {
+                            // Calculate balances
+                            const balanceQuery = `
+                                SELECT 
+                                    (SELECT IFNULL(SUM(amount), 0) FROM group_expenses WHERE groupId = ? AND payerId = ?) as totalPaid,
+                                    (SELECT IFNULL(SUM(amount), 0) FROM expense_splits es JOIN group_expenses ge ON es.expenseId = ge.id WHERE ge.groupId = ? AND es.userId = ?) as totalOwed
+                            `;
+                            db.get(balanceQuery, [groupId, req.user.id, groupId, req.user.id], (err, balance) => {
+                                res.json({
+                                    success: true,
+                                    data: {
+                                        ...group,
+                                        members,
+                                        expenses,
+                                        myBalance: (balance?.totalPaid || 0) - (balance?.totalOwed || 0)
+                                    }
+                                });
+                            });
+                        }
+                    );
+                }
+            );
+        });
+    });
+});
+
+// Delete group
+app.delete('/api/groups/:id', authenticateToken, (req, res) => {
+    const groupId = req.params.id;
+    const userId = req.user.id;
+
+    // Check if user is admin/creator of the group
+    db.get('SELECT * FROM groups WHERE id = ?', [groupId], (err, group) => {
+        if (err) return handleError(res, err, 'Database error');
+        if (!group) return res.status(404).json({ success: false, message: 'Group not found' });
+
+        if (group.createdBy !== userId) {
+            return res.status(403).json({ success: false, message: 'Only the group creator can delete this group' });
+        }
+
+        db.serialize(() => {
+            db.run('BEGIN TRANSACTION');
+
+            // Delete group members
+            db.run('DELETE FROM group_members WHERE groupId = ?', [groupId]);
+
+            // Delete group expenses and their splits
+            db.all('SELECT id FROM group_expenses WHERE groupId = ?', [groupId], (err, expenses) => {
+                if (!err && expenses && expenses.length > 0) {
+                    const expenseIds = expenses.map(e => e.id);
+                    const placeholders = expenseIds.map(() => '?').join(',');
+                    db.run(`DELETE FROM expense_splits WHERE expenseId IN (${placeholders})`, expenseIds);
+                }
+
+                // Now delete group expenses
+                db.run('DELETE FROM group_expenses WHERE groupId = ?', [groupId]);
+
+                // Unlink regular expenses if any
+                db.run('UPDATE expenses SET groupId = NULL WHERE groupId = ?', [groupId]);
+
+                // Delete the group
+                db.run('DELETE FROM groups WHERE id = ?', [groupId], function (err) {
+                    if (err) {
+                        db.run('ROLLBACK');
+                        return handleError(res, err, 'Failed to delete group');
+                    }
+                    db.run('COMMIT', (err) => {
+                        if (err) {
+                            db.run('ROLLBACK');
+                            return handleError(res, err, 'Failed to commit delete');
+                        }
+                        res.json({ success: true, message: 'Group deleted successfully' });
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Add shared expense
+app.post('/api/groups/:id/expenses', authenticateToken, (req, res) => {
+    const groupId = req.params.id;
+    const { description, amount, category, expenseDate, payerId, splits, notes } = req.body;
+
+    if (!description || !amount || !payerId || !splits) {
+        return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    const expenseId = uuidv4();
+
+    db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
+
+        db.run(
+            'INSERT INTO group_expenses (id, groupId, payerId, amount, description, expenseDate, category, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [expenseId, groupId, payerId, amount, description, expenseDate, category, notes]
+        );
+
+        splits.forEach(split => {
+            db.run(
+                'INSERT INTO expense_splits (id, expenseId, userId, amount) VALUES (?, ?, ?, ?)',
+                [uuidv4(), expenseId, split.userId, split.amount]
+            );
+        });
+
+        // Update group timestamp
+        db.run('UPDATE groups SET updatedAt = CURRENT_TIMESTAMP WHERE id = ?', [groupId]);
+
+        db.run('COMMIT', (err) => {
+            if (err) {
+                db.run('ROLLBACK');
+                return handleError(res, err, 'Failed to add shared expense');
+            }
+            res.json({ success: true, message: 'Expense added successfully' });
+        });
+    });
+});
+
+// Settle balance
+app.post('/api/groups/:id/settle', authenticateToken, (req, res) => {
+    const groupId = req.params.id;
+    const { amount, toUserId } = req.body;
+
+    if (!amount || !toUserId) return res.status(400).json({ success: false, message: 'Amount and target user required' });
+
+    const expenseId = uuidv4();
+    const description = 'Settlement';
+    const date = new Date().toISOString().split('T')[0];
+
+    db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
+
+        db.run(
+            'INSERT INTO group_expenses (id, groupId, payerId, amount, description, expenseDate, category, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [expenseId, groupId, req.user.id, amount, description, date, 'Other', 'Balance settlement']
+        );
+
+        db.run(
+            'INSERT INTO expense_splits (id, expenseId, userId, amount, isSettled) VALUES (?, ?, ?, ?, ?)',
+            [uuidv4(), expenseId, toUserId, amount, 1]
+        );
+
+        db.run('UPDATE groups SET updatedAt = CURRENT_TIMESTAMP WHERE id = ?', [groupId]);
+
+        db.run('COMMIT', (err) => {
+            if (err) {
+                db.run('ROLLBACK');
+                return handleError(res, err, 'Settlement failed');
+            }
+            res.json({ success: true, message: 'Settlement recorded' });
+        });
+    });
+});
+
+// --- Analytics API endpoints ---
 app.get('/api/analytics/spending-overview', authenticateToken, (req, res) => {
     const userId = req.user.id;
     const { timeRange = 'month' } = req.query;
@@ -2533,9 +3128,11 @@ app.post('/api/recurring-expenses/generate', authenticateToken, (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log(`API available at http://localhost:${PORT}/api`);
+app.listen(PORT, 'localhost', () => {
+    console.log(`\n✅ Server is running on port ${PORT}`);
+    console.log(`📡 API available at http://localhost:${PORT}/api`);
+    console.log(`👤 Guest login: http://localhost:${PORT}/api/auth/guest`);
+    console.log(`🏥 Health check: http://localhost:${PORT}/api/health\n`);
 });
 
 // Graceful shutdown

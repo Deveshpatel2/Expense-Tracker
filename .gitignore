@@ -1,1 +1,37 @@
-node_modules
+# Dependencies
+node_modules/
+
+# Build artifacts
+build/
+dist/
+target/
+*.class
+
+# Database files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Environment variables
+.env
+.env.*
+*.backup
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp

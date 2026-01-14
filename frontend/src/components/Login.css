@@ -1,132 +1,161 @@
-/* Login.css - Styles for Login component */
+/* Login.css */
 
-/* Main Container */
+/* Background with soft purple-blue gradient */
 .login-container {
-  @apply min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8;
+  background: radial-gradient(circle at 10% 20%, rgb(240, 235, 255) 0%, rgb(255, 255, 255) 50%, rgb(230, 245, 255) 90%);
 }
 
-/* Form Container */
-.login-form-container {
-  @apply max-w-md w-full space-y-8;
+.login-form-wrapper {
+  background-color: #ffffff;
+  padding: 3rem;
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f3f4f6;
+  width: 100%;
 }
 
-/* Header */
-.login-header {
-  @apply text-center;
+/* Input Fields */
+.login-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  padding-left: 2.75rem; /* Space for icon */
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background-color: #f9fafb;
+  color: #1f2937;
+  font-size: 0.9375rem;
+  transition: all 0.2s ease;
 }
 
-.login-title {
-  @apply text-3xl font-extrabold text-gray-900 dark:text-white;
+.login-input:focus {
+  outline: none;
+  background-color: #ffffff;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
 }
 
-.login-subtitle {
-  @apply mt-2 text-sm text-gray-600 dark:text-gray-400;
+.login-input::placeholder {
+  color: #9ca3af;
 }
 
-/* Form */
-.login-form {
-  @apply mt-8 space-y-6;
+/* Submit Button Gradient */
+.login-submit-button {
+  width: 100%;
+  padding: 0.875rem;
+  background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+  color: white;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.4);
+  transition: all 0.2s ease;
 }
 
-/* Form Group */
-.form-group {
-  @apply space-y-2;
+.login-submit-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 25px -5px rgba(59, 130, 246, 0.5);
 }
 
-/* Label */
-.form-label {
-  @apply block text-sm font-medium text-gray-700 dark:text-gray-300;
+.login-submit-button:active {
+  transform: translateY(0);
 }
 
-/* Input Container */
-.input-container {
-  @apply relative;
+.login-submit-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
-/* Input Field */
-.form-input {
-  @apply appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm;
+/* Google Button */
+.login-google-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  color: #374151;
+  font-size: 0.9375rem;
+  transition: all 0.2s;
 }
 
-/* Password Toggle Button */
-.password-toggle {
-  @apply absolute inset-y-0 right-0 pr-3 flex items-center;
+.login-google-button:hover {
+  background-color: #f9fafb;
+  border-color: #d1d5db;
 }
 
-.password-toggle-button {
-  @apply text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none focus:text-gray-600 dark:focus:text-gray-300;
+.login-google-icon {
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
-.password-toggle-icon {
-  @apply h-5 w-5;
+/* Guest Button */
+.login-guest-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  color: #374151;
+  font-size: 0.9375rem;
+  transition: all 0.2s;
 }
 
-/* Submit Button */
-.submit-button {
-  @apply relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed;
+.login-guest-button:hover {
+  background-color: #f9fafb;
+  border-color: #d1d5db;
 }
 
-.submit-button-loading {
-  @apply opacity-50 cursor-not-allowed;
-}
-
-/* Loading Spinner */
-.loading-spinner {
-  @apply animate-spin -ml-1 mr-3 h-5 w-5 text-white;
-}
-
-/* Error Message */
-.error-message {
-  @apply text-red-600 dark:text-red-400 text-sm mt-1;
-}
-
-/* Success Message */
-.success-message {
-  @apply text-green-600 dark:text-green-400 text-sm mt-1;
-}
-
-/* Link */
-.link {
-  @apply text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300;
-}
-
-/* Divider */
-.divider {
-  @apply relative my-6;
-}
-
-.divider-line {
-  @apply absolute inset-0 flex items-center;
-}
-
-.divider-line-content {
-  @apply w-full border-t border-gray-300 dark:border-gray-600;
-}
-
-.divider-text {
-  @apply relative flex justify-center text-sm;
-}
-
-.divider-text-content {
-  @apply px-2 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400;
-}
-
-/* Additional Options */
-.additional-options {
-  @apply text-center;
-}
-
-.additional-options-text {
-  @apply text-sm text-gray-600 dark:text-gray-400;
-}
-
-/* Responsive Design */
-@media (max-width: 640px) {
-  .login-container {
-    @apply px-4;
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-  
-  .login-form-container {
-    @apply max-w-sm;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+/* Dark Mode Overrides (Minimal to maintain legibility if user toggles) */
+.dark .login-container {
+  background: #111827;
+}
+
+.dark .login-form-wrapper {
+  background-color: #1f2937;
+  border-color: #374151;
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+}
+
+.dark .login-input {
+  background-color: #374151;
+  border-color: #4b5563;
+  color: white;
+}
+
+.dark .login-input:focus {
+  background-color: #4b5563;
+}
+
+.dark .login-google-button, .dark .login-guest-button {
+  background-color: #374151;
+  border-color: #4b5563;
+  color: #e5e7eb;
+}
+
+.dark .login-google-button:hover, .dark .login-guest-button:hover {
+  background-color: #4b5563;
 }

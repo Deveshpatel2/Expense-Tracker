@@ -1,5 +1,4 @@
 import React from 'react';
-import './PasswordStrengthIndicator.css';
 
 const PasswordStrengthIndicator = ({ password }) => {
   const getPasswordStrength = (password) => {
@@ -50,9 +49,9 @@ const PasswordStrengthIndicator = ({ password }) => {
         <span className="text-gray-600 dark:text-gray-400">Password strength:</span>
         <span className={`font-medium ${getTextColor(color)}`}>{strength}</span>
       </div>
-      <div className="mt-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+      <div className="mt-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
         <div
-          className={`h-2 rounded-full transition-all duration-300 ${getStrengthColor(color)}`}
+          className={`h-full rounded-full transition-all duration-500 ease-out ${getStrengthColor(color)}`}
           style={{ width: `${percentage}%` }}
         ></div>
       </div>
@@ -61,4 +60,3 @@ const PasswordStrengthIndicator = ({ password }) => {
 };
 
 export default PasswordStrengthIndicator;
-

@@ -1,0 +1,370 @@
+/* SettingsPage.css - Styles for Settings Page */
+
+.settings-page {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.settings-header {
+  margin-bottom: 2rem;
+}
+
+.settings-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.dark .settings-title {
+  color: #f9fafb;
+}
+
+.settings-subtitle {
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+.dark .settings-subtitle {
+  color: #9ca3af;
+}
+
+/* Alerts */
+.settings-alert {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-alert-error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.dark .settings-alert-error {
+  background-color: rgba(127, 29, 29, 0.2);
+  border-color: rgba(248, 113, 113, 0.3);
+  color: #fca5a5;
+}
+
+.settings-alert-success {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.dark .settings-alert-success {
+  background-color: rgba(20, 83, 45, 0.2);
+  border-color: rgba(134, 239, 172, 0.3);
+  color: #86efac;
+}
+
+.settings-alert-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.7;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-alert-close:hover {
+  opacity: 1;
+}
+
+/* Content */
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Section */
+.settings-section {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.dark .settings-section {
+  background: #1f2937;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+}
+
+.settings-section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  margin: 0;
+}
+
+.dark .settings-section-title {
+  color: #f9fafb;
+  border-bottom-color: #374151;
+}
+
+.settings-section-content {
+  padding: 1.5rem;
+}
+
+/* Field */
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.settings-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.dark .settings-label {
+  color: #d1d5db;
+}
+
+.settings-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: white;
+  color: #111827;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.dark .settings-select {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+.settings-select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.settings-help-text {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.dark .settings-help-text {
+  color: #9ca3af;
+}
+
+/* Toggle */
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.settings-toggle-button {
+  position: relative;
+  width: 48px;
+  height: 24px;
+  background: #d1d5db;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  padding: 0;
+}
+
+.settings-toggle-button.active {
+  background: #2563eb;
+}
+
+.settings-toggle-slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.settings-toggle-button.active .settings-toggle-slider {
+  transform: translateX(24px);
+}
+
+.settings-toggle-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.dark .settings-toggle-label {
+  color: #9ca3af;
+}
+
+/* Action Card */
+.settings-action-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.dark .settings-action-card {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+.settings-action-info {
+  flex: 1;
+}
+
+.settings-action-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.dark .settings-action-title {
+  color: #f9fafb;
+}
+
+.settings-action-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.dark .settings-action-description {
+  color: #9ca3af;
+}
+
+.settings-action-button {
+  padding: 0.5rem 1rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.settings-action-button:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.settings-action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Info Grid */
+.settings-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.settings-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.settings-info-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.dark .settings-info-label {
+  color: #9ca3af;
+}
+
+.settings-info-value {
+  font-size: 0.875rem;
+  color: #111827;
+  font-weight: 500;
+}
+
+.dark .settings-info-value {
+  color: #f9fafb;
+}
+
+/* Actions */
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dark .settings-actions {
+  border-top-color: #374151;
+}
+
+.settings-save-button {
+  padding: 0.75rem 2rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.settings-save-button:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.settings-save-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .settings-page {
+    padding: 1rem;
+  }
+
+  .settings-action-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .settings-action-button {
+    width: 100%;
+  }
+
+  .settings-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

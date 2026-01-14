@@ -1,661 +1,823 @@
 import React, { useState, useMemo } from 'react';
+import Papa from 'papaparse';
 import {
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, AreaChart, Area
+  PieChart, Pie, Cell,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line
 } from 'recharts';
-import { useDarkMode } from '../context/DarkModeContext';
-import './Report.css';
-
-const currencies = [
-  { code: 'USD', symbol: '$', name: 'US Dollar' },
-  { code: 'EUR', symbol: '€', name: 'Euro' },
-  { code: 'GBP', symbol: '£', name: 'British Pound' },
-  { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
-  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
-  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
-  { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc' },
-  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
-  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
-  { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
-  { code: 'MXN', symbol: 'Mex$', name: 'Mexican Peso' },
-  { code: 'KRW', symbol: '₩', name: 'South Korean Won' },
-  { code: 'RUB', symbol: '₽', name: 'Russian Ruble' },
-  { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
-  { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' },
-  { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone' },
-  { code: 'DKK', symbol: 'kr', name: 'Danish Krone' },
-  { code: 'PLN', symbol: 'zł', name: 'Polish Złoty' },
-  { code: 'TRY', symbol: '₺', name: 'Turkish Lira' },
-  { code: 'THB', symbol: '฿', name: 'Thai Baht' },
-  { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
-  { code: 'HKD', symbol: 'HK$', name: 'Hong Kong Dollar' },
-  { code: 'NZD', symbol: 'NZ$', name: 'New Zealand Dollar' }
-];
-
-// Move formatAmount function outside component to avoid dependency issues
-const formatAmount = (amount, currencyCode = 'USD') => {
-  const currency = currencies.find(c => c.code === currencyCode) || currencies[0];
+import { Download, ChevronDown, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { CATEGORIES, getCategoryConfig } from '../theme/ThemeConfig';
+import { useCurrency } from '../context/CurrencyContext';
+const formatCurrency = (amount, currencyCode = 'USD') => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: currency.code
+    currency: currencyCode,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount);
 };
 
-const Report = ({ expenses, selectedCurrency = 'USD' }) => {
-  const { isDarkMode } = useDarkMode();
-  const [timeRange, setTimeRange] = useState('month');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [chartType, setChartType] = useState('bar');
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
-
-  // Helper function to set default custom dates
-  const setDefaultCustomDates = () => {
-    const today = new Date();
-    const lastMonth = new Date();
-    lastMonth.setMonth(today.getMonth() - 1);
-    
-    setCustomStartDate(lastMonth.toISOString().split('T')[0]);
-    setCustomEndDate(today.toISOString().split('T')[0]);
-  };
-
-  // Set default custom dates when custom range is selected
-  React.useEffect(() => {
-    if (timeRange === 'custom' && (!customStartDate || !customEndDate)) {
-      setDefaultCustomDates();
-    }
-  }, [timeRange, customStartDate, customEndDate]);
-
-
-  // Move categories to useMemo to prevent recreation on every render
-  const categories = useMemo(() => [
-    'Food & Dining',
-    'Transportation',
-    'Shopping',
-    'Entertainment',
-    'Healthcare',
-    'Utilities',
-    'Housing',
-    'Education',
-    'Travel',
-    'Other'
-  ], []);
-
-  const filteredExpenses = useMemo(() => {
-    let filtered = [...expenses];
-    
-    // Filter by time range
+const Report = ({ expenses = [], budgets = [], groups = [] }) => {
+  const { selectedCurrency } = useCurrency();
+  const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
-    let startDate, endDate;
-    
-    if (timeRange === 'custom') {
-      // Use custom date range
-      if (customStartDate && customEndDate) {
-        startDate = new Date(customStartDate);
-        endDate = new Date(customEndDate);
-        // Set end date to end of day
-        endDate.setHours(23, 59, 59, 999);
-      } else {
-        // If custom dates are not set, default to last month
-        startDate = new Date();
-        startDate.setMonth(now.getMonth() - 1);
-        endDate = now;
-      }
-    } else {
-      // Use predefined time ranges
-      startDate = new Date();
-      endDate = now;
-      
-      switch (timeRange) {
-        case 'week':
-          startDate.setDate(now.getDate() - 7);
-          break;
-        case 'month':
-          startDate.setMonth(now.getMonth() - 1);
-          break;
-        case 'quarter':
-          startDate.setMonth(now.getMonth() - 3);
-          break;
-        case 'year':
-          startDate.setFullYear(now.getFullYear() - 1);
-          break;
-        default:
-          startDate.setMonth(now.getMonth() - 1);
-      }
-    }
-    
-    filtered = filtered.filter(expense => {
-      const expenseDate = new Date(expense.date);
-      return expenseDate >= startDate && expenseDate <= endDate;
-    });
-    
-    // Filter by category
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(expense => expense.category === selectedCategory);
-    }
-    
-    return filtered;
-  }, [expenses, timeRange, selectedCategory, customStartDate, customEndDate]);
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
 
-  // Calculate totals by currency
-  const totalsByCurrency = useMemo(() => {
+  // --- Data Processing ---
+
+  // Generate last 12 months for selector
+  const availableMonths = useMemo(() => {
+    const months = [];
+    const date = new Date();
+    for (let i = 0; i < 12; i++) {
+        const monthStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        months.push({ value: monthStr, label });
+        date.setMonth(date.getMonth() - 1);
+    }
+    return months;
+  }, []);
+
+  // Filter expenses by selected month
+  const currentMonthExpenses = useMemo(() => {
+    const [year, month] = selectedMonth.split('-');
+    return expenses.filter(exp => {
+      const d = new Date(exp.expenseDate || exp.date);
+      return d.getFullYear() === parseInt(year) && d.getMonth() + 1 === parseInt(month);
+    });
+  }, [expenses, selectedMonth]);
+
+  // totals
+  const totalSpent = useMemo(() => 
+    currentMonthExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0),
+    [currentMonthExpenses]
+  );
+
+  // Remaining Budget (Sum of budgets for this month - Total Spent) in simple terms
+  // Or just Total Budget - Total Spent.
+  // We'll calculate total budget for the selected month to get "Remaining"
+  const totalBudget = useMemo(() => 
+    budgets.filter(b => b.budgetMonth === selectedMonth)
+           .reduce((sum, b) => sum + parseFloat(b.amount), 0),
+    [budgets, selectedMonth]
+  );
+  
+  const remainingBudget = Math.max(0, totalBudget - totalSpent);
+
+  // Highest Category
+  const categoryTotals = useMemo(() => {
     const totals = {};
-    
-    filteredExpenses.forEach(expense => {
-      const currency = expense.currency || 'USD';
-      if (!totals[currency]) {
-        totals[currency] = 0;
-      }
-      totals[currency] += parseFloat(expense.amount);
+    currentMonthExpenses.forEach(exp => {
+      totals[exp.category] = (totals[exp.category] || 0) + parseFloat(exp.amount);
     });
-    
-    return totals;
-  }, [filteredExpenses]);
+    return Object.entries(totals).sort((a, b) => b[1] - a[1]);
+  }, [currentMonthExpenses]);
 
-  // Keep the old totalAmount for backward compatibility (will be the sum of all currencies)
-  const totalAmount = useMemo(() => {
-    return Object.values(totalsByCurrency).reduce((sum, amount) => sum + amount, 0);
-  }, [totalsByCurrency]);
+  const highestCategory = categoryTotals.length > 0 ? categoryTotals[0] : ['-', 0];
 
-  const categoryBreakdown = useMemo(() => {
-    const breakdown = {};
-    categories.forEach(category => {
-      breakdown[category] = 0;
-    });
-    
-    filteredExpenses.forEach(expense => {
-      if (breakdown[expense.category]) {
-        breakdown[expense.category] += parseFloat(expense.amount);
+  // Highest Group
+  const groupTotals = useMemo(() => {
+    const totals = {};
+    currentMonthExpenses.forEach(exp => {
+      if (exp.groupId) {
+        totals[exp.groupId] = (totals[exp.groupId] || 0) + parseFloat(exp.amount);
       }
     });
-    
-    return Object.entries(breakdown)
-      .filter(([_, amount]) => amount > 0)
-      .sort(([_, a], [__, b]) => b - a);
-  }, [filteredExpenses, categories]);
+    return Object.entries(totals)
+        .sort((a, b) => b[1] - a[1])
+        .map(([groupId, amount]) => {
+            const group = groups.find(g => g.id === groupId);
+            return { name: group ? group.name : 'Unknown Group', amount };
+        });
+  }, [currentMonthExpenses, groups]);
 
-  const weeklyData = useMemo(() => {
-    const weeks = {};
-    const now = new Date();
-    
-    // Generate last 8 weeks
-    for (let i = 7; i >= 0; i--) {
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - (i * 7));
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
-      
-      const weekKey = `Week ${weekStart.getDate()}/${weekStart.getMonth() + 1}`;
-      weeks[weekKey] = 0;
-      
-      filteredExpenses.forEach(expense => {
-        const expenseDate = new Date(expense.date);
-        if (expenseDate >= weekStart && expenseDate <= weekEnd) {
-          weeks[weekKey] += parseFloat(expense.amount);
+  const highestGroup = groupTotals.length > 0 ? groupTotals[0] : { name: '-', amount: 0 };
+
+
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false); // New Error State
+  const [exportData, setExportData] = useState({ url: null, range: '' }); // Store URL and Date Text
+
+  const [exportConfig, setExportConfig] = useState({
+    dateRange: 'this_month', // today, this_week, this_month, custom
+    customStart: '',
+    customEnd: '',
+    scope: 'all', // all, personal, group
+    includeSettlements: false,
+    format: 'csv', // csv
+    grouping: 'none' // none, category, date
+  });
+
+  // Export Logic
+  const handleExport = () => {
+    try {
+        // 1. Filter by Date Range
+        let startD = new Date();
+        let endD = new Date();
+        const now = new Date();
+
+        if (exportConfig.dateRange === 'today') {
+            startD = now;
+            endD = now;
+        } else if (exportConfig.dateRange === 'this_week') {
+            const day = now.getDay();
+            const diff = now.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+            startD = new Date(now.setDate(diff));
+            endD = new Date();
+        } else if (exportConfig.dateRange === 'this_month') {
+            startD = new Date(now.getFullYear(), now.getMonth(), 1);
+            endD = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        } else if (exportConfig.dateRange === 'custom') {
+            if (!exportConfig.customStart || !exportConfig.customEnd) return;
+            startD = new Date(exportConfig.customStart);
+            endD = new Date(exportConfig.customEnd);
         }
-      });
-    }
-    
-    return Object.entries(weeks).map(([week, amount]) => ({
-      week,
-      amount: parseFloat(amount.toFixed(2)),
-      formattedAmount: formatAmount(amount, selectedCurrency)
-    }));
-  }, [filteredExpenses, selectedCurrency]);
 
-  const dailyData = useMemo(() => {
-    const days = {};
-    const now = new Date();
-    
-    // Generate last 14 days
-    for (let i = 13; i >= 0; i--) {
-      const day = new Date(now);
-      day.setDate(now.getDate() - i);
-      const dayKey = day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      days[dayKey] = 0;
-      
-      filteredExpenses.forEach(expense => {
-        const expenseDate = new Date(expense.date);
-        if (expenseDate.toDateString() === day.toDateString()) {
-          days[dayKey] += parseFloat(expense.amount);
+        // Set times to start/end of day
+        startD.setHours(0, 0, 0, 0);
+        endD.setHours(23, 59, 59, 999);
+
+        let filtered = expenses.filter(exp => {
+            const d = new Date(exp.expenseDate || exp.date);
+            return d >= startD && d <= endD;
+        });
+
+        // 2. Filter by Scope
+        if (exportConfig.scope === 'personal') {
+            filtered = filtered.filter(exp => !exp.groupId);
+        } else if (exportConfig.scope === 'group') {
+            filtered = filtered.filter(exp => !!exp.groupId);
         }
-      });
+
+        // 3. Format Data
+        const csvData = filtered.map(exp => {
+            const groupName = exp.groupId ? groups.find(g => g.id === exp.groupId)?.name || 'Unknown Group' : 'Personal';
+            return {
+                Date: new Date(exp.expenseDate || exp.date).toLocaleDateString(),
+                Description: exp.description,
+                Category: exp.category,
+                Amount: exp.amount,
+                Currency: exp.currency || 'USD',
+                Group: groupName,
+                Payer: exp.paidBy || 'Me' // Assuming 'Me' if not specified or available logic
+            };
+        });
+
+        if (csvData.length === 0) {
+            alert("No expenses found for the selected criteria.");
+            return;
+        }
+
+        // SIMULATION: Uncomment to test error state
+        // throw new Error("Simulated Export Failure");
+
+        // 4. Generate CSV String
+        const csv = Papa.unparse(csvData);
+        
+        // 5. Create Data URI
+        const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+        
+        // 6. Format Date Range Text for Success Modal
+        const options = { month: 'long', day: 'numeric', year: 'numeric' };
+        const dateRangeText = `${startD.toLocaleDateString('en-US', options)} to ${endD.toLocaleDateString('en-US', options)}`;
+        
+        // 7. Update State to Show Success Modal
+        setExportData({ url: csvContent, range: dateRangeText });
+        setShowExportModal(false);
+        setShowSuccessModal(true);
+    } catch (error) {
+        console.error("Export Failed:", error);
+        setShowExportModal(false);
+        setShowErrorModal(true);
     }
-    
-    return Object.entries(days).map(([day, amount]) => ({
-      day,
-      amount: parseFloat(amount.toFixed(2)),
-      formattedAmount: formatAmount(amount, selectedCurrency)
-    }));
-  }, [filteredExpenses, selectedCurrency]);
-
-  const monthlyTrend = useMemo(() => {
-    const months = {};
-    filteredExpenses.forEach(expense => {
-      const month = new Date(expense.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-      months[month] = (months[month] || 0) + parseFloat(expense.amount);
-    });
-    
-    return Object.entries(months).sort(([a], [b]) => new Date(a) - new Date(b));
-  }, [filteredExpenses]);
-
-  const topExpenses = useMemo(() => {
-    return [...filteredExpenses]
-      .sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount))
-      .slice(0, 5);
-  }, [filteredExpenses]);
-
-  // Calculate averages by currency
-  const averagesByCurrency = useMemo(() => {
-    const averages = {};
-    const counts = {};
-    
-    filteredExpenses.forEach(expense => {
-      const currency = expense.currency || 'USD';
-      if (!averages[currency]) {
-        averages[currency] = 0;
-        counts[currency] = 0;
-      }
-      averages[currency] += parseFloat(expense.amount);
-      counts[currency]++;
-    });
-    
-    // Calculate actual averages
-    Object.keys(averages).forEach(currency => {
-      averages[currency] = averages[currency] / counts[currency];
-    });
-    
-    return averages;
-  }, [filteredExpenses]);
-
-  const getCategoryColor = (category) => {
-    const colors = {
-      'Food & Dining': '#10b981',
-      'Transportation': '#3b82f6',
-      'Shopping': '#8b5cf6',
-      'Entertainment': '#ec4899',
-      'Healthcare': '#ef4444',
-      'Utilities': '#f59e0b',
-      'Housing': '#6366f1',
-      'Education': '#14b8a6',
-      'Travel': '#f97316',
-      'Other': '#6b7280'
-    };
-    return colors[category] || colors['Other'];
   };
 
-  if (expenses.length === 0) {
+
+
+  // Success Modal Component
+  const SuccessModal = () => {
+    if (!showSuccessModal) return null;
+
     return (
-      <div className="text-center py-12">
-        <div className="text-gray-400 dark:text-gray-600 text-6xl mb-4">📊</div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No data to report</h3>
-        <p className="text-gray-500 dark:text-gray-400">Add some expenses to see detailed reports and insights!</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Filters and Chart Type Selection */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-          <div className={timeRange === 'custom' ? 'sm:col-span-2' : ''}>
-            <label htmlFor="timeRange" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Time Range
-            </label>
-            <select
-              id="timeRange"
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
-              className="block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            >
-              <option value="week">Last Week</option>
-              <option value="month">Last Month</option>
-              <option value="quarter">Last Quarter</option>
-              <option value="year">Last Year</option>
-              <option value="custom">Custom Range</option>
-            </select>
-            
-            {/* Custom Date Range Inputs - Inside the time range section */}
-            {timeRange === 'custom' && (
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="customStartDate" className="block text-xs font-medium text-gray-600 mb-1">
-                    Start Date
-                  </label>
-                  <input
-                    type="date"
-                    id="customStartDate"
-                    value={customStartDate}
-                    onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-xs"
-                  />
-                </div>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setShowSuccessModal(false)}>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-up flex flex-col items-center text-center p-8" onClick={e => e.stopPropagation()}>
                 
-                <div>
-                  <label htmlFor="customEndDate" className="block text-xs font-medium text-gray-600 mb-1">
-                    End Date
-                  </label>
-                  <input
-                    type="date"
-                    id="customEndDate"
-                    value={customEndDate}
-                    onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-xs"
-                  />
+                {/* Success Icon */}
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-6">
+                    <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" strokeWidth={3} />
                 </div>
-              </div>
-            )}
-          </div>
+
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Expenses Exported</h3>
+                
+                <p className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
+                    Your expenses from <span className="font-semibold text-slate-700 dark:text-slate-300">{exportData.range}</span> have been successfully exported.
+                </p>
+
+                {/* Primary Action: Download */}
+                <a 
+                    href={exportData.url} 
+                    download={`spendora_export_${new Date().toISOString().split('T')[0]}.csv`}
+                    className="flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300 font-bold rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors mb-3 group"
+                    onClick={() => {
+                        // Optional: Close modal after download click if desired, keeping open for now per common patterns
+                    }}
+                >
+                    <span>Download Expenses.csv</span>
+                    <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
+                </a>
+
+                {/* Secondary Action: Close */}
+                <button 
+                    onClick={() => setShowSuccessModal(false)}
+                    className="w-full px-6 py-3.5 bg-transparent text-slate-500 dark:text-slate-400 font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                    Close
+                </button>
+            </div>
+        </div>
+    );
+  };
+
+  // Error Modal Component
+  const ErrorModal = () => {
+    if (!showErrorModal) return null;
+
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setShowErrorModal(false)}>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-up flex flex-col items-center text-center p-8 relative" onClick={e => e.stopPropagation()}>
+                
+                {/* Close X Button */}
+                <button 
+                    onClick={() => setShowErrorModal(false)}
+                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                >
+                    <X className="w-5 h-5" />
+                </button>
+
+                {/* Error Icon */}
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-6">
+                    <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" strokeWidth={3} />
+                </div>
+
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Export Failed</h3>
+                
+                <p className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
+                    Something went wrong while exporting your expenses.<br/>
+                    Please try again or contact support if the issue persists.
+                </p>
+
+                {/* Primary Action: Retry (Same Download Styling) */}
+                <button 
+                    onClick={() => {
+                        setShowErrorModal(false);
+                        handleExport(); // Retry logic
+                    }}
+                    className="flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 hover:shadow-indigo-600/40 transition-all mb-3 group"
+                >
+                    <span>Download Expenses.csv</span>
+                    <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
+                </button>
+
+                {/* Secondary Action: Close */}
+                <button 
+                    onClick={() => setShowErrorModal(false)}
+                    className="w-full px-6 py-3.5 bg-transparent text-slate-500 dark:text-slate-400 font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                    Close
+                </button>
+            </div>
+        </div>
+    );
+  };
+
+  // Export Modal Component
+  const ExportModal = () => {
+    if (!showExportModal) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => setShowExportModal(false)}>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-slide-up" onClick={e => e.stopPropagation()}>
           
-          <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Category Filter
-            </label>
-            <select
-              id="category"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          {/* Modal Header */}
+          <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-700">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Export Expenses</h3>
+            <button 
+                onClick={() => setShowExportModal(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors"
             >
-              <option value="all">All Categories</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="chartType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Chart Type
-            </label>
-            <select
-              id="chartType"
-              value={chartType}
-              onChange={(e) => setChartType(e.target.value)}
-              className="block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            >
-              <option value="bar">Bar Chart</option>
-              <option value="line">Line Chart</option>
-              <option value="area">Area Chart</option>
-            </select>
-          </div>
-
-          <div className="flex items-end">
-            <button
-              onClick={() => window.print()}
-              className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              📄 Print Report
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
-        </div>
-      </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-indigo-500 rounded-md flex items-center justify-center">
-                <span className="text-white text-sm font-medium">💰</span>
+          {/* Modal Body */}
+          <div className="p-6 space-y-6">
+            
+            {/* Date Range Section */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Date Range</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: 'today', label: 'Today' },
+                  { id: 'this_week', label: 'This Week' },
+                  { id: 'this_month', label: 'This Month' },
+                  { id: 'custom', label: 'Custom Range' }
+                ].map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={() => setExportConfig({ ...exportConfig, dateRange: option.id })}
+                    className={`px-4 py-2 text-sm font-medium rounded-xl border transition-all ${
+                      exportConfig.dateRange === option.id
+                        ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200 dark:shadow-none'
+                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750'
+                    }`}
+                  >
+                     {option.label}
+                  </button>
+                ))}
               </div>
-            </div>
-            <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Expenses</p>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {Object.keys(totalsByCurrency).length > 0 ? (
-                  Object.entries(totalsByCurrency).map(([currency, total]) => (
-                    <div key={currency} className="flex items-center space-x-1">
-                      <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {formatAmount(total, currency)}
-                      </p>
-                      <span className="inline-flex px-1.5 py-0.5 text-xs font-semibold rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200">
-                        {currency}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white">No expenses</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                <span className="text-white text-sm font-medium">📊</span>
-              </div>
-            </div>
-            <div className="ml-4 flex-1">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Average Expense</p>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {Object.keys(averagesByCurrency).length > 0 ? (
-                  Object.entries(averagesByCurrency).map(([currency, average]) => (
-                    <div key={currency} className="flex items-center space-x-1">
-                      <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {formatAmount(average, currency)}
-                      </p>
-                      <span className="inline-flex px-1.5 py-0.5 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
-                        {currency}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white">No expenses</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                <span className="text-white text-sm font-medium">📝</span>
-              </div>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Transactions</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{filteredExpenses.length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                <span className="text-white text-sm font-medium">🏆</span>
-              </div>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Top Category</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                {categoryBreakdown.length > 0 ? categoryBreakdown[0][0] : 'N/A'}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Weekly Report Charts */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Weekly Bar Chart */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Weekly Spending Overview</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={weeklyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? "#374151" : "#e5e7eb"} />
-              <XAxis dataKey="week" stroke={isDarkMode ? "#d1d5db" : "#6b7280"} />
-              <YAxis stroke={isDarkMode ? "#d1d5db" : "#6b7280"} />
-              <Tooltip 
-                formatter={(value) => [formatAmount(value, selectedCurrency), 'Amount']}
-                labelFormatter={(label) => `Week: ${label}`}
-                contentStyle={{
-                  backgroundColor: isDarkMode ? "#374151" : "#ffffff",
-                  border: isDarkMode ? "1px solid #4b5563" : "1px solid #e5e7eb",
-                  color: isDarkMode ? "#f9fafb" : "#111827"
-                }}
-              />
-              <Bar dataKey="amount" fill={isDarkMode ? "#8b5cf6" : "#6366f1"} radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Daily Line Chart */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Daily Spending Trend</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={dailyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? "#374151" : "#e5e7eb"} />
-              <XAxis dataKey="day" stroke={isDarkMode ? "#d1d5db" : "#6b7280"} />
-              <YAxis stroke={isDarkMode ? "#d1d5db" : "#6b7280"} />
-              <Tooltip 
-                formatter={(value) => [formatAmount(value, selectedCurrency), 'Amount']}
-                labelFormatter={(label) => `Date: ${label}`}
-                contentStyle={{
-                  backgroundColor: isDarkMode ? "#374151" : "#ffffff",
-                  border: isDarkMode ? "1px solid #4b5563" : "1px solid #e5e7eb",
-                  color: isDarkMode ? "#f9fafb" : "#111827"
-                }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="amount" 
-                stroke={isDarkMode ? "#34d399" : "#10b981"} 
-                strokeWidth={3}
-                dot={{ fill: isDarkMode ? "#34d399" : "#10b981", strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, stroke: isDarkMode ? "#34d399" : "#10b981", strokeWidth: 2, fill: isDarkMode ? "#34d399" : "#10b981" }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Monthly Trend Chart */}
-      {monthlyTrend.length > 1 && (
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Monthly Spending Trend</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={monthlyTrend.map(([month, amount]) => ({ month, amount }))}>
-              <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? "#374151" : "#e5e7eb"} />
-              <XAxis dataKey="month" stroke={isDarkMode ? "#d1d5db" : "#6b7280"} />
-              <YAxis stroke={isDarkMode ? "#d1d5db" : "#6b7280"} />
-              <Tooltip 
-                formatter={(value) => [formatAmount(value, selectedCurrency), 'Amount']}
-                labelFormatter={(label) => `Month: ${label}`}
-                contentStyle={{
-                  backgroundColor: isDarkMode ? "#374151" : "#ffffff",
-                  border: isDarkMode ? "1px solid #4b5563" : "1px solid #e5e7eb",
-                  color: isDarkMode ? "#f9fafb" : "#111827"
-                }}
-              />
-              <Area 
-                type="monotone" 
-                dataKey="amount" 
-                stroke={isDarkMode ? "#a78bfa" : "#8b5cf6"} 
-                fill={isDarkMode ? "#a78bfa" : "#8b5cf6"} 
-                fillOpacity={0.3}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
-      {/* Category Pie Chart - Standalone */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4 text-center">Category Distribution</h3>
-        <ResponsiveContainer width="100%" height={400}>
-          <PieChart>
-            <Pie
-              data={categoryBreakdown.map(([category, amount]) => ({
-                name: category,
-                value: amount
-              }))}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              outerRadius={120}
-              fill="#8884d8"
-              dataKey="value"
-            >
-              {categoryBreakdown.map(([category], index) => (
-                <Cell key={`cell-${index}`} fill={getCategoryColor(category)} />
-              ))}
-            </Pie>
-            <Tooltip 
-              formatter={(value) => [formatAmount(value, selectedCurrency), 'Amount']} 
-              contentStyle={{
-                backgroundColor: isDarkMode ? "#374151" : "#ffffff",
-                border: isDarkMode ? "1px solid #4b5563" : "1px solid #e5e7eb",
-                color: isDarkMode ? "#f9fafb" : "#111827"
-              }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Top Expenses */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Top 5 Highest Expenses</h3>
-        <div className="space-y-3">
-          {topExpenses.map((expense, index) => (
-            <div key={expense.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center">
-                <span className="text-lg font-bold text-indigo-600 mr-3">#{index + 1}</span>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{expense.description}</p>
-                  <p className="text-xs text-gray-500">{expense.category} • {new Date(expense.date).toLocaleDateString()}</p>
-                </div>
-              </div>
-              <span className="text-lg font-semibold text-gray-900">{formatAmount(expense.amount, expense.currency || selectedCurrency)}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Detailed Category Breakdown */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Detailed Category Breakdown</h3>
-        <div className="space-y-4">
-          {categoryBreakdown.map(([category, amount]) => {
-            const percentage = totalAmount > 0 ? (amount / totalAmount) * 100 : 0;
-            return (
-              <div key={category} className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className={`w-4 h-4 rounded-full mr-3`} style={{ backgroundColor: getCategoryColor(category) }}></div>
-                  <span className="text-sm font-medium text-gray-700">{category}</span>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="w-32 bg-gray-200 rounded-full h-2">
-                    <div
-                      className="h-2 rounded-full"
-                      style={{ 
-                        width: `${percentage}%`,
-                        backgroundColor: getCategoryColor(category)
-                      }}
-                    ></div>
+              
+              {/* Custom Range Inputs */}
+              {exportConfig.dateRange === 'custom' && (
+                <div className="mt-3 grid grid-cols-2 gap-3 animate-fade-in">
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 mb-1 block">Start Date</label>
+                    <input 
+                      type="date"
+                      value={exportConfig.customStart}
+                      onChange={(e) => setExportConfig({ ...exportConfig, customStart: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
                   </div>
-                  <span className="text-sm font-medium text-gray-900 w-20 text-right">
-                    {formatAmount(amount, selectedCurrency)}
-                  </span>
-                  <span className="text-sm text-gray-500 w-16 text-right">
-                    {percentage.toFixed(1)}%
-                  </span>
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 mb-1 block">End Date</label>
+                    <input 
+                      type="date"
+                      value={exportConfig.customEnd}
+                      onChange={(e) => setExportConfig({ ...exportConfig, customEnd: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  </div>
                 </div>
+              )}
+            </div>
+
+            {/* Data Scope Section */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Data Scope</label>
+              <div className="space-y-3">
+                 {[
+                    { id: 'all', label: 'All expenses' },
+                    { id: 'personal', label: 'Personal only' },
+                    { id: 'group', label: 'Group expenses only' }
+                 ].map((scope) => (
+                    <label key={scope.id} className="flex items-center gap-3 cursor-pointer group">
+                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
+                            exportConfig.scope === scope.id 
+                            ? 'border-blue-600 bg-blue-600' 
+                            : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 group-hover:border-indigo-400'
+                        }`}>
+                            {exportConfig.scope === scope.id && <div className="w-2 h-2 bg-white rounded-full" />}
+                        </div>
+                        <input 
+                            type="radio" 
+                            name="scope" 
+                            className="hidden"
+                            checked={exportConfig.scope === scope.id}
+                            onChange={() => setExportConfig({ ...exportConfig, scope: scope.id })}
+                        />
+                        <span className="text-sm text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">{scope.label}</span>
+                    </label>
+                 ))}
+                 
+                 {/* Toggle for Settlements */}
+                 <div className="pt-2 border-t border-slate-100 dark:border-slate-700/50 mt-2">
+                    <label className="flex items-center justify-between cursor-pointer group py-1">
+                        <span className="text-sm text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Include split settlements</span>
+                        <div className="relative">
+                            <input 
+                                type="checkbox" 
+                                className="sr-only"
+                                checked={exportConfig.includeSettlements}
+                                onChange={(e) => setExportConfig({ ...exportConfig, includeSettlements: e.target.checked })}
+                            />
+                            <div className={`w-11 h-6 rounded-full transition-colors ${exportConfig.includeSettlements ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'}`}></div>
+                            <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${exportConfig.includeSettlements ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                        </div>
+                    </label>
+                 </div>
               </div>
-            );
-          })}
+            </div>
+
+            {/* Format & Grouping Section */}
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Format</label>
+                    <div className="relative">
+                        <select 
+                            value={exportConfig.format}
+                            onChange={(e) => setExportConfig({ ...exportConfig, format: e.target.value })}
+                            className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
+                        >
+                            <option value="csv">CSV</option>
+                            <option value="json" disabled>JSON (Coming Soon)</option>
+                            <option value="pdf" disabled>PDF (Coming Soon)</option>
+                        </select>
+                        <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
+                </div>
+                <div>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Grouping</label>
+                    <div className="relative">
+                        <select 
+                            value={exportConfig.grouping}
+                            onChange={(e) => setExportConfig({ ...exportConfig, grouping: e.target.value })}
+                            className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer"
+                        >
+                            <option value="none">No grouping</option>
+                            <option value="category">Group by category</option>
+                            <option value="date">Group by date</option>
+                        </select>
+                        <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
+                </div>
+            </div>
+
+          </div>
+
+          {/* Modal Footer */}
+          <div className="p-6 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex gap-3 justify-end">
+             <button 
+                onClick={() => setShowExportModal(false)}
+                className="px-5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors"
+             >
+                Cancel
+             </button>
+             <button 
+                onClick={handleExport}
+                disabled={exportConfig.dateRange === 'custom' && (!exportConfig.customStart || !exportConfig.customEnd)}
+                className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 hover:bg-blue-700 hover:shadow-blue-600/40 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+             >
+                Download
+             </button>
+          </div>
+
         </div>
       </div>
+    );
+  };
+
+  // --- Chart Data Preparation ---
+
+  // Donut Chart Data
+  const donutData = categoryTotals.map(([name, value]) => ({ 
+    name, 
+    value,
+    color: getCategoryConfig(name).color 
+  }));
+
+  // Budget vs Actual for Main Section (Top 4 Categories or so)
+  const budgetVsActualData = useMemo(() => {
+      // Get all unique categories from expenses and budgets
+      const cats = new Set([...categoryTotals.map(c => c[0]), ...budgets.filter(b => b.budgetMonth === selectedMonth).map(b => b.category)]);
+      
+      return Array.from(cats).map(cat => {
+          const actual = categoryTotals.find(c => c[0] === cat)?.[1] || 0;
+          const budget = budgets.find(b => b.budgetMonth === selectedMonth && b.category === cat)?.amount || 0;
+          return { name: cat, budget, actual };
+      }).sort((a, b) => b.actual - a.actual).slice(0, 4); // Top 4 for the smaller chart
+  }, [categoryTotals, budgets, selectedMonth]);
+
+    // Full Budget vs Actual for Secondary Section
+  const fullBudgetVsActualData = useMemo(() => {
+      const cats = new Set([...categoryTotals.map(c => c[0]), ...budgets.filter(b => b.budgetMonth === selectedMonth).map(b => b.category)]);
+      return Array.from(cats).map(cat => {
+          const actual = categoryTotals.find(c => c[0] === cat)?.[1] || 0;
+          const budget = budgets.find(b => b.budgetMonth === selectedMonth && b.category === cat)?.amount || 0;
+          return { name: cat, budget, actual };
+      }).sort((a, b) => b.budget - a.budget); // Sort by budget size usually looks nice
+  }, [categoryTotals, budgets, selectedMonth]);
+
+  // Daily Spending Trend
+  const trendData = useMemo(() => {
+      const [year, month] = selectedMonth.split('-');
+      const daysInMonth = new Date(year, month, 0).getDate();
+      const data = [];
+      
+      for(let i=1; i<=daysInMonth; i++) {
+        // Only show up to today if current month
+        const today = new Date();
+        if (parseInt(year) === today.getFullYear() && parseInt(month) === today.getMonth() + 1 && i > today.getDate()) break;
+        
+        const dayStr = `${year}-${month}-${String(i).padStart(2, '0')}`;
+        const dayTotal = currentMonthExpenses
+            .filter(e => e.expenseDate?.startsWith(dayStr) || e.date?.startsWith(dayStr))
+            .reduce((sum, e) => sum + parseFloat(e.amount), 0);
+        
+        data.push({ day: i, amount: dayTotal });
+      }
+      return data;
+  }, [currentMonthExpenses, selectedMonth]);
+
+
+  return (
+    <div className="space-y-6 animate-fade-in font-sans">
+      
+      {/* 1) Page Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Report</h1>
+        
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+             <div className="relative group">
+                <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors shadow-sm font-medium text-sm w-full sm:w-40 justify-between">
+                  <span>{availableMonths.find(m => m.value === selectedMonth)?.label}</span>
+                  <ChevronDown className="w-4 h-4 text-slate-400" />
+                </button>
+                {/* Dropdown would go here, implemented as simple select for now to avoid complexity without external lib or custom Logic */}
+                <select 
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                >
+                    {availableMonths.map(m => (
+                        <option key={m.value} value={m.value}>{m.label}</option>
+                    ))}
+                </select>
+             </div>
+
+             <button 
+                onClick={() => setShowExportModal(true)}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-600 transition-colors shadow-md shadow-blue-200 dark:shadow-blue-900/20 text-sm font-semibold"
+             >
+                <Download className="w-4 h-4" />
+                <span>Download</span>
+             </button>
+        </div>
+      </div>
+
+       {/* Render Export Modal */}
+       <ExportModal />
+       
+       {/* Render Success Modal */}
+       <SuccessModal />
+
+       {/* Render Error Modal */}
+       <ErrorModal />
+
+      {/* 2) Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Spent */}
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-xl font-bold">
+                $
+            </div>
+            <div>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(totalSpent, selectedCurrency)}</p>
+                <p className="text-sm text-slate-500 font-medium">Spent</p>
+            </div>
+        </div>
+
+        {/* Remaining Budget */}
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 text-xl font-bold">
+                👍
+            </div>
+            <div>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(remainingBudget, selectedCurrency)}</p>
+                <p className="text-sm text-slate-500 font-medium">Remaining</p>
+            </div>
+        </div>
+
+        {/* Highest Category */}
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400 text-xl font-bold">
+                🏢
+            </div>
+            <div className="overflow-hidden">
+                <p className="text-2xl font-bold text-slate-900 dark:text-white truncate">{formatCurrency(highestCategory[1], selectedCurrency)}</p>
+                <p className="text-sm text-slate-500 font-medium truncate">Highest Category</p>
+            </div>
+        </div>
+
+        {/* Highest Group */}
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 text-xl font-bold">
+                👥
+            </div>
+            <div className="overflow-hidden">
+                <p className="text-2xl font-bold text-slate-900 dark:text-white truncate">{formatCurrency(highestGroup.amount, selectedCurrency)}</p>
+                <p className="text-sm text-slate-500 font-medium truncate">Highest Group</p>
+            </div>
+        </div>
+      </div>
+
+      {/* 3) Main Analytics Section - Two Columns */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* LEFT COLUMN (2/3 width) */}
+        <div className="lg:col-span-2 space-y-6">
+            
+            {/* Row with Category Donut and Budget Bar */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* Category Breakdown */}
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6">Category Breakdown</h3>
+                    <div className="flex flex-col items-center">
+                        <div className="relative w-48 h-48 mb-6">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={donutData}
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={2}
+                                        dataKey="value"
+                                        stroke="none"
+                                    >
+                                        {donutData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip 
+                                        formatter={(value) => formatCurrency(value, selectedCurrency)}
+                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            {/* Center Text */}
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span className="text-2xl font-bold text-slate-800 dark:text-white">{formatCurrency(totalSpent, selectedCurrency)}</span>
+                                <span className="text-xs text-slate-500 font-medium uppercase tracking-wide">Spent</span>
+                            </div>
+                        </div>
+
+                        {/* Custom Legend */}
+                        <div className="w-full space-y-3">
+                            {donutData.slice(0, 5).map((item, idx) => (
+                                <div key={idx} className="flex items-center justify-between text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+                                        <span className="font-medium text-slate-600 dark:text-slate-300">{item.name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(item.value, selectedCurrency)}</span>
+                                        <span className="text-slate-400 w-8 text-right">
+                                            {totalSpent > 0 ? Math.round((item.value / totalSpent) * 100) : 0}%
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Budget vs Actual (Compact) */}
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50 flex flex-col">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-white">Budget vs Actual</h3>
+                        <div className="flex gap-3 text-xs font-medium">
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2.5 h-2.5 rounded-full bg-blue-100"></div>
+                                <span className="text-slate-500">Budget</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
+                                <span className="text-slate-500">Actual</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="flex-1 min-h-[250px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={budgetVsActualData} barCategoryGap="20%">
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                <XAxis 
+                                    dataKey="name" 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fill: '#64748b', fontSize: 11 }} 
+                                    dy={10}
+                                />
+                                <YAxis 
+                                    hide 
+                                />
+                                <Tooltip 
+                                    cursor={{ fill: 'transparent' }}
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                    formatter={(value) => formatCurrency(value, selectedCurrency)}
+                                />
+                                <Bar dataKey="budget" name="Budget" fill="#dbeafe" radius={[4, 4, 4, 4]} barSize={20} />
+                                <Bar dataKey="actual" name="Actual" fill="#34d399" radius={[4, 4, 4, 4]} barSize={20} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
+            {/* 4) Secondary Chart - Detailed Budget vs Actual */}
+             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50">
+                <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6">Budget vs Actual (Detailed)</h3>
+                <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={fullBudgetVsActualData} barCategoryGap="30%">
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <XAxis 
+                                dataKey="name" 
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{ fill: '#64748b', fontSize: 11 }} 
+                                dy={10}
+                            />
+                            <YAxis 
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: '#64748b', fontSize: 11 }}
+                                tickFormatter={(val) => `$${val}`}
+                            />
+                            <Tooltip 
+                                cursor={{ fill: 'rgba(241, 245, 249, 0.5)' }}
+                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                formatter={(value) => formatCurrency(value, selectedCurrency)}
+                            />
+                            <Bar dataKey="budget" name="Budget" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="actual" name="Actual" fill="#2dd4bf" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
+        </div>
+
+        {/* RIGHT COLUMN (1/3 width) */}
+        <div className="space-y-6">
+            
+            {/* Group Expense Summary */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50">
+                <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6">Group Expense Summary</h3>
+                <div className="space-y-4">
+                    {groupTotals.length > 0 ? (
+                        groupTotals.slice(0, 5).map((group, idx) => (
+                             <div key={idx} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                        <span className="text-lg">👥</span> 
+                                        {/* Could use specific icons if available */}
+                                    </div>
+                                    <span className="font-semibold text-slate-700 dark:text-slate-200">{group.name}</span>
+                                </div>
+                                <span className="font-bold text-slate-500 dark:text-slate-400">{formatCurrency(group.amount, selectedCurrency)}</span>
+                            </div>
+                        ))
+                    ) : (
+                         <div className="text-center py-8 text-slate-400 text-sm">No group expenses for this month</div>
+                    )}
+                </div>
+            </div>
+
+            {/* Spending Trends */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white">Spending Trends</h3>
+                </div>
+                
+                <div className="h-[200px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={trendData}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                            <XAxis 
+                                dataKey="day" 
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{ fill: '#64748b', fontSize: 10 }} 
+                                interval={2}
+                            />
+                            <YAxis hide />
+                            <Tooltip 
+                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', padding: '8px' }}
+                                formatter={(value) => [formatCurrency(value, selectedCurrency), 'Spent']}
+                                labelFormatter={(label) => `Day ${label}`}
+                            />
+                            <Line 
+                                type="monotone" 
+                                dataKey="amount" 
+                                stroke="#2563eb" 
+                                strokeWidth={2} 
+                                dot={{ fill: '#2563eb', r: 2, strokeWidth: 0 }}
+                                activeDot={{ r: 6, fill: '#2563eb', strokeWidth: 0 }}
+                            />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+                
+            </div>
+
+        </div>
+      </div>
+
     </div>
   );
 };

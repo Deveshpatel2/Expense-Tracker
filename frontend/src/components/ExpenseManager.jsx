@@ -36,7 +36,6 @@ const ExpenseManager = ({ onAddExpense }) => {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [receipts, setReceipts] = useState([]);
-  const [customCategories, setCustomCategories] = useState([]);
   const fileInputRef = useRef(null);
 
   const defaultCategories = [
@@ -762,7 +761,7 @@ const ExpenseManager = ({ onAddExpense }) => {
               setManualForm(prev => ({ ...prev, category: category.name }));
               setActiveTab('manual');
             }}
-            onCategoryUpdate={setCustomCategories}
+            onCategoryUpdate={() => {}}
             expenses={[]} // Pass expenses from parent component
           />
         )}
