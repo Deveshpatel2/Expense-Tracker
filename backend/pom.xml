@@ -51,9 +51,22 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>runtime</scope>
+            <groupId>commons-fileupload</groupId>
+            <artifactId>commons-fileupload</artifactId>
+            <version>1.6.0</version>
+        </dependency>
+        
+        <!-- OCR and Image Processing -->
+        <dependency>
+            <groupId>net.sourceforge.tess4j</groupId>
+            <artifactId>tess4j</artifactId>
+            <version>5.8.0</version>
+        </dependency>
+        
+        <!-- Utilities -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
