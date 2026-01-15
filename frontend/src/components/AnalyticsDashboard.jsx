@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Trash2, LogOut, Settings
+  Trash2, LogOut
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import ExpenseList from './ExpenseList';

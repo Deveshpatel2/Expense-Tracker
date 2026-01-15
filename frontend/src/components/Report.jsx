@@ -6,8 +6,10 @@ import {
   LineChart, Line
 } from 'recharts';
 import { Download, ChevronDown, CheckCircle, AlertCircle, X } from 'lucide-react';
-import { CATEGORIES, getCategoryConfig } from '../theme/ThemeConfig';
+import { getCategoryConfig } from '../theme/ThemeConfig';
 import { useCurrency } from '../context/CurrencyContext';
+import { useAuth } from '../context/AuthContext'; // Import useAuth
+
 const formatCurrency = (amount, currencyCode = 'USD') => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -17,12 +19,39 @@ const formatCurrency = (amount, currencyCode = 'USD') => {
   }).format(amount);
 };
 
-const Report = ({ expenses = [], budgets = [], groups = [] }) => {
+const Report = ({ expenses = [], groups = [] }) => { // Removed budgets prop reliance for internal logic
   const { selectedCurrency } = useCurrency();
+  // const { user } = useAuth(); // Not needed if we use localStorage directly
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
+  const [reportBudgets, setReportBudgets] = useState([]); // Local state for budgets
+
+  // Fetch budgets when selectedMonth changes
+  React.useEffect(() => {
+    const fetchBudgets = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            
+            // API expects YYYY-MM-01
+            const response = await fetch(`http://localhost:8080/api/budgets?month=${selectedMonth}-01`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (data.success) {
+                setReportBudgets(data.data || []);
+            } else {
+                setReportBudgets([]);
+            }
+        } catch (error) {
+            console.error("Failed to fetch report budgets", error);
+            setReportBudgets([]);
+        }
+    };
+    fetchBudgets();
+  }, [selectedMonth]);
 
   // --- Data Processing ---
 
@@ -58,9 +87,9 @@ const Report = ({ expenses = [], budgets = [], groups = [] }) => {
   // Or just Total Budget - Total Spent.
   // We'll calculate total budget for the selected month to get "Remaining"
   const totalBudget = useMemo(() => 
-    budgets.filter(b => b.budgetMonth === selectedMonth)
+    reportBudgets.filter(b => b.budgetMonth && b.budgetMonth.startsWith(selectedMonth))
            .reduce((sum, b) => sum + parseFloat(b.amount), 0),
-    [budgets, selectedMonth]
+    [reportBudgets, selectedMonth]
   );
   
   const remainingBudget = Math.max(0, totalBudget - totalSpent);
@@ -482,24 +511,24 @@ const Report = ({ expenses = [], budgets = [], groups = [] }) => {
   // Budget vs Actual for Main Section (Top 4 Categories or so)
   const budgetVsActualData = useMemo(() => {
       // Get all unique categories from expenses and budgets
-      const cats = new Set([...categoryTotals.map(c => c[0]), ...budgets.filter(b => b.budgetMonth === selectedMonth).map(b => b.category)]);
+      const cats = new Set([...categoryTotals.map(c => c[0]), ...reportBudgets.filter(b => b.budgetMonth && b.budgetMonth.startsWith(selectedMonth)).map(b => b.category)]);
       
       return Array.from(cats).map(cat => {
           const actual = categoryTotals.find(c => c[0] === cat)?.[1] || 0;
-          const budget = budgets.find(b => b.budgetMonth === selectedMonth && b.category === cat)?.amount || 0;
+          const budget = reportBudgets.find(b => b.budgetMonth && b.budgetMonth.startsWith(selectedMonth) && b.category === cat)?.amount || 0;
           return { name: cat, budget, actual };
       }).sort((a, b) => b.actual - a.actual).slice(0, 4); // Top 4 for the smaller chart
-  }, [categoryTotals, budgets, selectedMonth]);
+  }, [categoryTotals, reportBudgets, selectedMonth]);
 
     // Full Budget vs Actual for Secondary Section
   const fullBudgetVsActualData = useMemo(() => {
-      const cats = new Set([...categoryTotals.map(c => c[0]), ...budgets.filter(b => b.budgetMonth === selectedMonth).map(b => b.category)]);
+      const cats = new Set([...categoryTotals.map(c => c[0]), ...reportBudgets.filter(b => b.budgetMonth && b.budgetMonth.startsWith(selectedMonth)).map(b => b.category)]);
       return Array.from(cats).map(cat => {
           const actual = categoryTotals.find(c => c[0] === cat)?.[1] || 0;
-          const budget = budgets.find(b => b.budgetMonth === selectedMonth && b.category === cat)?.amount || 0;
+          const budget = reportBudgets.find(b => b.budgetMonth && b.budgetMonth.startsWith(selectedMonth) && b.category === cat)?.amount || 0;
           return { name: cat, budget, actual };
       }).sort((a, b) => b.budget - a.budget); // Sort by budget size usually looks nice
-  }, [categoryTotals, budgets, selectedMonth]);
+  }, [categoryTotals, reportBudgets, selectedMonth]);
 
   // Daily Spending Trend
   const trendData = useMemo(() => {

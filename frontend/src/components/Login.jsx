@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import DarkModeToggle from './DarkModeToggle';
+import logo from '../logo.png';
 import './Login.css';
 
 const Login = () => {
@@ -110,8 +111,8 @@ const Login = () => {
         <div className="login-form-wrapper">
           
           <div className="text-center mb-8">
-            <div className="mx-auto w-12 h-12 bg-[#3B82F6] rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 mb-6">
-              <span className="text-white text-2xl font-bold">$</span>
+            <div className="mx-auto w-28 h-28 flex items-center justify-center mb-4">
+               <img src={logo} alt="Spendora Logo" className="w-full h-full object-contain" />
             </div>
             <h2 className="text-[28px] font-bold text-slate-900 dark:text-white mb-2">Welcome Back</h2>
             <p className="text-slate-500 text-[15px]">Sign in to continue to Spendora</p>
