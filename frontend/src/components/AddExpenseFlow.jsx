@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Calendar, Tag, FileText, ChevronDown, Folder } from 'lucide-react';
 import { Card, PrimaryButton } from './CoreUI';
+import { useCurrency } from '../context/CurrencyContext';
 
 const categories = [
   'Food & Dining',
@@ -16,13 +17,14 @@ const categories = [
 ];
 
 const AddExpenseFlow = ({ onSave, onCancel, initialData = null, groups = [] }) => {
+  const { selectedCurrency } = useCurrency();
   const [formData, setFormData] = useState({
     amount: '',
     description: '',
     category: 'Other',
-    expenseDate: new Date().toISOString().split('T')[0],
+    expenseDate: new Date().toLocaleDateString('en-CA'),
     notes: '',
-    currency: 'USD',
+    currency: selectedCurrency || 'USD',
     groupId: ''
   });
 
@@ -34,9 +36,9 @@ const AddExpenseFlow = ({ onSave, onCancel, initialData = null, groups = [] }) =
         amount: initialData.amount || '',
         description: initialData.description || '',
         category: initialData.category || 'Other',
-        expenseDate: (initialData.expenseDate || initialData.date || new Date().toISOString()).split('T')[0],
+        expenseDate: (initialData.expenseDate || initialData.date || new Date().toLocaleDateString('en-CA')),
         notes: initialData.notes || '',
-        currency: initialData.currency || 'USD',
+        currency: initialData.currency || selectedCurrency || 'USD',
         groupId: initialData.groupId || ''
       });
     }
@@ -45,7 +47,7 @@ const AddExpenseFlow = ({ onSave, onCancel, initialData = null, groups = [] }) =
     if (amountRef.current) {
         amountRef.current.focus();
     }
-  }, [initialData]);
+  }, [initialData, selectedCurrency]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -55,7 +57,23 @@ const AddExpenseFlow = ({ onSave, onCancel, initialData = null, groups = [] }) =
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.amount || !formData.description) return;
-    onSave(formData);
+    
+    // Explicitly construct payload to match backend expectations exactly
+    const payload = {
+        description: formData.description,
+        amount: parseFloat(formData.amount),
+        category: formData.category,
+        expenseDate: formData.expenseDate,
+        notes: formData.notes,
+        currency: formData.currency
+    };
+
+    // Only add groupId if it has a value (non-empty string)
+    if (formData.groupId) {
+        payload.groupId = formData.groupId;
+    }
+
+    onSave(payload);
   };
 
   return (

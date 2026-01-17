@@ -37,5 +37,8 @@
     "bugs": {
         "url": "https://github.com/yourusername/expense-tracker/issues"
     },
-    "homepage": "https://github.com/yourusername/expense-tracker#readme"
+    "homepage": "https://github.com/yourusername/expense-tracker#readme",
+    "dependencies": {
+        "react-router-dom": "^7.12.0"
+    }
 }

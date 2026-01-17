@@ -706,7 +706,8 @@ app.post('/api/auth/register', async (req, res) => {
             [userId, firstName, lastName, email, hashedPassword, false, false, false, emailVerificationToken, emailVerificationExpires],
             function (err) {
                 if (err) {
-                    return res.status(500).json({ success: false, message: 'Registration failed' });
+                    console.error('Registration DB Error:', err);
+                    return res.status(500).json({ success: false, message: 'Registration failed', error: err.message });
                 }
 
                 // Send verification email
@@ -742,7 +743,8 @@ app.post('/api/auth/register', async (req, res) => {
             }
         );
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Registration failed' });
+        console.error('Registration Exception:', error);
+        res.status(500).json({ success: false, message: 'Registration failed', error: error.message });
     }
 });
 
@@ -1022,36 +1024,61 @@ app.get('/api/expenses', authenticateToken, (req, res) => {
     });
 });
 
+const fs = require('fs');
+
+function logDebug(msg) {
+    fs.appendFileSync('debug_server.log', new Date().toISOString() + ': ' + msg + '\n');
+}
+
 app.post('/api/expenses', authenticateToken, (req, res) => {
-    const { description, amount, category, expenseDate, notes, currency, groupId } = req.body;
-    const expenseId = uuidv4();
-
-    db.run(
-        'INSERT INTO expenses (id, description, amount, category, expenseDate, notes, currency, userId, groupId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [expenseId, description, amount, category, expenseDate, notes, currency, req.user.id, groupId || null],
-        function (err) {
-            if (err) {
-                return res.status(500).json({ success: false, message: 'Failed to create expense' });
-            }
-
-            res.json({
-                success: true,
-                message: 'Expense created successfully',
-                data: {
-                    id: expenseId,
-                    description,
-                    amount,
-                    category,
-                    expenseDate,
-                    notes,
-                    currency,
-                    currency,
-                    userId: req.user.id,
-                    groupId: groupId || null
-                }
+    logDebug('Received expense request');
+    try {
+        logDebug('User: ' + JSON.stringify(req.user));
+        logDebug('Body: ' + JSON.stringify(req.body));
+        // Validate input
+        const validation = validateExpenseInput(req.body);
+        if (!validation.isValid) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid expense data',
+                errors: validation.errors
             });
         }
-    );
+
+        const { description, amount, category, expenseDate, notes, currency, groupId } = req.body;
+        const expenseId = uuidv4();
+
+        db.run(
+            'INSERT INTO expenses (id, description, amount, category, expenseDate, notes, currency, userId, groupId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [expenseId, description, amount, category, expenseDate, notes, currency, req.user.id, groupId || null],
+            function (err) {
+                if (err) {
+                    logDebug('DB Error: ' + err.message);
+                    return handleError(res, err, 'Failed to create expense');
+                }
+
+                logDebug('Success');
+                res.json({
+                    success: true,
+                    message: 'Expense created successfully',
+                    data: {
+                        id: expenseId,
+                        description,
+                        amount,
+                        category,
+                        expenseDate,
+                        notes,
+                        currency,
+                        userId: req.user.id,
+                        groupId: groupId || null
+                    }
+                });
+            }
+        );
+    } catch (error) {
+        logDebug('Exception: ' + error.message);
+        res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    }
 });
 
 app.get('/api/expenses/:id', authenticateToken, (req, res) => {
