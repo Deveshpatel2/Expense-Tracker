@@ -16,7 +16,7 @@ export const PrimaryButton = ({ children, onClick, disabled, className = '', ...
       disabled={disabled}
       className={`
         px-[var(--space-md)] py-[var(--space-sm)]
-        bg-[var(--color-primary)] text-[var(--color-surface)]
+        bg-[var(--color-primary)] text-white
         rounded-[var(--radius-btn)] font-[var(--weight-semibold)]
         text-[var(--text-body)] transition-all duration-200 ease-in-out
         hover:opacity-90 hover:scale-[1.02] hover:shadow-lg
