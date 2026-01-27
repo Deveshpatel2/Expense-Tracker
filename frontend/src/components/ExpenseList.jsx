@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Filter, Search, ChevronLeft, ChevronRight, Plus, Trash2, CheckCircle, Users } from 'lucide-react';
-import AdvancedSearch from './AdvancedSearch';
+import { Search, ChevronLeft, ChevronRight, Plus, Trash2, CheckCircle, Users } from 'lucide-react';
+
 import { Card, EmptyState, Input, Select, PrimaryButton, SecondaryButton } from './CoreUI';
 import CreateGroupModal from './CreateGroupModal';
 import { CATEGORIES, getCategoryConfig } from '../theme/ThemeConfig';
@@ -10,9 +10,9 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [sortBy, setSortBy] = useState('date');
-  const [sortOrder, setSortOrder] = useState('desc');
-  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const sortBy = 'date';
+  const sortOrder = 'desc';
+
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [showSuccessBanner, setShowSuccessBanner] = useState(false);
   const [createdGroup, setCreatedGroup] = useState(null);
@@ -169,7 +169,7 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
     });
 
     setFilteredExpenses(filtered);
-  }, [expenses, searchTerm, categoryFilter, currentDate, sortBy, sortOrder]);
+  }, [expenses, searchTerm, categoryFilter, currentDate]);
 
   useEffect(() => {
     filterAndSortExpenses();
@@ -294,42 +294,11 @@ const ExpenseList = ({ expenses, onDeleteExpense, onEditExpense, selectedCurrenc
                 />
             </div>
 
-            <button
-                onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
-                className={`flex-shrink-0 p-[var(--space-sm)] h-[42px] flex items-center justify-center rounded-[var(--radius-btn)] border transition-all ${showAdvancedSearch ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]' : 'bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-muted)]'}`}
-            >
-                <Filter className="w-5 h-5" />
-            </button>
+
          </div>
       </div>
 
-      {showAdvancedSearch && (
-        <Card className="animate-slide-up" padding="md">
-            <AdvancedSearch
-                onSearch={(data) => {
-                    setSearchTerm(data.query);
-                    setCategoryFilter(data.category);
-                    setSortBy(data.sortBy);
-                    setSortOrder(data.sortOrder);
-                }}
-                 onFilter={(data) => {
-                    setCategoryFilter(data.category);
-                    setSortBy(data.sortBy);
-                    setSortOrder(data.sortOrder);
-                }}
-                 onSort={(sb, so) => {
-                    setSortBy(sb);
-                    setSortOrder(so);
-                }}
-                 onClear={() => {
-                    setSearchTerm('');
-                    setCategoryFilter('All Categories');
-                    setSortBy('date');
-                    setSortOrder('desc');
-                }}
-            />
-        </Card>
-      )}
+
 
       {/* Active Filter Summary */}
       {getFilterSummary()}
