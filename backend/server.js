@@ -2226,7 +2226,7 @@ app.get('/api/groups', authenticateToken, (req, res) => {
 
 // Create group
 app.post('/api/groups', authenticateToken, (req, res) => {
-    const { name, description, memberIds } = req.body;
+    const { name, description, memberIds, type } = req.body;
     if (!name) return res.status(400).json({ success: false, message: 'Group name is required' });
 
     const groupId = uuidv4();
@@ -2235,9 +2235,14 @@ app.post('/api/groups', authenticateToken, (req, res) => {
     db.serialize(() => {
         db.run('BEGIN TRANSACTION');
 
+        // Add type field - check if column exists first
+        db.run("ALTER TABLE groups ADD COLUMN type TEXT", (err) => {
+            // Silently fail if column exists
+        });
+
         db.run(
-            'INSERT INTO groups (id, name, description, createdBy, includeInBudget, startDate, endDate) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [groupId, name, description, createdBy, req.body.includeInBudget !== false ? 1 : 0, req.body.startDate || null, req.body.endDate || null]
+            'INSERT INTO groups (id, name, description, createdBy, type, includeInBudget, startDate, endDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [groupId, name, description, createdBy, type || 'Other', req.body.includeInBudget !== false ? 1 : 0, req.body.startDate || null, req.body.endDate || null]
         );
 
         // Add creator as admin
@@ -2265,6 +2270,133 @@ app.post('/api/groups', authenticateToken, (req, res) => {
             }
             res.json({ success: true, data: { id: groupId, name, description } });
         });
+    });
+});
+
+// Update group
+app.put('/api/groups/:id', authenticateToken, (req, res) => {
+    const groupId = req.params.id;
+    const { name, type } = req.body;
+
+    if (!name && !type) {
+        return res.status(400).json({ success: false, message: 'Name or type is required' });
+    }
+
+    // Verify user is admin/creator
+    db.get('SELECT * FROM groups WHERE id = ?', [groupId], (err, group) => {
+        if (err) return handleError(res, err, 'Database error');
+        if (!group) return res.status(404).json({ success: false, message: 'Group not found' });
+
+        if (group.createdBy !== req.user.id) {
+            return res.status(403).json({ success: false, message: 'Only the group creator can update this group' });
+        }
+
+        const updates = [];
+        const params = [];
+
+        if (name) {
+            updates.push('name = ?');
+            params.push(name);
+        }
+        if (type) {
+            updates.push('type = ?');
+            params.push(type);
+        }
+
+        params.push(groupId);
+
+        db.run(
+            `UPDATE groups SET ${updates.join(', ')}, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
+            params,
+            function (err) {
+                if (err) return handleError(res, err, 'Failed to update group');
+                res.json({ success: true, message: 'Group updated successfully' });
+            }
+        );
+    });
+});
+
+// Add member to group
+app.post('/api/groups/:id/members', authenticateToken, (req, res) => {
+    const groupId = req.params.id;
+    const { name, email, userId } = req.body;
+
+    if (!name && !userId) {
+        return res.status(400).json({ success: false, message: 'Name or userId is required' });
+    }
+
+    // Verify user is member of the group
+    db.get('SELECT * FROM group_members WHERE groupId = ? AND userId = ?', [groupId, req.user.id], (err, membership) => {
+        if (err || !membership) {
+            return res.status(403).json({ success: false, message: 'Access denied' });
+        }
+
+        if (userId) {
+            // Adding existing user
+            db.run(
+                'INSERT INTO group_members (id, groupId, userId, role) VALUES (?, ?, ?, ?)',
+                [uuidv4(), groupId, userId, 'member'],
+                function (err) {
+                    if (err) {
+                        if (err.code === 'SQLITE_CONSTRAINT') {
+                            return res.status(400).json({ success: false, message: 'User is already a member' });
+                        }
+                        return handleError(res, err, 'Failed to add member');
+                    }
+
+                    // Update group timestamp
+                    db.run('UPDATE groups SET updatedAt = CURRENT_TIMESTAMP WHERE id = ?', [groupId]);
+
+                    res.json({ success: true, message: 'Member added successfully' });
+                }
+            );
+        } else {
+            // Adding guest member (name + email)
+            // First check if user exists with this email
+            db.get('SELECT id FROM users WHERE email = ?', [email], (err, existingUser) => {
+                if (existingUser) {
+                    // User exists, add them
+                    db.run(
+                        'INSERT INTO group_members (id, groupId, userId, role) VALUES (?, ?, ?, ?)',
+                        [uuidv4(), groupId, existingUser.id, 'member'],
+                        function (err) {
+                            if (err) {
+                                if (err.code === 'SQLITE_CONSTRAINT') {
+                                    return res.status(400).json({ success: false, message: 'User is already a member' });
+                                }
+                                return handleError(res, err, 'Failed to add member');
+                            }
+
+                            db.run('UPDATE groups SET updatedAt = CURRENT_TIMESTAMP WHERE id = ?', [groupId]);
+                            res.json({ success: true, message: 'Member added successfully' });
+                        }
+                    );
+                } else {
+                    // Create guest user
+                    const guestUserId = uuidv4();
+                    const tempPassword = crypto.randomBytes(16).toString('hex');
+
+                    db.run(
+                        'INSERT INTO users (id, firstName, lastName, email, password, isGuest) VALUES (?, ?, ?, ?, ?, ?)',
+                        [guestUserId, name, '', email || `guest_${guestUserId}@spendora.app`, tempPassword, 1],
+                        function (err) {
+                            if (err) return handleError(res, err, 'Failed to create guest user');
+
+                            db.run(
+                                'INSERT INTO group_members (id, groupId, userId, role) VALUES (?, ?, ?, ?)',
+                                [uuidv4(), groupId, guestUserId, 'member'],
+                                function (err) {
+                                    if (err) return handleError(res, err, 'Failed to add member');
+
+                                    db.run('UPDATE groups SET updatedAt = CURRENT_TIMESTAMP WHERE id = ?', [groupId]);
+                                    res.json({ success: true, message: 'Guest member added successfully' });
+                                }
+                            );
+                        }
+                    );
+                }
+            });
+        }
     });
 });
 
