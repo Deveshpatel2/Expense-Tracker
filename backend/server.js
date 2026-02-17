@@ -2538,6 +2538,115 @@ app.post('/api/groups/:id/expenses', authenticateToken, (req, res) => {
     });
 });
 
+// Update a group expense
+app.put('/api/groups/:id/expenses/:expenseId', authenticateToken, (req, res) => {
+    const groupId = req.params.id;
+    const expenseId = req.params.expenseId;
+    const { description, amount, category, expenseDate, payerId, splits, notes } = req.body;
+
+    if (!description && !amount && !payerId && !splits) {
+        return res.status(400).json({ success: false, message: 'At least one field to update is required' });
+    }
+
+    db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
+
+        // Build dynamic UPDATE query
+        const updates = [];
+        const params = [];
+
+        if (description !== undefined) {
+            updates.push('description = ?');
+            params.push(description);
+        }
+        if (amount !== undefined) {
+            updates.push('amount = ?');
+            params.push(amount);
+        }
+        if (category !== undefined) {
+            updates.push('category = ?');
+            params.push(category);
+        }
+        if (expenseDate !== undefined) {
+            updates.push('expenseDate = ?');
+            params.push(expenseDate);
+        }
+        if (payerId !== undefined) {
+            updates.push('payerId = ?');
+            params.push(payerId);
+        }
+        if (notes !== undefined) {
+            updates.push('notes = ?');
+            params.push(notes);
+        }
+
+        params.push(expenseId, groupId);
+
+        if (updates.length > 0) {
+            db.run(
+                `UPDATE group_expenses SET ${updates.join(', ')} WHERE id = ? AND groupId = ?`,
+                params
+            );
+        }
+
+        // Update splits if provided
+        if (splits) {
+            // Delete existing splits
+            db.run('DELETE FROM expense_splits WHERE expenseId = ?', [expenseId]);
+
+            // Insert new splits
+            splits.forEach(split => {
+                db.run(
+                    'INSERT INTO expense_splits (id, expenseId, userId, amount) VALUES (?, ?, ?, ?)',
+                    [uuidv4(), expenseId, split.userId, split.amount]
+                );
+            });
+        }
+
+        db.run('COMMIT', (err) => {
+            if (err) {
+                db.run('ROLLBACK');
+                return handleError(res, err, 'Failed to update expense');
+            }
+            res.json({ success: true, message: 'Expense updated successfully' });
+        });
+    });
+});
+
+// Delete a group expense
+app.delete('/api/groups/:id/expenses/:expenseId', authenticateToken, (req, res) => {
+    const groupId = req.params.id;
+    const expenseId = req.params.expenseId;
+
+    db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
+
+        // Delete splits first (foreign key constraint)
+        db.run('DELETE FROM expense_splits WHERE expenseId = ?', [expenseId]);
+
+        // Delete expense
+        db.run('DELETE FROM group_expenses WHERE id = ? AND groupId = ?', [expenseId, groupId], function (err) {
+            if (err) {
+                db.run('ROLLBACK');
+                return handleError(res, err, 'Failed to delete expense');
+            }
+
+            if (this.changes === 0) {
+                db.run('ROLLBACK');
+                return res.status(404).json({ success: false, message: 'Expense not found' });
+            }
+
+            db.run('COMMIT', (err) => {
+                if (err) {
+                    db.run('ROLLBACK');
+                    return handleError(res, err, 'Failed to delete expense');
+                }
+                res.json({ success: true, message: 'Expense deleted successfully' });
+            });
+        });
+    });
+});
+
 // Settle balance
 app.post('/api/groups/:id/settle', authenticateToken, (req, res) => {
     const groupId = req.params.id;
