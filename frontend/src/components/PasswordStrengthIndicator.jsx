@@ -46,10 +46,10 @@ const PasswordStrengthIndicator = ({ password }) => {
   return (
     <div className="mt-2">
       <div className="flex items-center justify-between text-sm">
-        <span className="text-gray-600 dark:text-gray-400">Password strength:</span>
+        <span className="text-gray-600">Password strength:</span>
         <span className={`font-medium ${getTextColor(color)}`}>{strength}</span>
       </div>
-      <div className="mt-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+      <div className="mt-1 w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-500 ease-out ${getStrengthColor(color)}`}
           style={{ width: `${percentage}%` }}

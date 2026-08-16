@@ -1,7 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
-  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -31,12 +30,6 @@ module.exports = {
           900: '#0c4a6e',
           950: '#082f49',
         },
-        dark: {
-          bg: '#0f172a', /* Slate 900 */
-          card: '#1e293b', /* Slate 800 */
-          text: '#f8fafc', /* Slate 50 */
-          muted: '#94a3b8', /* Slate 400 */
-        }
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

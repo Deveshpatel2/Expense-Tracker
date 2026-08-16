@@ -1,44 +1,24 @@
 {
     "name": "expense-tracker",
     "version": "1.0.0",
-    "description": "Full-stack expense tracking application with React frontend and Node.js backend",
-    "main": "index.js",
+    "description": "Spendora — a full-stack expense tracker with a React frontend and an Express/SQLite API",
+    "private": true,
     "scripts": {
+        "install:all": "npm install && npm --prefix backend install && npm --prefix frontend install",
         "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
-        "start:backend": "cd backend && npm start",
-        "start:frontend": "cd frontend && npm start",
-        "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
-        "build": "cd frontend && npm run build",
-        "test": "cd frontend && npm test",
-        "dev": "concurrently \"npm run start:backend\" \"npm run start:frontend\""
+        "start:backend": "npm --prefix backend start",
+        "start:frontend": "npm --prefix frontend start",
+        "dev": "npm start",
+        "build": "npm --prefix frontend run build",
+        "test": "npm --prefix backend test && cross-env CI=true npm --prefix frontend test",
+        "lint": "npm --prefix backend run lint && npm --prefix frontend run lint"
     },
-    "keywords": [
-        "expense-tracker",
-        "react",
-        "nodejs",
-        "express",
-        "sqlite",
-        "jwt",
-        "fullstack"
-    ],
-    "author": "Your Name",
-    "license": "MIT",
     "devDependencies": {
-        "concurrently": "^8.2.2"
+        "concurrently": "^8.2.2",
+        "cross-env": "^7.0.3"
     },
     "engines": {
-        "node": ">=14.0.0",
-        "npm": ">=6.0.0"
+        "node": ">=18.0.0"
     },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/yourusername/expense-tracker.git"
-    },
-    "bugs": {
-        "url": "https://github.com/yourusername/expense-tracker/issues"
-    },
-    "homepage": "https://github.com/yourusername/expense-tracker#readme",
-    "dependencies": {
-        "react-router-dom": "^7.12.0"
-    }
+    "license": "MIT"
 }

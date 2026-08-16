@@ -206,7 +206,7 @@ export const Toggle = ({ checked, onChange, className = '' }) => {
       className={`
         relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent 
         transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2
-        ${checked ? 'bg-[var(--color-primary)]' : 'bg-slate-200 dark:bg-slate-700'}
+        ${checked ? 'bg-[var(--color-primary)]' : 'bg-slate-200'}
         ${className}
       `}
     >

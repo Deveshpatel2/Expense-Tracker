@@ -1,11 +1,9 @@
 const { db } = require('../config/database');
+const { LOCKOUT_THRESHOLD, LOCKOUT_MINUTES } = require('../config/constants');
 
 const checkAccountLockout = (user) => {
     if (user.accountLockedUntil && new Date(user.accountLockedUntil) > new Date()) {
-        return {
-            isLocked: true,
-            lockoutTime: user.accountLockedUntil
-        };
+        return { isLocked: true, lockoutTime: user.accountLockedUntil };
     }
     return { isLocked: false };
 };
@@ -16,16 +14,15 @@ const incrementFailedAttempts = (userId) => {
             if (err) return reject(err);
 
             const failedAttempts = (user.failedLoginAttempts || 0) + 1;
-            let lockoutUntil = null;
-            if (failedAttempts >= 5) {
-                lockoutUntil = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-            }
+            const lockoutUntil = failedAttempts >= LOCKOUT_THRESHOLD
+                ? new Date(Date.now() + LOCKOUT_MINUTES * 60 * 1000).toISOString()
+                : null;
 
             db.run(
                 'UPDATE users SET failedLoginAttempts = ?, accountLockedUntil = ? WHERE id = ?',
                 [failedAttempts, lockoutUntil, userId],
-                (err) => {
-                    if (err) reject(err);
+                (updateErr) => {
+                    if (updateErr) reject(updateErr);
                     else resolve({ failedAttempts, isLocked: !!lockoutUntil });
                 }
             );
@@ -38,10 +35,7 @@ const resetFailedAttempts = (userId) => {
         db.run(
             'UPDATE users SET failedLoginAttempts = 0, accountLockedUntil = NULL WHERE id = ?',
             [userId],
-            (err) => {
-                if (err) reject(err);
-                else resolve();
-            }
+            (err) => (err ? reject(err) : resolve())
         );
     });
 };

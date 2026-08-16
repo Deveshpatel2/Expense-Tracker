@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Calendar, Tag, FileText, ChevronDown, Folder } from 'lucide-react';
+import { X, Calendar, Tag, FileText, ChevronDown } from 'lucide-react';
 import { Card, PrimaryButton } from './CoreUI';
 import { useCurrency } from '../context/CurrencyContext';
 
@@ -16,7 +16,7 @@ const categories = [
   'Other'
 ];
 
-const AddExpenseFlow = ({ onSave, onCancel, initialData = null, groups = [] }) => {
+const AddExpenseFlow = ({ onSave, onCancel, initialData = null }) => {
   const { selectedCurrency } = useCurrency();
   const [formData, setFormData] = useState({
     amount: '',
@@ -24,8 +24,7 @@ const AddExpenseFlow = ({ onSave, onCancel, initialData = null, groups = [] }) =
     category: 'Other',
     expenseDate: new Date().toLocaleDateString('en-CA'),
     notes: '',
-    currency: selectedCurrency || 'USD',
-    groupId: ''
+    currency: selectedCurrency || 'USD'
   });
 
   const amountRef = useRef(null);
@@ -38,8 +37,7 @@ const AddExpenseFlow = ({ onSave, onCancel, initialData = null, groups = [] }) =
         category: initialData.category || 'Other',
         expenseDate: (initialData.expenseDate || initialData.date || new Date().toLocaleDateString('en-CA')),
         notes: initialData.notes || '',
-        currency: initialData.currency || selectedCurrency || 'USD',
-        groupId: initialData.groupId || ''
+        currency: initialData.currency || selectedCurrency || 'USD'
       });
     }
     
@@ -68,11 +66,6 @@ const AddExpenseFlow = ({ onSave, onCancel, initialData = null, groups = [] }) =
         currency: formData.currency
     };
 
-    // Only add groupId if it has a value (non-empty string)
-    if (formData.groupId) {
-        payload.groupId = formData.groupId;
-    }
-
     onSave(payload);
   };
 
@@ -82,7 +75,7 @@ const AddExpenseFlow = ({ onSave, onCancel, initialData = null, groups = [] }) =
         {/* Header */}
         <div className="px-[var(--space-lg)] py-[var(--space-md)] border-b border-[var(--color-border)] flex justify-between items-center">
           <h3 className="text-[var(--text-section-title)] font-[var(--weight-semibold)] text-[var(--color-text-main)]">
-            {initialData?.id ? 'Edit Expense' : (initialData?.groupId ? 'Add Expense in Group' : 'Add Expense')}
+            {initialData?.id ? 'Edit Expense' : 'Add Expense'}
           </h3>
           <button 
             onClick={onCancel}
@@ -126,25 +119,6 @@ const AddExpenseFlow = ({ onSave, onCancel, initialData = null, groups = [] }) =
                 required
                 className="w-full bg-transparent border-b border-[var(--color-border)] py-[var(--space-sm)] text-[var(--text-body)] text-[var(--color-text-main)] focus:outline-none focus:border-[var(--color-primary)] transition-colors placeholder:text-[var(--color-text-muted)]"
               />
-            </div>
-
-            {/* Expense Group (Optional) */}
-            <div className="flex items-center gap-[var(--space-sm)]">
-              <Folder className="w-4 h-4 text-[var(--color-text-muted)]" />
-              <div className="relative flex-1">
-                <select
-                  name="groupId"
-                  value={formData.groupId}
-                  onChange={handleChange}
-                  className="w-full bg-transparent border-b border-[var(--color-border)] py-[var(--space-sm)] text-[var(--text-body)] text-[var(--color-text-main)] appearance-none focus:outline-none focus:border-[var(--color-primary)] transition-colors"
-                >
-                  {!(initialData && initialData.groupId) && <option value="">No Group</option>}
-                  {groups.map(g => (
-                    <option key={g.id} value={g.id}>{g.name}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none" />
-              </div>
             </div>
 
             {/* Category Selector */}

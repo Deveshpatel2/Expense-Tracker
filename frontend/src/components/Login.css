@@ -129,33 +129,3 @@
   animation: fadeInUp 0.5s ease-out forwards;
 }
 
-/* Dark Mode Overrides (Minimal to maintain legibility if user toggles) */
-.dark .login-container {
-  background: #111827;
-}
-
-.dark .login-form-wrapper {
-  background-color: #1f2937;
-  border-color: #374151;
-  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
-}
-
-.dark .login-input {
-  background-color: #374151;
-  border-color: #4b5563;
-  color: white;
-}
-
-.dark .login-input:focus {
-  background-color: #4b5563;
-}
-
-.dark .login-google-button, .dark .login-guest-button {
-  background-color: #374151;
-  border-color: #4b5563;
-  color: #e5e7eb;
-}
-
-.dark .login-google-button:hover, .dark .login-guest-button:hover {
-  background-color: #4b5563;
-}

@@ -1,11 +1,13 @@
 {
     "name": "spendora-backend",
     "version": "1.0.0",
-    "description": "Node.js backend for Spendora",
+    "description": "Express + SQLite API for Spendora",
     "main": "server.js",
     "scripts": {
         "start": "node server.js",
-        "dev": "nodemon server.js"
+        "dev": "nodemon server.js",
+        "test": "cross-env NODE_ENV=test jest --runInBand",
+        "lint": "eslint ."
     },
     "dependencies": {
         "bcryptjs": "^2.4.3",
@@ -13,22 +15,22 @@
         "dotenv": "^16.4.5",
         "express": "^4.18.2",
         "express-rate-limit": "^8.1.0",
-        "google-auth-library": "^10.5.0",
         "jsonwebtoken": "^9.0.2",
-        "multer": "^2.0.2",
-        "nodemailer": "^7.0.11",
         "sqlite3": "^5.1.6",
         "uuid": "^9.0.1"
     },
     "devDependencies": {
-        "nodemon": "^3.0.1"
+        "cross-env": "^7.0.3",
+        "eslint": "^8.57.1",
+        "jest": "^29.7.0",
+        "nodemon": "^3.0.1",
+        "supertest": "^7.0.0"
     },
-    "keywords": [
-        "expense",
-        "tracker",
-        "api",
-        "nodejs"
-    ],
-    "author": "Your Name",
+    "jest": {
+        "testEnvironment": "node",
+        "testMatch": [
+            "**/tests/**/*.test.js"
+        ]
+    },
     "license": "MIT"
 }

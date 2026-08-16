@@ -1,7 +1,4 @@
 import React from 'react';
-import { 
-  ChevronRight, Filter
-} from 'lucide-react';
 import { getCategoryConfig } from '../theme/ThemeConfig';
 
 // --- Shared Styles ---
@@ -24,11 +21,7 @@ export const GreetingHeader = ({ userName }) => (
 );
 
 // --- 2. KPI Cards Row ---
-export const KpiCardRow = ({ statistics, budgets }) => {
-    const totalBudget = budgets.reduce((sum, b) => sum + (parseFloat(b.amount) || 0), 0);
-    // Dummy budget for weekly if not set
-    const weeklyBudget = totalBudget > 0 ? (totalBudget / 4).toFixed(0) : 400;
-
+export const KpiCardRow = ({ statistics }) => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 mb-6">
             {/* Card A: Total Spent */}
@@ -50,25 +43,20 @@ export const KpiCardRow = ({ statistics, budgets }) => {
             {/* Card B: Weekly Spending */}
             <div className={`${CARD_BASE} flex flex-col justify-between h-[160px]`}>
                 <div>
-                    <h3 className={`${TEXT_MUTED} text-[14px] font-medium mb-1`}>Weekly Spending</h3>
+                    <h3 className={`${TEXT_MUTED} text-[14px] font-medium mb-1`}>Last 7 Days</h3>
                     <div className="flex items-center gap-2">
                         <span className="text-[28px] font-bold text-[#111827]">
                             ${statistics.thisWeek.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                         <span className={`${BG_BLUE_SOFT} text-[#2563EB] text-[12px] px-2 py-1 rounded-md font-medium whitespace-nowrap`}>
-                            / ${weeklyBudget} Budget
+                            {statistics.thisWeek.count} {statistics.thisWeek.count === 1 ? 'expense' : 'expenses'}
                         </span>
                     </div>
                 </div>
-                <div className="space-y-2">
-                    <div className="w-full bg-[#E5E7EB] h-[3px] rounded-full overflow-hidden">
-                        <div 
-                            className="bg-[#2563EB] h-full rounded-full" 
-                            style={{ width: `${Math.min((statistics.thisWeek.amount / weeklyBudget) * 100, 100)}%` }}
-                        />
-                    </div>
+                <div>
+                     <div className="w-full h-[1px] bg-[#E5E7EB] mb-2" />
                      <p className={`${TEXT_MUTED} text-[13px] text-center font-medium`}>
-                        ${statistics.thisWeek.amount.toFixed(2)} / ${weeklyBudget} Budget
+                        {statistics.thisWeek.count > 0 ? 'Rolling 7-day total' : 'No spend in the last 7 days'}
                      </p>
                 </div>
             </div>
@@ -92,85 +80,54 @@ export const KpiCardRow = ({ statistics, budgets }) => {
     );
 };
 
-// --- 3. Monthly Budget Pace ---
-export const BudgetPaceCard = ({ statistics, budgets }) => {
-    const totalBudget = budgets.reduce((sum, b) => sum + (parseFloat(b.amount) || 0), 0) || 1420; // Default 1420 if 0
-    const percentage = (statistics.thisMonth.amount / totalBudget) * 100;
-    
-    return (
-        <div className={`${CARD_BASE} mb-6`}>
-             <div className="flex justify-between items-start mb-4">
-                <h3 className={`${TEXT_MAIN} font-semibold text-[15px]`}>Monthly Budget Pace</h3>
-                <span className={`${TEXT_MUTED} text-[13px]`}>Target: ${totalBudget.toLocaleString()}</span>
-             </div>
-
-             <div className="flex flex-col gap-1 mb-4">
-                <span className={`${TEXT_MUTED} text-[14px] font-medium`}>You're spending faster than usual.</span>
-                <span className={`${TEXT_MUTED} text-[13px] font-normal`}>{percentage.toFixed(0)}% of monthly budget used</span>
-             </div>
-
-             <div className="relative pt-1">
-                 <div className="flex justify-between text-[12px] text-[#9CA3AF] mb-1">
-                    <span>{/* Spacer */}</span>
-                    <span className="flex items-center gap-1">Target: ${totalBudget.toLocaleString()} <ChevronRight size={12}/></span>
-                 </div>
-                 <div className="w-full h-2 bg-[#E5E7EB] rounded-full overflow-hidden">
-                     <div 
-                        className="bg-[#2563EB] h-full rounded-full transition-all duration-500" 
-                        style={{ width: `${Math.min(percentage, 100)}%` }}
-                     />
-                 </div>
-             </div>
-        </div>
-    );
-};
-
 // --- 4. Category Breakdown ---
 export const CategoryBreakdownCard = ({ categories }) => {
     const displayCats = categories.slice(0, 6);
+    const total = categories.reduce((sum, c) => sum + c.amount, 0);
 
     return (
         <div className={`${CARD_BASE} flex flex-col`}>
              <div className="flex justify-between items-center mb-6">
                  <h3 className={`${TEXT_MAIN} font-semibold text-[15px]`}>Category Breakdown</h3>
-                 <button className={`${TEXT_MUTED} text-[13px] hover:text-[#111827]`}>Manage Budgets</button>
              </div>
 
-             <div className="space-y-6 flex-1">
-                 {displayCats.map((cat, i) => {
-                     const { icon: Icon } = getCategoryConfig(cat.name);
-                     const safeColor = '#2563EB'; // Enforce blue only per Image 1 Polish Rules
-                     // Mock budget data for layout if not present
-                     const budgetVal = cat.budget || (cat.amount * 1.5).toFixed(0); 
+             {displayCats.length === 0 ? (
+                 <p className={`${TEXT_MUTED} text-[14px]`}>No expenses yet.</p>
+             ) : (
+                 <div className="space-y-6 flex-1">
+                     {displayCats.map((cat) => {
+                         const { icon: Icon } = getCategoryConfig(cat.name);
+                         // Each bar shows this category's share of total spending.
+                         const share = total > 0 ? (cat.amount / total) * 100 : 0;
 
-                     return (
-                         <div key={i} className="group">
-                             <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-6 h-6 rounded bg-[#EFF6FF] flex items-center justify-center text-[#2563EB]">
-                                         <Icon size={14} style={{ color: safeColor }} />
+                         return (
+                             <div key={cat.name}>
+                                 <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-6 h-6 rounded bg-[#EFF6FF] flex items-center justify-center text-[#2563EB]">
+                                             <Icon size={14} style={{ color: '#2563EB' }} />
+                                        </div>
+                                        <span className={`${TEXT_MAIN} text-[14px] font-semibold`}>{cat.name}</span>
                                     </div>
-                                    <span className={`${TEXT_MAIN} text-[14px] font-semibold`}>{cat.name}</span>
-                                </div>
-                                <div className="text-right">
-                                    <div className={`${TEXT_MAIN} font-bold text-[14px]`}>${cat.amount.toLocaleString()}</div>
-                                    <div className="text-[10px] text-[#9CA3AF]">${budgetVal} Budget</div>
-                                </div>
-                             </div>
-                             
-                             {/* Progress Line */}
-                             <div className="flex items-center gap-2">
-                                 <div className="flex-1 h-[2px] bg-[#E5E7EB] rounded-full overflow-hidden">
-                                     <div 
-                                        className="h-full rounded-full opacity-100" 
-                                        style={{ backgroundColor: safeColor, width: '65%' }} 
-                                     />
+                                    <div className="text-right">
+                                        <div className={`${TEXT_MAIN} font-bold text-[14px]`}>${cat.amount.toFixed(2)}</div>
+                                        <div className="text-[10px] text-[#9CA3AF]">{share.toFixed(0)}% of spending</div>
+                                    </div>
+                                 </div>
+
+                                 <div className="flex items-center gap-2">
+                                     <div className="flex-1 h-[2px] bg-[#E5E7EB] rounded-full overflow-hidden">
+                                         <div
+                                            className="h-full rounded-full"
+                                            style={{ backgroundColor: '#2563EB', width: `${share}%` }}
+                                         />
+                                     </div>
                                  </div>
                              </div>
-                         </div>
-                     );
-                 })}
-             </div>
+                         );
+                     })}
+                 </div>
+             )}
         </div>
     );
 };
@@ -183,19 +140,17 @@ export const RecentTransactionsCard = ({ expenses }) => {
         <div className={`${CARD_BASE} flex flex-col h-full min-h-[500px] relative`}>
             <div className="flex justify-between items-center mb-6">
                  <h3 className={`${TEXT_MAIN} font-semibold text-[15px]`}>Recent Transactions</h3>
-                 <button className={`${TEXT_MUTED} text-[13px] hover:text-[#111827]`}>View All &gt;</button>
              </div>
 
              <div className="space-y-5 flex-1 overflow-y-auto pr-1 custom-scrollbar">
-                 {displayExpenses.map((expense, i) => {
-                     const { icon: Icon } = getCategoryConfig(expense.category || expense.description); // Fallback usually good
-                     // Attempt to match image icons specifically if possible, otherwise generic
-                     // Image 1 specific overrides:
-                     let SpecificIcon = Icon;
-                     // let specificBg = `${color}15`; // 10% opacity hex
-                     
+                 {displayExpenses.length === 0 && (
+                     <p className={`${TEXT_MUTED} text-[14px]`}>No expenses yet.</p>
+                 )}
+                 {displayExpenses.map((expense) => {
+                     const { icon: SpecificIcon } = getCategoryConfig(expense.category || expense.description);
+
                      return (
-                         <div key={i} className="flex items-center justify-between">
+                         <div key={expense.id} className="flex items-center justify-between">
                              <div className="flex items-center gap-3">
                                  <div 
                                     className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
@@ -216,11 +171,6 @@ export const RecentTransactionsCard = ({ expenses }) => {
                  })}
              </div>
 
-             <div className="mt-4 pt-4 border-t border-[#E5E7EB] flex justify-end">
-                 <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#E5E7EB] text-[13px] text-[#6B7280] hover:bg-gray-50">
-                     <Filter size={14} /> Filter
-                 </button>
-             </div>
         </div>
     );
 };

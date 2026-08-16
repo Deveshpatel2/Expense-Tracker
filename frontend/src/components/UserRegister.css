@@ -10,11 +10,6 @@
   background-color: var(--color-bg);
   padding: var(--space-xl) var(--space-md);
 }
-
-.dark .register-container {
-  background-color: #111827;
-}
-
 /* Form Wrapper */
 .register-form-wrapper {
   width: 100%;
@@ -26,18 +21,6 @@
   position: relative;
   border: 1px solid var(--color-border);
 }
-
-.dark .register-form-wrapper {
-  background-color: #1f2937;
-  border-color: #374151;
-}
-
-.register-dark-mode-toggle {
-  position: absolute;
-  top: var(--space-sm);
-  right: var(--space-sm);
-}
-
 /* Header */
 .register-header {
   font-size: var(--text-monetary-lg); /* 28px approx 1.875rem */
@@ -46,11 +29,6 @@
   text-align: center;
   margin-bottom: var(--space-xs);
 }
-
-.dark .register-header {
-  color: #ffffff;
-}
-
 .register-subtitle {
   margin-top: var(--space-xs);
   font-size: var(--text-body);
@@ -58,11 +36,6 @@
   text-align: center;
   margin-bottom: var(--space-md);
 }
-
-.dark .register-subtitle {
-  color: #9ca3af;
-}
-
 /* Form Container */
 .register-form-container {
   margin-top: var(--space-md);
@@ -74,11 +47,6 @@
   color: var(--color-text-main);
   margin-bottom: var(--space-md);
 }
-
-.dark .register-form-title {
-  color: #d1d5db;
-}
-
 /* Form */
 .register-form {
   display: flex;
@@ -107,11 +75,6 @@
   color: var(--color-text-main);
   margin-bottom: var(--space-xs);
 }
-
-.dark .register-label {
-  color: #d1d5db;
-}
-
 /* Input */
 .register-input {
   width: 100%;
@@ -123,13 +86,6 @@
   font-size: var(--text-body);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-
-.dark .register-input {
-  border-color: #4b5563;
-  background-color: #374151;
-  color: #ffffff;
-}
-
 .register-input:focus {
   outline: none;
   border-color: var(--color-primary);
@@ -139,11 +95,6 @@
 .register-input::placeholder {
   color: var(--color-text-muted);
 }
-
-.dark .register-input::placeholder {
-  color: #6b7280;
-}
-
 .register-input.pr-10 {
   padding-right: 2.5rem; /* Standard spacing fallback */
 }
@@ -189,13 +140,6 @@
   font-size: var(--text-body);
   margin-bottom: var(--space-md);
 }
-
-.dark .register-error-message {
-  background-color: rgba(127, 29, 29, 0.2);
-  border-color: #7f1d1d;
-  color: #fca5a5;
-}
-
 /* Success Message */
 .register-success-message {
   background-color: #f0fdf4;
@@ -206,13 +150,6 @@
   font-size: var(--text-body);
   margin-bottom: var(--space-md);
 }
-
-.dark .register-success-message {
-  background-color: rgba(20, 83, 45, 0.2);
-  border-color: #166534;
-  color: #86efac;
-}
-
 /* Submit Button */
 .register-submit-button {
   width: 100%;
@@ -260,11 +197,6 @@
   width: 100%;
   border-top: 1px solid var(--color-border);
 }
-
-.dark .register-divider-border {
-  border-color: #4b5563;
-}
-
 .register-divider-text {
   position: relative;
   display: flex;
@@ -277,12 +209,6 @@
   color: var(--color-text-muted);
   font-size: var(--text-body);
 }
-
-.dark .register-divider-span {
-  background-color: #1f2937;
-  color: #9ca3af;
-}
-
 /* Google Button */
 .register-google-button {
   width: 100%;
@@ -300,21 +226,9 @@
   gap: var(--space-sm);
   transition: background-color 0.2s;
 }
-
-.dark .register-google-button {
-  border-color: #4b5563;
-  background-color: #374151;
-  color: #d1d5db;
-}
-
 .register-google-button:hover:not(:disabled) {
   background-color: var(--color-bg);
 }
-
-.dark .register-google-button:hover:not(:disabled) {
-  background-color: #4b5563;
-}
-
 .register-google-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -336,21 +250,11 @@
   color: var(--color-text-muted);
   margin-bottom: var(--space-xs);
 }
-
-.dark .register-login-link {
-  color: #9ca3af;
-}
-
 .register-login-link-text {
   font-weight: var(--weight-semibold);
   color: var(--color-primary);
   text-decoration: none;
 }
-
-.dark .register-login-link-text {
-  color: #818cf8;
-}
-
 .register-login-link-text:hover {
   opacity: 0.9;
   text-decoration: underline;
@@ -361,11 +265,6 @@
   color: var(--color-text-muted);
   margin-top: var(--space-sm);
 }
-
-.dark .register-demo-text {
-  color: #6b7280;
-}
-
 /* Responsive adjustments */
 @media (max-width: 640px) {
   .register-container {
@@ -376,11 +275,6 @@
     padding: var(--space-md);
   }
 }
-
-.dark .register-container {
-  background-color: #111827;
-}
-
 /* Form Wrapper */
 .register-form-wrapper {
   width: 100%;
@@ -391,17 +285,6 @@
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   position: relative;
 }
-
-.dark .register-form-wrapper {
-  background-color: #1f2937;
-}
-
-.register-dark-mode-toggle {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-}
-
 /* Header */
 .register-header {
   font-size: 1.875rem;
@@ -410,11 +293,6 @@
   text-align: center;
   margin-bottom: 0.5rem;
 }
-
-.dark .register-header {
-  color: #ffffff;
-}
-
 .register-subtitle {
   margin-top: 0.5rem;
   font-size: 0.875rem;
@@ -422,11 +300,6 @@
   text-align: center;
   margin-bottom: 1.5rem;
 }
-
-.dark .register-subtitle {
-  color: #9ca3af;
-}
-
 /* Form Container */
 .register-form-container {
   margin-top: 1.5rem;
@@ -438,11 +311,6 @@
   color: #374151;
   margin-bottom: 1rem;
 }
-
-.dark .register-form-title {
-  color: #d1d5db;
-}
-
 /* Form */
 .register-form {
   display: flex;
@@ -471,11 +339,6 @@
   color: #374151;
   margin-bottom: 0.5rem;
 }
-
-.dark .register-label {
-  color: #d1d5db;
-}
-
 /* Input */
 .register-input {
   width: 100%;
@@ -487,13 +350,6 @@
   font-size: 0.875rem;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-
-.dark .register-input {
-  border-color: #4b5563;
-  background-color: #374151;
-  color: #ffffff;
-}
-
 .register-input:focus {
   outline: none;
   border-color: #4f46e5;
@@ -503,11 +359,6 @@
 .register-input::placeholder {
   color: #9ca3af;
 }
-
-.dark .register-input::placeholder {
-  color: #6b7280;
-}
-
 .register-input.pr-10 {
   padding-right: 2.5rem;
 }
@@ -553,13 +404,6 @@
   font-size: 0.875rem;
   margin-bottom: 1rem;
 }
-
-.dark .register-error-message {
-  background-color: rgba(127, 29, 29, 0.2);
-  border-color: #7f1d1d;
-  color: #fca5a5;
-}
-
 /* Success Message */
 .register-success-message {
   background-color: #f0fdf4;
@@ -570,13 +414,6 @@
   font-size: 0.875rem;
   margin-bottom: 1rem;
 }
-
-.dark .register-success-message {
-  background-color: rgba(20, 83, 45, 0.2);
-  border-color: #166534;
-  color: #86efac;
-}
-
 /* Submit Button */
 .register-submit-button {
   width: 100%;
@@ -623,11 +460,6 @@
   width: 100%;
   border-top: 1px solid #d1d5db;
 }
-
-.dark .register-divider-border {
-  border-color: #4b5563;
-}
-
 .register-divider-text {
   position: relative;
   display: flex;
@@ -640,12 +472,6 @@
   color: #6b7280;
   font-size: 0.875rem;
 }
-
-.dark .register-divider-span {
-  background-color: #1f2937;
-  color: #9ca3af;
-}
-
 /* Google Button */
 .register-google-button {
   width: 100%;
@@ -663,21 +489,9 @@
   gap: 0.75rem;
   transition: background-color 0.2s;
 }
-
-.dark .register-google-button {
-  border-color: #4b5563;
-  background-color: #374151;
-  color: #d1d5db;
-}
-
 .register-google-button:hover:not(:disabled) {
   background-color: #f9fafb;
 }
-
-.dark .register-google-button:hover:not(:disabled) {
-  background-color: #4b5563;
-}
-
 .register-google-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -699,40 +513,20 @@
   color: #6b7280;
   margin-bottom: 0.5rem;
 }
-
-.dark .register-login-link {
-  color: #9ca3af;
-}
-
 .register-login-link-text {
   font-weight: 500;
   color: #4f46e5;
   text-decoration: none;
 }
-
-.dark .register-login-link-text {
-  color: #818cf8;
-}
-
 .register-login-link-text:hover {
   color: #4338ca;
   text-decoration: underline;
 }
-
-.dark .register-login-link-text:hover {
-  color: #a5b4fc;
-}
-
 .register-demo-text {
   font-size: 0.75rem;
   color: #9ca3af;
   margin-top: 0.75rem;
 }
-
-.dark .register-demo-text {
-  color: #6b7280;
-}
-
 /* Responsive adjustments */
 @media (max-width: 640px) {
   .register-container {

@@ -21,10 +21,10 @@ export const LoadingOverlay = ({ isLoading, children, message = 'Loading...' }) 
     return (
         <div className="relative">
             {children}
-            <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-10">
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10">
                 <div className="flex flex-col items-center space-y-3">
                     <Spinner size="lg" />
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>
+                    <p className="text-sm text-gray-600">{message}</p>
                 </div>
             </div>
         </div>
@@ -61,10 +61,10 @@ export const LoadingButton = ({
 // Loading card component
 export const LoadingCard = ({ message = 'Loading...' }) => {
     return (
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+        <div className="bg-white shadow rounded-lg p-6">
             <div className="flex flex-col items-center justify-center space-y-4 py-8">
                 <Spinner size="lg" />
-                <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>
+                <p className="text-sm text-gray-600">{message}</p>
             </div>
         </div>
     );
@@ -77,7 +77,7 @@ export const SkeletonText = ({ lines = 1, className = '' }) => {
             {Array.from({ length: lines }).map((_, index) => (
                 <div
                     key={index}
-                    className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                    className="h-4 bg-gray-200 rounded animate-pulse"
                     style={{ width: `${Math.random() * 40 + 60}%` }}
                 ></div>
             ))}
@@ -87,13 +87,13 @@ export const SkeletonText = ({ lines = 1, className = '' }) => {
 
 export const SkeletonCard = ({ className = '' }) => {
     return (
-        <div className={`bg-white dark:bg-gray-800 shadow rounded-lg p-6 ${className}`}>
+        <div className={`bg-white shadow rounded-lg p-6 ${className}`}>
             <div className="space-y-4">
-                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4"></div>
+                <div className="h-6 bg-gray-200 rounded animate-pulse w-3/4"></div>
                 <SkeletonText lines={3} />
                 <div className="flex space-x-2">
-                    <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-20"></div>
-                    <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-20"></div>
+                    <div className="h-8 bg-gray-200 rounded animate-pulse w-20"></div>
+                    <div className="h-8 bg-gray-200 rounded animate-pulse w-20"></div>
                 </div>
             </div>
         </div>
@@ -102,19 +102,19 @@ export const SkeletonCard = ({ className = '' }) => {
 
 export const SkeletonTable = ({ rows = 5, columns = 4, className = '' }) => {
     return (
-        <div className={`bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden ${className}`}>
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className={`bg-white shadow rounded-lg overflow-hidden ${className}`}>
+            <div className="px-6 py-4 border-b border-gray-200">
                 <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
                     {Array.from({ length: columns }).map((_, index) => (
-                        <div key={index} className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                        <div key={index} className="h-4 bg-gray-200 rounded animate-pulse"></div>
                     ))}
                 </div>
             </div>
             {Array.from({ length: rows }).map((_, rowIndex) => (
-                <div key={rowIndex} className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+                <div key={rowIndex} className="px-6 py-4 border-b border-gray-200 last:border-b-0">
                     <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
                         {Array.from({ length: columns }).map((_, colIndex) => (
-                            <div key={colIndex} className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                            <div key={colIndex} className="h-4 bg-gray-200 rounded animate-pulse"></div>
                         ))}
                     </div>
                 </div>
@@ -194,10 +194,10 @@ export const LoadingProvider = ({ children }) => {
             {children}
             {globalLoading && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-xl">
+                    <div className="bg-white rounded-lg p-6 shadow-xl">
                         <div className="flex flex-col items-center space-y-4">
                             <Spinner size="xl" />
-                            <p className="text-lg font-medium text-gray-900 dark:text-white">
+                            <p className="text-lg font-medium text-gray-900">
                                 {globalLoadingMessage}
                             </p>
                         </div>

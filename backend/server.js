@@ -1,11 +1,13 @@
 const app = require('./src/app');
 const { PORT } = require('./src/config/constants');
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Spendora Backend running on http://0.0.0.0:${PORT}`);
-});
-
-process.on('SIGINT', () => {
-    console.log('Shutting down server...');
-    process.exit(0);
-});
+app.locals.dbReady
+    .then(() => {
+        app.listen(PORT, () => {
+            console.log(`🚀 Spendora API running on http://localhost:${PORT}`);
+        });
+    })
+    .catch((err) => {
+        console.error('❌ Failed to initialize database:', err);
+        process.exit(1);
+    });

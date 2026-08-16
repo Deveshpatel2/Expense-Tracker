@@ -4,8 +4,6 @@ node_modules/
 # Build artifacts
 build/
 dist/
-target/
-*.class
 
 # Database files
 *.db
@@ -13,9 +11,10 @@ target/
 *.db-wal
 *.db-shm
 
-# Environment variables
+# Environment variables — never commit real secrets.
 .env
 .env.*
+!.env.example
 *.backup
 
 # Logs

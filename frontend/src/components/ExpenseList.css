@@ -11,11 +11,11 @@
 }
 
 .expense-list-title {
-  @apply text-2xl font-bold text-gray-900 dark:text-white;
+  @apply text-2xl font-bold text-gray-900;
 }
 
 .expense-list-subtitle {
-  @apply text-sm text-gray-600 dark:text-gray-400 mt-1;
+  @apply text-sm text-gray-600 mt-1;
 }
 
 /* Controls */
@@ -25,7 +25,7 @@
 
 /* Search and Filters */
 .expense-list-filters {
-  @apply bg-white dark:bg-gray-800 rounded-lg shadow p-4;
+  @apply bg-white rounded-lg shadow p-4;
 }
 
 .expense-list-filters-grid {
@@ -37,15 +37,15 @@
 }
 
 .expense-list-filter-label {
-  @apply block text-sm font-medium text-gray-700 dark:text-gray-300;
+  @apply block text-sm font-medium text-gray-700;
 }
 
 .expense-list-filter-input {
-  @apply block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
+  @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white text-gray-900;
 }
 
 .expense-list-filter-select {
-  @apply block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
+  @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white text-gray-900;
 }
 
 .expense-list-filter-actions {
@@ -61,7 +61,7 @@
 }
 
 .expense-list-filter-button-secondary {
-  @apply text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 focus:ring-gray-500;
+  @apply text-gray-700 bg-gray-200 hover:bg-gray-300 focus:ring-gray-500;
 }
 
 /* Expenses List */
@@ -71,7 +71,7 @@
 
 /* Expense Item */
 .expense-item {
-  @apply bg-white dark:bg-gray-800 rounded-lg shadow p-4 hover:shadow-md transition-shadow duration-200;
+  @apply bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow duration-200;
 }
 
 .expense-item-header {
@@ -79,11 +79,11 @@
 }
 
 .expense-item-title {
-  @apply text-lg font-semibold text-gray-900 dark:text-white;
+  @apply text-lg font-semibold text-gray-900;
 }
 
 .expense-item-amount {
-  @apply text-lg font-bold text-gray-900 dark:text-white;
+  @apply text-lg font-bold text-gray-900;
 }
 
 .expense-item-actions {
@@ -91,7 +91,7 @@
 }
 
 .expense-item-action-button {
-  @apply p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none focus:text-gray-600 dark:focus:text-gray-300;
+  @apply p-1 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600;
 }
 
 .expense-item-action-icon {
@@ -108,15 +108,15 @@
 }
 
 .expense-detail-icon {
-  @apply h-4 w-4 text-gray-400 dark:text-gray-500;
+  @apply h-4 w-4 text-gray-400;
 }
 
 .expense-detail-label {
-  @apply text-sm font-medium text-gray-600 dark:text-gray-400;
+  @apply text-sm font-medium text-gray-600;
 }
 
 .expense-detail-value {
-  @apply text-sm text-gray-900 dark:text-white;
+  @apply text-sm text-gray-900;
 }
 
 /* Category Badge */
@@ -125,32 +125,32 @@
 }
 
 .category-badge-food {
-  @apply bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400;
+  @apply bg-red-100 text-red-800;
 }
 
 .category-badge-transport {
-  @apply bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400;
+  @apply bg-blue-100 text-blue-800;
 }
 
 .category-badge-entertainment {
-  @apply bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400;
+  @apply bg-purple-100 text-purple-800;
 }
 
 .category-badge-shopping {
-  @apply bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400;
+  @apply bg-green-100 text-green-800;
 }
 
 .category-badge-utilities {
-  @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400;
+  @apply bg-yellow-100 text-yellow-800;
 }
 
 .category-badge-other {
-  @apply bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400;
+  @apply bg-gray-100 text-gray-800;
 }
 
 /* Pagination */
 .pagination {
-  @apply flex items-center justify-between border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 sm:px-6;
+  @apply flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6;
 }
 
 .pagination-info {
@@ -158,7 +158,7 @@
 }
 
 .pagination-button {
-  @apply relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700;
+  @apply relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50;
 }
 
 .pagination-button-disabled {
@@ -170,7 +170,7 @@
 }
 
 .pagination-desktop-info {
-  @apply text-sm text-gray-700 dark:text-gray-300;
+  @apply text-sm text-gray-700;
 }
 
 .pagination-desktop-nav {
@@ -178,7 +178,7 @@
 }
 
 .pagination-desktop-button {
-  @apply relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700;
+  @apply relative inline-flex items-center px-2 py-2 border border-gray-300 text-sm font-medium text-gray-500 bg-white hover:bg-gray-50;
 }
 
 .pagination-desktop-button-first {
@@ -190,7 +190,7 @@
 }
 
 .pagination-desktop-button-active {
-  @apply z-10 bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 text-indigo-600 dark:text-indigo-400;
+  @apply z-10 bg-indigo-50 border-indigo-500 text-indigo-600;
 }
 
 /* Loading State */
@@ -208,7 +208,7 @@
 }
 
 .error-message {
-  @apply text-red-600 dark:text-red-400 text-center;
+  @apply text-red-600 text-center;
 }
 
 /* Empty State */
@@ -217,7 +217,7 @@
 }
 
 .empty-message {
-  @apply text-gray-500 dark:text-gray-400 text-center;
+  @apply text-gray-500 text-center;
 }
 
 /* Responsive Design */

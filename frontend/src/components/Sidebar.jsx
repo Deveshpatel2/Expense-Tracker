@@ -1,20 +1,14 @@
 import React from 'react';
-import { 
-  LayoutDashboard, Receipt, CreditCard, Users, PieChart, Settings, History
-} from 'lucide-react';
+import { LayoutDashboard, Receipt } from 'lucide-react';
 
-const Sidebar = ({ activeNav, setActiveNav, sidebarOpen, mobileSidebarOpen, setMobileSidebarOpen }) => {
-  
+const Sidebar = ({ activeNav, setActiveNav, mobileSidebarOpen, setMobileSidebarOpen }) => {
+
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'expenses', label: 'Expenses', icon: Receipt },
-    { id: 'budget', label: 'Budget', icon: CreditCard },
-    { id: 'split', label: 'Split', icon: Users },
-    { id: 'reports', label: 'Report', icon: PieChart },
-    { id: 'history', label: 'History', icon: History },
   ];
 
-  const NavItem = ({ item, isActive, isBottom = false }) => {
+  const NavItem = ({ item, isActive }) => {
     const Icon = item.icon;
     
     return (
@@ -53,24 +47,12 @@ const Sidebar = ({ activeNav, setActiveNav, sidebarOpen, mobileSidebarOpen, setM
       {/* Navigation Menu (Top) */}
       <nav className="flex-1 flex flex-col px-4 pt-6 overflow-y-auto">
         {menuItems.map((item) => (
-          <NavItem 
-            key={item.id} 
-            item={item} 
-            isActive={activeNav === item.id} 
+          <NavItem
+            key={item.id}
+            item={item}
+            isActive={activeNav === item.id}
           />
         ))}
-
-        {/* Spacer to push Settings to bottom */}
-        <div className="flex-1" />
-
-        {/* Bottom Separator Line */}
-        <div className="border-t border-[#E5E7EB] mt-[12px] pt-[12px] pb-6">
-           <NavItem 
-             item={{ id: 'settings', label: 'Settings', icon: Settings }} 
-             isActive={activeNav === 'settings'} 
-             isBottom={true}
-           />
-        </div>
       </nav>
       
     </aside>
